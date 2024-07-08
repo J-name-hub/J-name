@@ -7,8 +7,7 @@ import json
 STATE_FILE = "calendar_state.json"
 
 # Initialize color mapping
-if "color_mapping" not in st.session_state:
-    st.session_state.color_mapping = {}
+color_mapping = {}
 
 def save_state(pattern, highlight, year, month, memo_text, page):
     state = {
@@ -17,7 +16,7 @@ def save_state(pattern, highlight, year, month, memo_text, page):
         "year": year,
         "month": month,
         "memo": memo_text,
-        "colors": st.session_state.color_mapping,
+        "colors": color_mapping,
         "page": page
     }
     with open(STATE_FILE, "w") as f:
@@ -27,7 +26,8 @@ def load_state():
     try:
         with open(STATE_FILE, "r") as f:
             state = json.load(f)
-        st.session_state.color_mapping = state.get("colors", {})
+        global color_mapping
+        color_mapping = state.get("colors", {})
         return state["pattern"], state["highlight"], state["year"], state["month"], state.get("memo", ""), state.get("page", 1)
     except FileNotFoundError:
         return "AB", "A", datetime.now().year, datetime.now().month, "", 1
@@ -59,113 +59,82 @@ def generate_schedule(start_pattern, year, month):
     
     return schedule
 
+def on_date_click(day, year, month, current_bg):
+    new_bg = st.selectbox(f"{year}-{month}-{day} 근무 선택", ["비", "주", "야", "올"], index=["비", "주", "야", "올"].index(current_bg))
+    if new_bg != current_bg:
+        color_mapping[f"{year}-{month}-{day}"] = new_bg
+        save_state(pattern, highlight, year, month, memo, current_page)
+        st.experimental_rerun()
+
 def update_calendar():
-    start_pattern = st.session_state.pattern
-    highlight_team = st.session_state.highlight
-    year = st.session_state.year
-    month = st.session_state.month
-    memo_text = st.session_state.memo
+    start_pattern = pattern
+    highlight_team = highlight
+    year = int(selected_year)
+    month = int(selected_month)
     schedule = generate_schedule(start_pattern, year, month)
 
-    st.markdown(f"### {year}년 {month}월")
-    calendar_html = "<table><tr>" + "".join(f"<th>{day}</th>" for day in ['월', '화', '수', '목', '금', '토', '일']) + "</tr>"
+    st.write(f"### {year}년 {month}월")
+    st.write("####")
 
-    for week in calendar.monthcalendar(year, month):
-        week_html = "<tr>"
-        for day in week:
+    day_names = ['월', '화', '수', '목', '금', '토', '일']
+    cols = st.columns(7)
+    for i, day_name in enumerate(day_names):
+        cols[i].write(day_name)
+
+    month_days = calendar.monthcalendar(year, month)
+    for week in month_days:
+        cols = st.columns(7)
+        for i, day in enumerate(week):
             if day == 0:
-                week_html += "<td></td>"
+                cols[i].write("")
             else:
                 color_key = f"{year}-{month}-{day}"
-                bg_color = st.session_state.color_mapping.get(color_key, "white")
-                label_text = f"{day} 비"
-                if bg_color == "yellow":
-                    label_text = f"{day} 주"
-                elif bg_color == "gray":
-                    label_text = f"{day} 야"
-                elif bg_color == "green":
-                    label_text = f"{day} 올"
+                if color_key in color_mapping:
+                    bg_color = color_mapping[color_key]
+                else:
+                    if schedule[day][0] == highlight_team:
+                        bg_color = "주"
+                    elif schedule[day][1] == highlight_team:
+                        bg_color = "야"
+                    else:
+                        bg_color = "비"
+                label_text = f"{day} {bg_color}"
+                if st.button(label_text, key=f"{year}-{month}-{day}"):
+                    on_date_click(day, year, month, bg_color)
 
-                week_html += f'<td style="background-color:{bg_color};width:30px;height:30px;text-align:center;"><button onClick="window.location.reload(); change_color({day})">{label_text}</button></td>'
-        week_html += "</tr>"
-        calendar_html += week_html
+# Initialize current year and month
+now = datetime.now()
+current_year = now.year
+current_month = now.month
 
-    calendar_html += "</table>"
-    st.markdown(calendar_html, unsafe_allow_html=True)
-    save_state(start_pattern, highlight_team, year, month, memo_text, st.session_state.page)
-
-def change_color(day):
-    options = ["비", "주", "야", "올"]
-    choice = st.selectbox(f"근무 선택 ({day}일)", options, key=f"color_{st.session_state.year}_{st.session_state.month}_{day}")
-    if choice:
-        year = st.session_state.year
-        month = st.session_state.month
-        color_key = f"{year}-{month}-{day}"
-        if choice == "비":
-            st.session_state.color_mapping[color_key] = "white"
-        elif choice == "주":
-            st.session_state.color_mapping[color_key] = "yellow"
-        elif choice == "야":
-            st.session_state.color_mapping[color_key] = "gray"
-        elif choice == "올":
-            st.session_state.color_mapping[color_key] = "green"
-        update_calendar()
-
-def increment_month():
-    if st.session_state.month == 12:
-        st.session_state.month = 1
-        st.session_state.year += 1
+# Load saved state
+pattern, highlight, saved_year, saved_month, memo, saved_page = load_state()
+if saved_page == 2:
+    password_correct = st.text_input("비밀번호를 입력하세요:", type="password")
+    if password_correct == "0301":
+        show_admin = True
     else:
-        st.session_state.month += 1
+        show_admin = False
+else:
+    show_admin = False
+
+# Create main window
+st.title("교대근무 달력")
+
+current_page = st.selectbox("페이지 선택", ["달력", "관리자"], index=saved_page - 1)
+if current_page == "관리자" and not show_admin:
+    st.stop()
+
+pattern = st.selectbox("시작 패턴 선택:", ['AB', 'DA', 'CD', 'BC'], index=['AB', 'DA', 'CD', 'BC'].index(pattern))
+highlight = st.selectbox("조 선택:", ['A', 'B', 'C', 'D'], index=['A', 'B', 'C', 'D'].index(highlight))
+selected_year = st.selectbox("년도:", list(range(2000, 2101)), index=list(range(2000, 2101)).index(saved_year))
+selected_month = st.selectbox("월:", list(range(1, 13)), index=list(range(1, 13)).index(saved_month - 1))
+
+if current_page == "관리자":
+    memo = st.text_area("메모:", value=memo)
+    if st.button("업데이트"):
+        save_state(pattern, highlight, int(selected_year), int(selected_month), memo, 2)
+        st.experimental_rerun()
+
+if current_page == "달력":
     update_calendar()
-
-def decrement_month():
-    if st.session_state.month == 1:
-        st.session_state.month = 12
-        st.session_state.year -= 1
-    else:
-        st.session_state.month -= 1
-    update_calendar()
-
-def show_page(page):
-    st.session_state.page = page
-
-# Load state
-if "initialized" not in st.session_state:
-    pattern, highlight, saved_year, saved_month, saved_memo, saved_page = load_state()
-    st.session_state.pattern = pattern
-    st.session_state.highlight = highlight
-    st.session_state.year = saved_year
-    st.session_state.month = saved_month
-    st.session_state.memo = saved_memo
-    st.session_state.page = saved_page
-    st.session_state.authenticated = False
-    st.session_state.initialized = True
-
-# Page layout
-if st.session_state.page == 1:
-    if st.button("관리자"):
-        show_page(2)
-    if st.button("◀"):
-        decrement_month()
-    if st.button("▶"):
-        increment_month()
-    update_calendar()
-elif st.session_state.page == 2:
-    if st.session_state.authenticated:
-        st.selectbox("시작 패턴 선택:", ['AB', 'DA', 'CD', 'BC'], key='pattern')
-        st.selectbox("조 선택:", ['A', 'B', 'C', 'D'], key='highlight')
-        st.selectbox("년도:", list(range(2000, 2101)), key='year')
-        st.selectbox("월:", list(range(1, 13)), key='month')
-        st.button("업데이트", on_click=update_calendar)
-        st.text_area("메모:", key='memo')
-        if st.button("달력"):
-            show_page(1)
-        update_calendar()
-    else:
-        password = st.text_input("비밀번호를 입력하세요:", type="password", key='password_input_auth')
-        if password == "0301":
-            st.session_state.authenticated = True
-            show_page(2)
-        elif password:
-            st.error("비밀번호가 틀렸습니다.")
