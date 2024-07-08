@@ -78,6 +78,15 @@ def update_calendar():
     schedule = generate_schedule(start_pattern, year, month)
 
     st.write(f"## {year}년 {month}월")
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col1:
+        if st.button("◀ 이전 월"):
+            decrement_month()
+    with col3:
+        if st.button("다음 월 ▶"):
+            increment_month()
+    
     col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
     cols = [col1, col2, col3, col4, col5, col6, col7]
 
@@ -162,12 +171,15 @@ if 'page' not in st.session_state:
     st.session_state.page = saved_page
 
 # Page navigation
-if st.session_state.page == 1:
-    if st.button("관리자 페이지"):
-        show_page(2)
-else:
-    if st.button("달력 페이지"):
-        show_page(1)
+col1, col2 = st.columns(2)
+with col1:
+    if st.session_state.page == 1:
+        if st.button("관리자 페이지"):
+            show_page(2)
+with col2:
+    if st.session_state.page == 2:
+        if st.button("달력 페이지"):
+            show_page(1)
 
 # Show the current page
 show_page(st.session_state.page)
