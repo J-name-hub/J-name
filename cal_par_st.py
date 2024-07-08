@@ -7,17 +7,15 @@ import json
 STATE_FILE = "calendar_state.json"
 
 # Initialize color mapping
-if 'color_mapping' not in st.session_state:
-    st.session_state.color_mapping = {}
+color_mapping = {}
 
-def save_state(pattern, highlight, year, month, memo_text, page):
+def save_state(pattern, highlight, year, month, page):
     state = {
         "pattern": pattern,
         "highlight": highlight,
         "year": year,
         "month": month,
-        "memo": memo_text,
-        "colors": st.session_state.color_mapping,
+        "colors": color_mapping,
         "page": page
     }
     with open(STATE_FILE, "w") as f:
@@ -27,10 +25,11 @@ def load_state():
     try:
         with open(STATE_FILE, "r") as f:
             state = json.load(f)
-        st.session_state.color_mapping = state.get("colors", {})
-        return state["pattern"], state["highlight"], state["year"], state["month"], state.get("memo", ""), state.get("page", 1)
+        global color_mapping
+        color_mapping = state.get("colors", {})
+        return state["pattern"], state["highlight"], state["year"], state["month"], state.get("page", 1)
     except FileNotFoundError:
-        return "AB", "A", datetime.now().year, datetime.now().month, "", 1
+        return "AB", "A", datetime.now().year, datetime.now().month, 1
 
 def generate_schedule(start_pattern, year, month):
     rotations = {
@@ -59,95 +58,116 @@ def generate_schedule(start_pattern, year, month):
     
     return schedule
 
-def on_date_click(day, year, month):
-    choice = st.radio(f"Change color for {day}/{month}/{year}", ["비", "주", "야", "올"])
-    if choice:
-        if choice == "비":
-            st.session_state.color_mapping[f"{year}-{month}-{day}"] = "white"
-        elif choice == "주":
-            st.session_state.color_mapping[f"{year}-{month}-{day}"] = "yellow"
-        elif choice == "야":
-            st.session_state.color_mapping[f"{year}-{month}-{day}"] = "gray"
-        elif choice == "올":
-            st.session_state.color_mapping[f"{year}-{month}-{day}"] = "green"
-        save_state(st.session_state.pattern, st.session_state.highlight, year, month, st.session_state.memo, st.session_state.page)
-        st.experimental_rerun()
+def change_color(year, month, day, choice):
+    if choice == "비":
+        color_mapping[f"{year}-{month}-{day}"] = "white"
+    elif choice == "주":
+        color_mapping[f"{year}-{month}-{day}"] = "yellow"
+    elif choice == "야":
+        color_mapping[f"{year}-{month}-{day}"] = "gray"
+    elif choice == "올":
+        color_mapping[f"{year}-{month}-{day}"] = "green"
+    save_state(st.session_state.pattern, st.session_state.highlight, year, month, st.session_state.page)
+    st.experimental_rerun()
 
 def update_calendar():
+    start_pattern = st.session_state.pattern
+    highlight_team = st.session_state.highlight
     year = st.session_state.year
     month = st.session_state.month
-    schedule = generate_schedule(st.session_state.pattern, year, month)
-    
-    st.write(f"### {year}년 {month}월")
-    
+    schedule = generate_schedule(start_pattern, year, month)
+
+    st.write(f"## {year}년 {month}월")
+    col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+    cols = [col1, col2, col3, col4, col5, col6, col7]
+
     day_names = ['월', '화', '수', '목', '금', '토', '일']
-    st.write(" | ".join(day_names))
-    
+    for i, day_name in enumerate(day_names):
+        cols[i].write(f"**{day_name}**")
+
     month_days = calendar.monthcalendar(year, month)
     for week in month_days:
-        week_display = []
-        for day in week:
+        week_cols = st.columns(7)
+        for i, day in enumerate(week):
             if day == 0:
-                week_display.append(" ")
+                week_cols[i].write("")
             else:
                 color_key = f"{year}-{month}-{day}"
-                if color_key in st.session_state.color_mapping:
-                    bg_color = st.session_state.color_mapping[color_key]
+                if color_key in color_mapping:
+                    bg_color = color_mapping[color_key]
                 else:
-                    if schedule[day][0] == st.session_state.highlight:
+                    if schedule[day][0] == highlight_team:
                         bg_color = "yellow"
-                    elif schedule[day][1] == st.session_state.highlight:
+                    elif schedule[day][1] == highlight_team:
                         bg_color = "gray"
                     else:
                         bg_color = "white"
 
-                label_text = f"{day}"
+                label_text = ""
                 if bg_color == "yellow":
-                    label_text += " 주"
+                    label_text = f"{day} 주"
                 elif bg_color == "gray":
-                    label_text += " 야"
+                    label_text = f"{day} 야"
                 elif bg_color == "green":
-                    label_text += " 올"
+                    label_text = f"{day} 올"
                 else:
-                    label_text += " 비"
-                
-                week_display.append(f"<div style='background-color:{bg_color};'>{label_text}</div>")
-        st.write(" | ".join(week_display))
+                    label_text = f"{day} 비"
+
+                week_cols[i].markdown(f"<div style='background-color:{bg_color}; padding: 10px;'>{label_text}</div>", unsafe_allow_html=True)
+                if st.session_state.page == 2:
+                    if week_cols[i].button(f"Edit {day}", key=f"edit_{day}"):
+                        change_color(year, month, day, st.selectbox("근무 선택", ["비", "주", "야", "올"], key=f"select_{day}"))
+
+def increment_month():
+    if st.session_state.month == 12:
+        st.session_state.month = 1
+        st.session_state.year += 1
+    else:
+        st.session_state.month += 1
+    update_calendar()
+
+def decrement_month():
+    if st.session_state.month == 1:
+        st.session_state.month = 12
+        st.session_state.year -= 1
+    else:
+        st.session_state.month -= 1
+    update_calendar()
 
 def show_page(page):
     st.session_state.page = page
     if page == 1:
-        st.write("### 달력")
         update_calendar()
     elif page == 2:
-        st.write("### 관리자 설정")
         st.selectbox("시작 패턴 선택:", ['AB', 'DA', 'CD', 'BC'], key='pattern')
         st.selectbox("조 선택:", ['A', 'B', 'C', 'D'], key='highlight')
         st.selectbox("년도:", list(range(2000, 2101)), key='year')
         st.selectbox("월:", list(range(1, 13)), key='month')
-        st.text_area("메모:", key='memo')
-        st.button("업데이트", on_click=update_calendar)
+        if st.button("업데이트"):
+            update_calendar()
 
-# Initialize current year and month
-now = datetime.now()
-if 'year' not in st.session_state:
-    st.session_state.year = now.year
-if 'month' not in st.session_state:
-    st.session_state.month = now.month
+# Load state
+pattern, highlight, saved_year, saved_month, saved_page = load_state()
 
-# Load initial state
-if 'loaded' not in st.session_state:
-    pattern, highlight, saved_year, saved_month, saved_memo, saved_page = load_state()
+# Initialize session state
+if 'pattern' not in st.session_state:
     st.session_state.pattern = pattern
+if 'highlight' not in st.session_state:
     st.session_state.highlight = highlight
+if 'year' not in st.session_state:
     st.session_state.year = saved_year
+if 'month' not in st.session_state:
     st.session_state.month = saved_month
-    st.session_state.memo = saved_memo
+if 'page' not in st.session_state:
     st.session_state.page = saved_page
-    st.session_state.loaded = True
 
-st.sidebar.title("교대근무 달력")
-st.sidebar.button("달력 보기", on_click=lambda: show_page(1))
-st.sidebar.button("관리자", on_click=lambda: show_page(2))
+# Page navigation
+if st.session_state.page == 1:
+    if st.button("관리자 페이지"):
+        show_page(2)
+else:
+    if st.button("달력 페이지"):
+        show_page(1)
 
+# Show the current page
 show_page(st.session_state.page)
