@@ -59,12 +59,18 @@ def generate_schedule(start_pattern, year, month):
     
     return schedule
 
-def on_date_click(day, year, month, current_bg):
-    new_bg = st.selectbox(f"{year}-{month}-{day} 근무 선택", ["비", "주", "야", "올"], index=["비", "주", "야", "올"].index(current_bg))
-    if new_bg != current_bg:
-        color_mapping[f"{year}-{month}-{day}"] = new_bg
-        save_state(pattern, highlight, year, month, memo, current_page)
-        st.experimental_rerun()
+def on_date_click(day, year, month):
+    color_options = {
+        "비": "white",
+        "주": "yellow",
+        "야": "gray",
+        "올": "green"
+    }
+    
+    choice = st.selectbox(f"{year}-{month}-{day} 근무 선택", list(color_options.keys()))
+    color_mapping[f"{year}-{month}-{day}"] = color_options[choice]
+    save_state(pattern, highlight, year, month, memo, current_page)
+    st.experimental_rerun()
 
 def update_calendar():
     start_pattern = pattern
@@ -93,14 +99,14 @@ def update_calendar():
                     bg_color = color_mapping[color_key]
                 else:
                     if schedule[day][0] == highlight_team:
-                        bg_color = "주"
+                        bg_color = "yellow"
                     elif schedule[day][1] == highlight_team:
-                        bg_color = "야"
+                        bg_color = "gray"
                     else:
-                        bg_color = "비"
-                label_text = f"{day} {bg_color}"
-                if st.button(label_text, key=f"{year}-{month}-{day}"):
-                    on_date_click(day, year, month, bg_color)
+                        bg_color = "white"
+
+                label_text = f"{day} {'주' if bg_color == 'yellow' else '야' if bg_color == 'gray' else '올' if bg_color == 'green' else '비'}"
+                cols[i].button(label_text, key=f"{year}-{month}-{day}", on_click=on_date_click, args=(day, year, month))
 
 # Initialize current year and month
 now = datetime.now()
