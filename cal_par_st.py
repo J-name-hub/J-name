@@ -133,6 +133,7 @@ def increment_month():
         st.session_state.year += 1
     else:
         st.session_state.month += 1
+    save_state(st.session_state.pattern, st.session_state.highlight, st.session_state.year, st.session_state.month, st.session_state.page)
     update_calendar()
 
 def decrement_month():
@@ -141,10 +142,12 @@ def decrement_month():
         st.session_state.year -= 1
     else:
         st.session_state.month -= 1
+    save_state(st.session_state.pattern, st.session_state.highlight, st.session_state.year, st.session_state.month, st.session_state.page)
     update_calendar()
 
 def show_page(page):
     st.session_state.page = page
+    save_state(st.session_state.pattern, st.session_state.highlight, st.session_state.year, st.session_state.month, st.session_state.page)
     if page == 1:
         update_calendar()
     elif page == 2:
