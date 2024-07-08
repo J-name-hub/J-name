@@ -94,7 +94,7 @@ def update_calendar():
 
 def change_color(day):
     options = ["비", "주", "야", "올"]
-    choice = st.selectbox("근무 선택", options, key=f"color_{day}")
+    choice = st.selectbox("근무 선택", options, key=f"color_{st.session_state.year}_{st.session_state.month}_{day}")
     if choice:
         year = st.session_state.year
         month = st.session_state.month
@@ -152,10 +152,10 @@ if "initialized" not in st.session_state:
 
 # Page layout
 if st.session_state.page == 1:
-    st.button("관리자", on_click=lambda: show_page(2))
     st.button("◀", on_click=decrement_month)
     st.button("▶", on_click=increment_month)
     update_calendar()
+    st.button("관리자", on_click=lambda: show_page(2))
 elif st.session_state.page == 2:
     if st.session_state.authenticated:
         st.selectbox("시작 패턴 선택:", ['AB', 'DA', 'CD', 'BC'], key='pattern')
@@ -167,7 +167,7 @@ elif st.session_state.page == 2:
         st.button("달력", on_click=lambda: show_page(1))
         update_calendar()
     else:
-        password = st.text_input("비밀번호를 입력하세요:", type="password", key='password_input')
+        password = st.text_input("비밀번호를 입력하세요:", type="password", key='password_input_auth')
         if password == "0301":
             st.session_state.authenticated = True
             st.experimental_rerun()
