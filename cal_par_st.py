@@ -81,10 +81,10 @@ def update_calendar():
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col1:
-        if st.button("◀ 이전 월"):
+        if st.button("◀ 이전 월", key="prev_month"):
             decrement_month()
     with col3:
-        if st.button("다음 월 ▶"):
+        if st.button("다음 월 ▶", key="next_month"):
             increment_month()
     
     col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
@@ -124,8 +124,8 @@ def update_calendar():
 
                 week_cols[i].markdown(f"<div style='background-color:{bg_color}; padding: 10px;'>{label_text}</div>", unsafe_allow_html=True)
                 if st.session_state.page == 2:
-                    if week_cols[i].button(f"Edit {day}", key=f"edit_{day}"):
-                        change_color(year, month, day, st.selectbox("근무 선택", ["비", "주", "야", "올"], key=f"select_{day}"))
+                    if week_cols[i].button(f"Edit {day}", key=f"edit_{year}_{month}_{day}"):
+                        change_color(year, month, day, st.selectbox("근무 선택", ["비", "주", "야", "올"], key=f"select_{year}_{month}_{day}"))
 
 def increment_month():
     if st.session_state.month == 12:
@@ -151,11 +151,16 @@ def show_page(page):
     if page == 1:
         update_calendar()
     elif page == 2:
-        st.selectbox("시작 패턴 선택:", ['AB', 'DA', 'CD', 'BC'], key='pattern')
-        st.selectbox("조 선택:", ['A', 'B', 'C', 'D'], key='highlight')
-        st.selectbox("년도:", list(range(2000, 2101)), key='year')
-        st.selectbox("월:", list(range(1, 13)), key='month')
-        if st.button("업데이트"):
+        st.selectbox("시작 패턴 선택:", ['AB', 'DA', 'CD', 'BC'], key='pattern_admin')
+        st.selectbox("조 선택:", ['A', 'B', 'C', 'D'], key='highlight_admin')
+        st.selectbox("년도:", list(range(2000, 2101)), key='year_admin')
+        st.selectbox("월:", list(range(1, 13)), key='month_admin')
+        if st.button("업데이트", key="update_button"):
+            st.session_state.pattern = st.session_state.pattern_admin
+            st.session_state.highlight = st.session_state.highlight_admin
+            st.session_state.year = st.session_state.year_admin
+            st.session_state.month = st.session_state.month_admin
+            save_state(st.session_state.pattern, st.session_state.highlight, st.session_state.year, st.session_state.month, st.session_state.page)
             update_calendar()
 
 # Load state
@@ -174,14 +179,14 @@ if 'page' not in st.session_state:
     st.session_state.page = saved_page
 
 # Page navigation
-col1, col2 = st.columns(2)
+col1, col2 = st.columns([1, 1])
 with col1:
     if st.session_state.page == 1:
-        if st.button("관리자 페이지"):
+        if st.button("관리자 페이지", key="admin_page"):
             show_page(2)
 with col2:
     if st.session_state.page == 2:
-        if st.button("달력 페이지"):
+        if st.button("달력 페이지", key="calendar_page"):
             show_page(1)
 
 # Show the current page
