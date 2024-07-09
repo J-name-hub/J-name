@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import calendar
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from dateutil.relativedelta import relativedelta
 import json
 import requests
@@ -115,7 +115,7 @@ shift_patterns = {
 }
 
 def get_shift(date, team):
-    base_date = datetime(2000, 1, 3)
+    base_date = date(2000, 1, 3)  # 기준 날짜를 date 객체로 변경
     delta_days = (date - base_date).days
     pattern = shift_patterns[team]
     return pattern[delta_days % len(pattern)]
