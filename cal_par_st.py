@@ -123,36 +123,51 @@ def get_shift(date, team):
 # 1페이지: 달력 보기
 st.title(f"{month}월 교대근무 달력")
 
-# 월 선택 박스 추가
-months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
-years = range(year-1, year+1)  # 원하는 년도 범위를 설정합니다.
+# 월 이동 바 추가
+bar_placeholder = st.empty()
+bar_content = "<div style='width: 100%; height: 40px; border: 1px solid black; position: relative; cursor: pointer;' onclick='handleClick(event)'><div style='position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);'>이전 월 / 다음 월</div></div>"
 
-# 현재 년도와 월을 기준으로 인덱스를 설정합니다.
-current_index = (year - (year - 1)) * 12 + (month - 1)
+# JavaScript를 사용하여 클릭 위치를 감지하고 Streamlit으로 클릭 정보를 전달하는 스크립트 추가
+st.markdown("""
+    <script>
+    function handleClick(event) {
+        const barWidth = event.currentTarget.offsetWidth;
+        const clickX = event.clientX - event.currentTarget.getBoundingClientRect().left;
+        const clickRatio = clickX / barWidth;
+        
+        if (clickRatio < 0.5) {
+            window.parent.postMessage("prev", "*");
+        } else {
+            window.parent.postMessage("next", "*");
+        }
+    }
+    
+    window.addEventListener("message", (event) => {
+        if (event.data === "prev") {
+            window.streamlitApi.setComponentValue("prev");
+        } else if (event.data === "next") {
+            window.streamlitApi.setComponentValue("next");
+        }
+    });
+    </script>
+""", unsafe_allow_html=True)
 
-# Add a list to hold the desired months
-desired_months = []
-current_date = datetime(year, month, 1)
-for i in range(-5, 6):
-    new_date = current_date + relativedelta(months=i)
-    desired_months.append((new_date.year, new_date.month))
+# Placeholder에 바 콘텐츠 삽입
+bar_placeholder.markdown(bar_content, unsafe_allow_html=True)
 
-today = datetime.today()
+# 클릭 정보 감지
+clicked = st.text_input("clicked", value="", key="clicked", type="hidden")
 
-selected_year_month = st.selectbox(
-    "", 
-    options=desired_months,
-    format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
-    index=5  # the current month is in the middle of the range
-)
+if clicked == "prev":
+    new_date = datetime(year, month, 1) - relativedelta(months=1)
+    st.session_state.year = new_date.year
+    st.session_state.month = new_date.month
+    st.experimental_rerun()
 
-# 선택한 년도와 월로 변경
-selected_year, selected_month = selected_year_month
-if selected_year != year or selected_month != month:
-    st.session_state.year = selected_year
-    st.session_state.month = selected_month
-    year = selected_year
-    month = selected_month
+elif clicked == "next":
+    new_date = datetime(year, month, 1) + relativedelta(months=1)
+    st.session_state.year = new_date.year
+    st.session_state.month = new_date.month
     st.experimental_rerun()
 
 month_days = generate_calendar(year, month)
@@ -167,7 +182,7 @@ for day in month_days:
         if date_str not in schedule_data:
             schedule_data[date_str] = get_shift(date, st.session_state.get("team", "A"))
         background = shift_colors[schedule_data[date_str]]
-        day_style = "font-weight: bold; text-align: center; padding: 2px; height: 50px;"  # Adjust height to ensure uniformity
+        day_style = "font-weight: bold; text-align: center; padding: 2px; height: 30px;"  # Adjust height to ensure uniformity
 
         if date.date() == today.date():  # Check if the date is today
             background = "background-color: lightblue"
@@ -181,7 +196,7 @@ for day in month_days:
         shift_text = f"<div style='color: black'>{day[2]}<br><span style='color: black;'>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"  # Always black text for shift
         week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
     else:
-        week.append("<div style='height: 50px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
+        week.append("<div style='height: 30px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
     
     if day[3] == 6:  # End of the week
         calendar_df.loc[len(calendar_df)] = week
