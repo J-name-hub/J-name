@@ -149,17 +149,17 @@ for day in month_days:
         if date_str not in schedule_data:
             schedule_data[date_str] = get_shift(date, st.session_state.get("team", "A"))
         background = shift_colors[schedule_data[date_str]]
-        day_style = "font-weight: bold; text-align: center; padding: 10px;"
+        day_style = "font-weight: bold; text-align: center; padding: 10px; height: 60px;"  # Adjust height to ensure uniformity
         if day[3] == 5:  # Saturday
             day_style += " color: red;"
         elif day[3] == 6:  # Sunday
             day_style += " color: red;"
         else:
             day_style += " color: black;"
-        shift_text = f"<div>{day[2]}<br>{schedule_data[date_str] if schedule_data[date_str] != '비' else ''}</div>"
+        shift_text = f"<div>{day[2]}<br>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</div>"
         week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
     else:
-        week.append("")
+        week.append("<div style='height: 60px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
     
     if day[3] == 6:  # End of the week
         calendar_df.loc[len(calendar_df)] = week
@@ -179,7 +179,6 @@ st.markdown(
 )
 
 # 근무 시간 설명 추가
-st.markdown("**노란색 : 주간, 회색 : 야간, 초록색 : 주야**", unsafe_allow_html=True)
 st.markdown("**주간은 9시\\~18시이고, 야간은 18시\\~9시입니다.**", unsafe_allow_html=True)
 
 # 2페이지: 스케줄 설정
