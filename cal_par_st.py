@@ -37,6 +37,8 @@ def save_schedule(schedule, sha):
         "content": content,
         "sha": sha
     }
+    if sha:
+        data["sha"] = sha
     response = requests.put(url, headers=headers, data=json.dumps(data))
     if response.status_code == 201 or response.status_code == 200:
         st.success("스케줄이 저장되었습니다.")
@@ -45,6 +47,11 @@ def save_schedule(schedule, sha):
 
 # 초기 스케줄 데이터 로드
 schedule_data, sha = load_schedule()
+
+# 파일이 없을 경우 기본 값 설정
+if not schedule_data:
+    schedule_data = {}
+    sha = None
 
 # 페이지 설정
 st.set_page_config(page_title="교대근무 달력", layout="wide")
