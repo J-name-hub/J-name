@@ -83,23 +83,22 @@ def get_shift(date, team):
     return pattern[delta_days % len(pattern)]
 
 # 1페이지: 달력 보기
-st.title(f"{year}년 {month}월")
-
-# 근무 시간 설명 추가
-st.markdown("**노란색 배경은 9시~18시 근무입니다.**")
-
-# 버튼 배치 및 달력 출력
-col1, col2, col3 = st.columns([1, 5, 1])
-
+col1, col2, col3 = st.columns([1, 3, 1])
 with col1:
     if st.button("이전 달"):
         st.session_state.year, st.session_state.month = get_previous_month(year, month)
         st.experimental_rerun()
 
+with col2:
+    st.title(f"{year}년 {month}월")
+
 with col3:
     if st.button("다음 달"):
         st.session_state.year, st.session_state.month = get_next_month(year, month)
         st.experimental_rerun()
+
+# 근무 시간 설명 추가
+st.markdown("**노란색 배경은 9시~18시 근무입니다.**")
 
 month_days = generate_calendar(year, month)
 
@@ -159,11 +158,15 @@ if st.session_state.expander_open:
     with st.expander("스케줄 변경", expanded=True):
         change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
         new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
+        password = st.text_input("암호 입력", type="password", key="password")
 
         if st.button("스케줄 변경 저장"):
-            change_date_str = change_date.strftime("%Y-%m-%d")
-            schedule_data[change_date_str] = new_shift
-            save_schedule(schedule_data)
-            st.success("스케줄이 변경되었습니다.")
-            st.session_state.expander_open = False
-            st.experimental_rerun()
+            if password == "0301":
+                change_date_str = change_date.strftime("%Y-%m-%d")
+                schedule_data[change_date_str] = new_shift
+                save_schedule(schedule_data)
+                st.success("스케줄이 변경되었습니다.")
+                st.session_state.expander_open = False
+                st.experimental_rerun()
+            else:
+                st.error("암호가 일치하지 않습니다.")
