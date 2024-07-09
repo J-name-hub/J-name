@@ -138,6 +138,7 @@ for i in range(-5, 6):
     desired_months.append((new_date.year, new_date.month))
 
 today = datetime.today()
+yesterday = today - timedelta(days=1)
 
 selected_year_month = st.selectbox(
     "", 
@@ -171,6 +172,8 @@ for day in month_days:
 
         if date.date() == today.date():  # Check if the date is today
             background = "background-color: lightblue"
+        elif date.date() == yesterday.date():  # Check if the date is yesterday
+            background = shift_colors[schedule_data[date_str]]
 
         if day[3] == 5:  # Saturday
             day_style += " color: red;"
