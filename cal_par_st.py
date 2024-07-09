@@ -9,13 +9,14 @@ STATE_FILE = "calendar_state.json"
 # Initialize color mapping
 color_mapping = {}
 
-def save_state(pattern, highlight, year, month, colors):
+def save_state(pattern, highlight, year, month, colors, page):
     state = {
         "pattern": pattern,
         "highlight": highlight,
         "year": year,
         "month": month,
-        "colors": colors
+        "colors": colors,
+        "page": page
     }
     with open(STATE_FILE, "w") as f:
         json.dump(state, f)
@@ -26,9 +27,9 @@ def load_state():
             state = json.load(f)
         global color_mapping
         color_mapping = state.get("colors", {})
-        return state["pattern"], state["highlight"], state["year"], state["month"]
+        return state["pattern"], state["highlight"], state["year"], state["month"], state.get("page", 1)
     except FileNotFoundError:
-        return "A", datetime.now().year, datetime.now().month
+        return "A", "A", datetime.now().year, datetime.now().month, 1
 
 def generate_schedule(start_pattern, year, month):
     rotations = {
@@ -66,7 +67,7 @@ def change_color(year, month, day, choice):
         color_mapping[f"{year}-{month}-{day}"] = "gray"
     elif choice == "올":
         color_mapping[f"{year}-{month}-{day}"] = "green"
-    save_state(st.session_state.pattern, st.session_state.highlight, year, month, color_mapping)
+    save_state(st.session_state.pattern, st.session_state.highlight, year, month, color_mapping, st.session_state.page)
     st.experimental_rerun()
 
 def update_calendar():
@@ -125,7 +126,7 @@ def increment_month():
         st.session_state.year += 1
     else:
         st.session_state.month += 1
-    save_state(st.session_state.pattern, st.session_state.highlight, st.session_state.year, st.session_state.month, color_mapping)
+    save_state(st.session_state.pattern, st.session_state.highlight, st.session_state.year, st.session_state.month, color_mapping, st.session_state.page)
     update_calendar()
 
 def decrement_month():
@@ -134,12 +135,12 @@ def decrement_month():
         st.session_state.year -= 1
     else:
         st.session_state.month -= 1
-    save_state(st.session_state.pattern, st.session_state.highlight, st.session_state.year, st.session_state.month, color_mapping)
+    save_state(st.session_state.pattern, st.session_state.highlight, st.session_state.year, st.session_state.month, color_mapping, st.session_state.page)
     update_calendar()
 
 def show_page(page):
     st.session_state.page = page
-    save_state(st.session_state.pattern, st.session_state.highlight, st.session_state.year, st.session_state.month, color_mapping)
+    save_state(st.session_state.pattern, st.session_state.highlight, st.session_state.year, st.session_state.month, color_mapping, st.session_state.page)
     if page == 1:
         update_calendar()
     elif page == 2:
@@ -148,7 +149,7 @@ def show_page(page):
             update_calendar()
 
 # Load state
-pattern, highlight, saved_year, saved_month = load_state()
+pattern, highlight, saved_year, saved_month, saved_page = load_state()
 
 # Initialize session state
 if 'pattern' not in st.session_state:
@@ -160,7 +161,7 @@ if 'year' not in st.session_state:
 if 'month' not in st.session_state:
     st.session_state.month = saved_month
 if 'page' not in st.session_state:
-    st.session_state.page = 1
+    st.session_state.page = saved_page
 
 # Page navigation
 col1, col2 = st.columns([1, 1])
