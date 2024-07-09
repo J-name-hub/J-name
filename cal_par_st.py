@@ -125,32 +125,32 @@ st.title(f"{month}월 교대근무 달력")
 
 # 월 이동 바 추가
 bar_placeholder = st.empty()
-bar_content = "<div style='width: 100%; height: 40px; border: 1px solid black; position: relative; cursor: pointer;' onclick='handleClick(event)'><div style='position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);'>이전 월 / 다음 월</div></div>"
+bar_content = """
+<div style='width: 100%; height: 40px; border: 1px solid black; position: relative; cursor: pointer;' onclick='handleClick(event)'>
+    <div style='position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);'>이전 월 / 다음 월</div>
+</div>
+<script>
+function handleClick(event) {
+    const barWidth = event.currentTarget.offsetWidth;
+    const clickX = event.clientX - event.currentTarget.getBoundingClientRect().left;
+    const clickRatio = clickX / barWidth;
 
-# JavaScript를 사용하여 클릭 위치를 감지하고 Streamlit으로 클릭 정보를 전달하는 스크립트 추가
-st.markdown("""
-    <script>
-    function handleClick(event) {
-        const barWidth = event.currentTarget.offsetWidth;
-        const clickX = event.clientX - event.currentTarget.getBoundingClientRect().left;
-        const clickRatio = clickX / barWidth;
-        
-        if (clickRatio < 0.5) {
-            window.parent.postMessage("prev", "*");
-        } else {
-            window.parent.postMessage("next", "*");
-        }
+    if (clickRatio < 0.5) {
+        window.parent.postMessage("prev", "*");
+    } else {
+        window.parent.postMessage("next", "*");
     }
-    
-    window.addEventListener("message", (event) => {
-        if (event.data === "prev") {
-            window.streamlitApi.setComponentValue("prev");
-        } else if (event.data === "next") {
-            window.streamlitApi.setComponentValue("next");
-        }
-    });
-    </script>
-""", unsafe_allow_html=True)
+}
+
+window.addEventListener("message", (event) => {
+    if (event.data === "prev") {
+        window.streamlitApi.setComponentValue("prev");
+    } else if (event.data === "next") {
+        window.streamlitApi.setComponentValue("next");
+    }
+});
+</script>
+"""
 
 # Placeholder에 바 콘텐츠 삽입
 bar_placeholder.markdown(bar_content, unsafe_allow_html=True)
@@ -159,10 +159,8 @@ bar_placeholder.markdown(bar_content, unsafe_allow_html=True)
 if "clicked" not in st.session_state:
     st.session_state.clicked = ""
 
-clicked = st.session_state.clicked
-
 # 클릭 정보 감지
-clicked = st.text_input("clicked", value="", key="clicked", type="hidden")
+clicked = st.session_state.clicked
 
 if clicked == "prev":
     new_date = datetime(year, month, 1) - relativedelta(months=1)
