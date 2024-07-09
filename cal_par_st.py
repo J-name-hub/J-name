@@ -205,17 +205,19 @@ st.markdown("**주간은 9시\\~18시이고, 야간은 18시\\~9시입니다.**"
 
 # 2페이지: 스케줄 설정
 st.sidebar.title("근무 조 설정")
-team = st.sidebar.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
-password_for_settings = st.sidebar.text_input("암호 입력", type="password", key="settings_password")
+with st.sidebar.form(key='team_settings_form'):
+    team = st.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
+    password_for_settings = st.text_input("암호 입력", type="password", key="settings_password")
+    submit_button = st.form_submit_button("설정 저장")
 
-if st.sidebar.button("설정 저장"):
-    if password_for_settings == "0301":
-        st.session_state["team"] = team
-        save_team_settings(team)  # 선택한 팀을 파일에 저장
-        st.sidebar.success("조가 저장되었습니다.")
-        st.experimental_rerun()  # This line ensures the page is rerun to reflect the new team
-    else:
-        st.sidebar.error("암호가 일치하지 않습니다.")
+    if submit_button:
+        if password_for_settings == "0301":
+            st.session_state["team"] = team
+            save_team_settings(team)  # 선택한 팀을 파일에 저장
+            st.sidebar.success("조가 저장되었습니다.")
+            st.experimental_rerun()  # This line ensures the page is rerun to reflect the new team
+        else:
+            st.sidebar.error("암호가 일치하지 않습니다.")
 
 # 일자 클릭 시 스케줄 변경 버튼
 if st.button("일자 스케줄 변경"):
@@ -223,15 +225,17 @@ if st.button("일자 스케줄 변경"):
 
 if st.session_state.expander_open:
     with st.expander("스케줄 변경", expanded=True):
-        change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
-        new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
-        password = st.text_input("암호 입력", type="password", key="password")
+        with st.form(key='schedule_change_form'):
+            change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
+            new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
+            password = st.text_input("암호 입력", type="password", key="password")
+            change_submit_button = st.form_submit_button("스케줄 변경 저장")
 
-        if st.button("스케줄 변경 저장"):
-            if password == "0301":
-                change_date_str = change_date.strftime("%Y-%m-%d")
-                schedule_data[change_date_str] = new_shift
-                save_schedule(schedule_data, sha)
-                st.experimental_rerun()  # This line ensures the page is rerun to reflect the new schedule
-            else:
-                st.error("암호가 일치하지 않습니다.")
+            if change_submit_button:
+                if password == "0301":
+                    change_date_str = change_date.strftime("%Y-%m-%d")
+                    schedule_data[change_date_str] = new_shift
+                    save_schedule(schedule_data, sha)
+                    st.experimental_rerun()  # This line ensures the page is rerun to reflect the new schedule
+                else:
+                    st.error("암호가 일치하지 않습니다.")
