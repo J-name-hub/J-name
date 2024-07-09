@@ -5,9 +5,6 @@ from datetime import datetime, timedelta
 import json
 import os
 
-# 페이지 설정
-st.set_page_config(page_title="교대근무 달력", layout="wide")
-
 # JSON 파일 경로 설정
 FILE_PATH = "shift_schedule.json"
 
@@ -26,6 +23,9 @@ def save_schedule(schedule):
 
 # 초기 스케줄 데이터 로드
 schedule_data = load_schedule()
+
+# 페이지 설정
+st.set_page_config(page_title="교대근무 달력", layout="wide")
 
 # 월 이동 버튼 설정
 def get_current_year_month():
@@ -61,10 +61,10 @@ def generate_calendar(year, month):
 
 # 조 색상 설정
 shift_colors = {
-    "주": "yellow",
-    "야": "gray",
-    "비": "white",
-    "올": "green"
+    "주": "background-color: yellow",
+    "야": "background-color: gray",
+    "비": "background-color: white",
+    "올": "background-color: green"
 }
 
 # 교대 근무 조 설정
@@ -103,16 +103,18 @@ with col3:
 
 month_days = generate_calendar(year, month)
 
+st.markdown("###")
 st.markdown(
     """
     <style>
     .calendar-day {
-        width: 40px;
-        height: 40px;
+        width: 35px;
+        height: 35px;
         display: inline-block;
-        line-height: 40px;
+        line-height: 35px;
         text-align: center;
         vertical-align: middle;
+        font-weight: bold;
     }
     .calendar-header {
         font-weight: bold;
@@ -139,13 +141,13 @@ for day in month_days:
         date = datetime(day[0], day[1], day[2])
         if date_str not in schedule_data:
             schedule_data[date_str] = get_shift(date, st.session_state.get("team", "A"))
-        background_color = shift_colors[schedule_data[date_str]]
-        day_style = f"background-color: {background_color}; width: 40px; height: 40px; display: inline-block; line-height: 40px; text-align: center; vertical-align: middle; font-weight: bold;"
+        background = shift_colors[schedule_data[date_str]]
+        day_style = "calendar-day"
         if day[3] == 5:  # Saturday
-            day_style += " color: red;"
+            day_style += " calendar-day-red"
         elif day[3] == 6:  # Sunday
-            day_style += " color: red;"
-        week.append(f"<div style='{day_style}'>{day[2]}</div>")
+            day_style += " calendar-day-red"
+        week.append(f"<div class='{day_style}' style='{background}'>{day[2]}</div>")
     else:
         week.append("")
     
@@ -177,7 +179,7 @@ if st.sidebar.button("설정 저장"):
 
 # 일자 클릭 시 스케줄 변경 버튼
 if st.button("일자 스케줄 변경"):
-    st.session_state.expander_open = True
+    st.session_state.expander_open = not st.session_state.expander_open
 
 if st.session_state.expander_open:
     with st.expander("스케줄 변경", expanded=True):
