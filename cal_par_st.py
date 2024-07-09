@@ -103,33 +103,7 @@ with col3:
 
 month_days = generate_calendar(year, month)
 
-st.markdown(
-    """
-    <style>
-    .calendar-day {
-        width: 40px;
-        height: 40px;
-        display: inline-block;
-        line-height: 40px;
-        text-align: center;
-        vertical-align: middle;
-    }
-    .calendar-header {
-        font-weight: bold;
-        text-align: center;
-    }
-    .calendar-header-red {
-        font-weight: bold;
-        text-align: center;
-        color: red;
-    }
-    .calendar-day-red {
-        color: red;
-    }
-    </style>
-    """, unsafe_allow_html=True
-)
-
+st.markdown("###")
 calendar_df = pd.DataFrame(columns=["월", "화", "수", "목", "금", "토", "일"])
 
 week = []
@@ -140,12 +114,12 @@ for day in month_days:
         if date_str not in schedule_data:
             schedule_data[date_str] = get_shift(date, st.session_state.get("team", "A"))
         background = shift_colors[schedule_data[date_str]]
-        day_style = f"calendar-day {background}"
+        day_style = "font-weight: bold; text-align: center; padding: 10px;"
         if day[3] == 5:  # Saturday
-            day_style += " calendar-day-red"
+            day_style += " color: red;"
         elif day[3] == 6:  # Sunday
-            day_style += " calendar-day-red"
-        week.append(f"<div class='{day_style}'>{day[2]}</div>")
+            day_style += " color: red;"
+        week.append(f"<div style='{background}; {day_style}'>{day[2]}</div>")
     else:
         week.append("")
     
@@ -158,11 +132,11 @@ if week:
 
 # 요일 헤더 스타일 설정
 days_header = ["월", "화", "수", "목", "금", "토", "일"]
-days_header_style = ["calendar-header"] * 5 + ["calendar-header-red"] * 2
-calendar_df.columns = [f"<div class='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
+days_header_style = ["text-align: center; font-weight: bold;"] * 5 + ["text-align: center; font-weight: bold; color: red;"] * 2
+calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
 
 st.markdown(
-    calendar_df.to_html(escape=False, index=False, header=False), 
+    calendar_df.to_html(escape=False, index=False), 
     unsafe_allow_html=True
 )
 
