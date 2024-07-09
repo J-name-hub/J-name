@@ -1,12 +1,13 @@
 import streamlit as st
 import pandas as pd
 import calendar
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import json
 import requests
 import base64
 import os
+import pytz
 
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
@@ -75,7 +76,7 @@ st.set_page_config(page_title="교대근무 달력", layout="wide")
 
 # 월 이동 버튼 설정
 def get_current_year_month():
-    today = datetime.today()
+    today = datetime.now(pytz.timezone('Asia/Seoul'))
     return today.year, today.month
 
 if "year" not in st.session_state or "month" not in st.session_state:
@@ -137,7 +138,7 @@ for i in range(-5, 6):
     new_date = current_date + relativedelta(months=i)
     desired_months.append((new_date.year, new_date.month))
 
-today = datetime.today().date()
+today = datetime.now(pytz.timezone('Asia/Seoul')).date()
 yesterday = today - timedelta(days=1)
 
 selected_year_month = st.selectbox(
