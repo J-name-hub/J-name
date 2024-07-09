@@ -105,13 +105,19 @@ st.title(f"{year}년 {month}월 교대근무 달력")
 # 월 선택 박스 추가
 months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
 years = range(2020, 2031)  # 원하는 년도 범위를 설정합니다.
-selected_year, selected_month = st.selectbox(
+
+# 현재 년도와 월을 기준으로 인덱스를 설정합니다.
+current_index = (year - 2020) * 12 + (month - 1)
+
+selected_year_month = st.selectbox(
+    "월 선택", 
     options=[(y, m) for y in years for m in range(1, 13)],
     format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
-    index=(year - 2020) * 12 + (month - 1)
+    index=current_index
 )
 
 # 선택한 년도와 월로 변경
+selected_year, selected_month = selected_year_month
 if selected_year != year or selected_month != month:
     st.session_state.year = selected_year
     st.session_state.month = selected_month
@@ -160,8 +166,8 @@ st.markdown(
 )
 
 # 근무 시간 설명 추가
-st.markdown("**노란색 배경은 9시~18시 근무입니다.**", unsafe_allow_html=True)
-st.markdown("**회색 배경은 18시~9시 근무입니다.**", unsafe_allow_html=True)
+st.markdown("**[노란색-주간], [회색-야간], [초록색-주야]입니다.**", unsafe_allow_html=True)
+st.markdown("**주간은 9시~18시이고, 야간은 18시~9시입니다.**", unsafe_allow_html=True)
 
 # 2페이지: 스케줄 설정
 st.sidebar.title("근무 조 설정")
