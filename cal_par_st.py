@@ -156,7 +156,8 @@ for day in month_days:
             day_style += " color: red;"
         else:
             day_style += " color: black;"
-        week.append(f"<div style='{background}; {day_style}'>{day[2]}</div>")
+        shift_text = f"<div>{day[2]}<br>{schedule_data[date_str] if schedule_data[date_str] != '비' else ''}</div>"
+        week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
     else:
         week.append("")
     
