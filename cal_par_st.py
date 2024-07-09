@@ -74,13 +74,15 @@ shift_patterns = {
 }
 
 def get_shift(date, team):
-    base_date = datetime(2000, 1, 1)
+    base_date = datetime(2000, 1, 3)
     delta_days = (date - base_date).days
     pattern = shift_patterns[team]
     return pattern[delta_days % len(pattern)]
 
 # 1페이지: 달력 보기
 st.title(f"{year}년 {month}월")
+
+# 버튼 배치 및 달력 출력
 col1, col2, col3 = st.columns([1, 6, 1])
 
 with col1:
@@ -126,19 +128,6 @@ if week:
 days_header = ["월", "화", "수", "목", "금", "토", "일"]
 days_header_style = ["text-align: center; font-weight: bold;"] * 5 + ["text-align: center; font-weight: bold; color: red;"] * 2
 calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
-
-# 버튼 배치 및 달력 출력
-col1, col2, col3 = st.columns([1, 6, 1])
-
-with col1:
-    if st.button("이전 달", key="prev_month"):
-        st.session_state.year, st.session_state.month = get_previous_month(year, month)
-        st.experimental_rerun()
-
-with col3:
-    if st.button("다음 달", key="next_month"):
-        st.session_state.year, st.session_state.month = get_next_month(year, month)
-        st.experimental_rerun()
 
 st.markdown(
     calendar_df.to_html(escape=False, index=False), 
