@@ -212,4 +212,9 @@ if st.session_state.expander_open:
 
         if st.button("스케줄 변경 저장"):
             if password == "0301":
-                change_date_str
+                change_date_str = change_date.strftime("%Y-%m-%d")
+                schedule_data[change_date_str] = new_shift
+                save_schedule(schedule_data, sha)
+                st.experimental_rerun()  # This line ensures the page is rerun to reflect the new schedule
+            else:
+                st.error("암호가 일치하지 않습니다.")
