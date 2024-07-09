@@ -162,7 +162,7 @@ for day in month_days:
             day_style += " color: red;"
         else:
             day_style += " color: black;"
-        shift_text = f"<div style='color: black'>{day[2]}<br>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</div>"  # Always black text for shift
+        shift_text = f"<div style='color: black'>{day[2]}<br><span style='color: black;'>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"  # Always black text for shift
         week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
     else:
         week.append("<div style='height: 60px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
@@ -212,11 +212,4 @@ if st.session_state.expander_open:
 
         if st.button("스케줄 변경 저장"):
             if password == "0301":
-                change_date_str = change_date.strftime("%Y-%m-%d")
-                schedule_data[change_date_str] = new_shift
-                save_schedule(schedule_data, sha)
-                st.success("스케줄이 변경되었습니다.")
-                st.session_state.expander_open = False
-                st.experimental_rerun()
-            else:
-                st.error("암호가 일치하지 않습니다.")
+                change_date_str
