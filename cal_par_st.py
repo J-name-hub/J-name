@@ -106,7 +106,12 @@ for day in month_days:
         if date_str not in schedule_data:
             schedule_data[date_str] = get_shift(date, st.session_state.get("team", "A"))
         background = shift_colors[schedule_data[date_str]]
-        week.append(f"<div style='{background}; padding:10px'>{day[2]}</div>")
+        day_style = "font-weight: bold; text-align: center; padding: 10px;"
+        if day[3] == 5:  # Saturday
+            day_style += " color: red;"
+        elif day[3] == 6:  # Sunday
+            day_style += " color: red;"
+        week.append(f"<div style='{background}; {day_style}'>{day[2]}</div>")
     else:
         week.append("")
     
@@ -116,6 +121,24 @@ for day in month_days:
 
 if week:
     calendar_df.loc[len(calendar_df)] = week + [""] * (7 - len(week))
+
+# 요일 헤더 스타일 설정
+days_header = ["월", "화", "수", "목", "금", "토", "일"]
+days_header_style = ["text-align: center; font-weight: bold;"] * 5 + ["text-align: center; font-weight: bold; color: red;"] * 2
+calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
+
+# 버튼 배치 및 달력 출력
+col1, col2, col3 = st.columns([1, 6, 1])
+
+with col1:
+    if st.button("이전 달", key="prev_month"):
+        st.session_state.year, st.session_state.month = get_previous_month(year, month)
+        st.experimental_rerun()
+
+with col3:
+    if st.button("다음 달", key="next_month"):
+        st.session_state.year, st.session_state.month = get_next_month(year, month)
+        st.experimental_rerun()
 
 st.markdown(
     calendar_df.to_html(escape=False, index=False), 
@@ -133,13 +156,16 @@ if st.sidebar.button("설정 저장"):
 
 # 일자 클릭 시 스케줄 변경 버튼
 if st.button("일자 스케줄 변경"):
-    with st.expander("스케줄 변경"):
-        change_date = st.date_input("변경할 날짜", datetime(year, month, 1))
-        new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"])
+    st.session_state.expander_open = True
 
-        if st.button("스케줄 변경 저장"):
-            change_date_str = change_date.strftime("%Y-%m-%d")
-            schedule_data[change_date_str] = new_shift
-            save_schedule(schedule_data)
-            st.success("스케줄이 변경되었습니다.")
-            st.experimental_rerun()
+with st.expander("스케줄 변경", expanded=st.session_state.get("expander_open", False)):
+    change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
+    new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
+
+    if st.button("스케줄 변경 저장"):
+        change_date_str = change_date.strftime("%Y-%m-%d")
+        schedule_data[change_date_str] = new_shift
+        save_schedule(schedule_data)
+        st.success("스케줄이 변경되었습니다.")
+        st.session_state.expander_open = False
+        st.experimental_rerun()
