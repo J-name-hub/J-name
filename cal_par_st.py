@@ -47,6 +47,9 @@ def get_previous_month(year, month):
 if "year" not in st.session_state or "month" not in st.session_state:
     st.session_state.year, st.session_state.month = get_current_year_month()
 
+if "expander_open" not in st.session_state:
+    st.session_state.expander_open = False
+
 year = st.session_state.year
 month = st.session_state.month
 
@@ -82,6 +85,9 @@ def get_shift(date, team):
 # 1페이지: 달력 보기
 st.title(f"{year}년 {month}월")
 
+# 근무 시간 설명 추가
+st.markdown("**노란색 배경은 9시~18시 근무입니다.**")
+
 # 버튼 배치 및 달력 출력
 col1, col2, col3 = st.columns([1, 6, 1])
 
@@ -97,7 +103,33 @@ with col3:
 
 month_days = generate_calendar(year, month)
 
-st.markdown("###")
+st.markdown(
+    """
+    <style>
+    .calendar-day {
+        width: 40px;
+        height: 40px;
+        display: inline-block;
+        line-height: 40px;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .calendar-header {
+        font-weight: bold;
+        text-align: center;
+    }
+    .calendar-header-red {
+        font-weight: bold;
+        text-align: center;
+        color: red;
+    }
+    .calendar-day-red {
+        color: red;
+    }
+    </style>
+    """, unsafe_allow_html=True
+)
+
 calendar_df = pd.DataFrame(columns=["월", "화", "수", "목", "금", "토", "일"])
 
 week = []
@@ -108,12 +140,12 @@ for day in month_days:
         if date_str not in schedule_data:
             schedule_data[date_str] = get_shift(date, st.session_state.get("team", "A"))
         background = shift_colors[schedule_data[date_str]]
-        day_style = "font-weight: bold; text-align: center; padding: 10px;"
+        day_style = f"calendar-day {background}"
         if day[3] == 5:  # Saturday
-            day_style += " color: red;"
+            day_style += " calendar-day-red"
         elif day[3] == 6:  # Sunday
-            day_style += " color: red;"
-        week.append(f"<div style='{background}; {day_style}'>{day[2]}</div>")
+            day_style += " calendar-day-red"
+        week.append(f"<div class='{day_style}'>{day[2]}</div>")
     else:
         week.append("")
     
@@ -126,11 +158,11 @@ if week:
 
 # 요일 헤더 스타일 설정
 days_header = ["월", "화", "수", "목", "금", "토", "일"]
-days_header_style = ["text-align: center; font-weight: bold;"] * 5 + ["text-align: center; font-weight: bold; color: red;"] * 2
-calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
+days_header_style = ["calendar-header"] * 5 + ["calendar-header-red"] * 2
+calendar_df.columns = [f"<div class='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
 
 st.markdown(
-    calendar_df.to_html(escape=False, index=False), 
+    calendar_df.to_html(escape=False, index=False, header=False), 
     unsafe_allow_html=True
 )
 
@@ -147,14 +179,15 @@ if st.sidebar.button("설정 저장"):
 if st.button("일자 스케줄 변경"):
     st.session_state.expander_open = True
 
-with st.expander("스케줄 변경", expanded=st.session_state.get("expander_open", False)):
-    change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
-    new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
+if st.session_state.expander_open:
+    with st.expander("스케줄 변경", expanded=True):
+        change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
+        new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
 
-    if st.button("스케줄 변경 저장"):
-        change_date_str = change_date.strftime("%Y-%m-%d")
-        schedule_data[change_date_str] = new_shift
-        save_schedule(schedule_data)
-        st.success("스케줄이 변경되었습니다.")
-        st.session_state.expander_open = False
-        st.experimental_rerun()
+        if st.button("스케줄 변경 저장"):
+            change_date_str = change_date.strftime("%Y-%m-%d")
+            schedule_data[change_date_str] = new_shift
+            save_schedule(schedule_data)
+            st.success("스케줄이 변경되었습니다.")
+            st.session_state.expander_open = False
+            st.experimental_rerun()
