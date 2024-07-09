@@ -103,12 +103,17 @@ def get_shift(date, team):
 st.title(f"{year}년 {month}월 교대근무 달력")
 
 # 월 선택 박스 추가
-months = {i: calendar.month_name[i] for i in range(1, 13)}
-selected_month = st.selectbox("월 선택", options=range(1, 13), format_func=lambda x: f"{year}년 {months[x]}", index=month-1)
+months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
+years = range(2020, 2050)  # 원하는 년도 범위를 설정합니다.
+selected_year, selected_month = st.selectbox(options=[(y, m) for y in years for m in range(1, 13)],
+                                              format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
+                                              index=(year - 2020) * 12 + (month - 1))
 
-# 선택한 월로 변경
-if selected_month != month:
+# 선택한 년도와 월로 변경
+if selected_year != year or selected_month != month:
+    st.session_state.year = selected_year
     st.session_state.month = selected_month
+    year = selected_year
     month = selected_month
     st.experimental_rerun()
 
