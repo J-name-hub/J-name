@@ -196,7 +196,7 @@ if st.sidebar.button("설정 저장"):
     if password_for_settings == "0301":
         st.session_state["team"] = team
         st.sidebar.success("조가 저장되었습니다.")
-        st.experimental_rerun()
+        st.experimental_rerun()  # This line ensures the page is rerun to reflect the new team
     else:
         st.sidebar.error("암호가 일치하지 않습니다.")
 
