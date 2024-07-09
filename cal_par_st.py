@@ -70,7 +70,7 @@ if "expander_open" not in st.session_state:
 
 # 팀 설정 초기화
 if "team" not in st.session_state:
-    st.session_state.team = st.secrets["default_team"] if "default_team" in st.secrets else "A"
+    st.session_state.team = "A"  # 기본 팀 설정
 
 year = st.session_state.year
 month = st.session_state.month
@@ -195,7 +195,7 @@ password_for_settings = st.sidebar.text_input("암호 입력", type="password", 
 if st.sidebar.button("설정 저장"):
     if password_for_settings == "0301":
         st.session_state["team"] = team
-        st.secrets["default_team"] = team  # 선택한 팀을 저장
+        st.session_state["default_team"] = team  # 선택한 팀을 세션 상태에 저장
         st.sidebar.success("조가 저장되었습니다.")
         st.experimental_rerun()  # This line ensures the page is rerun to reflect the new team
     else:
