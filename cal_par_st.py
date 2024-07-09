@@ -89,7 +89,7 @@ st.title(f"{year}년 {month}월")
 st.markdown("**노란색 배경은 9시~18시 근무입니다.**")
 
 # 버튼 배치 및 달력 출력
-col1, col2, col3 = st.columns([1, 6, 1])
+col1, col2, col3 = st.columns([1, 5, 1])
 
 with col1:
     if st.button("이전 달"):
@@ -104,34 +104,6 @@ with col3:
 month_days = generate_calendar(year, month)
 
 st.markdown("###")
-st.markdown(
-    """
-    <style>
-    .calendar-day {
-        width: 35px;
-        height: 35px;
-        display: inline-block;
-        line-height: 35px;
-        text-align: center;
-        vertical-align: middle;
-        font-weight: bold;
-    }
-    .calendar-header {
-        font-weight: bold;
-        text-align: center;
-    }
-    .calendar-header-red {
-        font-weight: bold;
-        text-align: center;
-        color: red;
-    }
-    .calendar-day-red {
-        color: red;
-    }
-    </style>
-    """, unsafe_allow_html=True
-)
-
 calendar_df = pd.DataFrame(columns=["월", "화", "수", "목", "금", "토", "일"])
 
 week = []
@@ -142,12 +114,14 @@ for day in month_days:
         if date_str not in schedule_data:
             schedule_data[date_str] = get_shift(date, st.session_state.get("team", "A"))
         background = shift_colors[schedule_data[date_str]]
-        day_style = "calendar-day"
+        day_style = "font-weight: bold; text-align: center; padding: 10px;"
         if day[3] == 5:  # Saturday
-            day_style += " calendar-day-red"
+            day_style += " color: red;"
         elif day[3] == 6:  # Sunday
-            day_style += " calendar-day-red"
-        week.append(f"<div class='{day_style}' style='{background}'>{day[2]}</div>")
+            day_style += " color: red;"
+        else:
+            day_style += " color: black;"
+        week.append(f"<div style='{background}; {day_style}'>{day[2]}</div>")
     else:
         week.append("")
     
@@ -160,11 +134,11 @@ if week:
 
 # 요일 헤더 스타일 설정
 days_header = ["월", "화", "수", "목", "금", "토", "일"]
-days_header_style = ["calendar-header"] * 5 + ["calendar-header-red"] * 2
-calendar_df.columns = [f"<div class='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
+days_header_style = ["background-color: white; text-align: center; font-weight: bold; color: black;"] * 5 + ["background-color: white; text-align: center; font-weight: bold; color: red;"] * 2
+calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
 
 st.markdown(
-    calendar_df.to_html(escape=False, index=False, header=False), 
+    calendar_df.to_html(escape=False, index=False), 
     unsafe_allow_html=True
 )
 
