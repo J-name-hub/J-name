@@ -38,6 +38,8 @@ def save_schedule(schedule, sha):
         "content": content,
         "sha": sha
     }
+    if sha:
+        data["sha"] = sha
     response = requests.put(url, headers=headers, data=json.dumps(data))
     if response.status_code == 201 or response.status_code == 200:
         st.success("스케줄이 저장되었습니다.")
@@ -49,7 +51,7 @@ schedule_data, sha = load_schedule()
 
 # 파일이 없을 경우 기본 값 설정
 if not schedule_data:
-    schedule_data = {"schedule": {}, "team": "A"}
+    schedule_data = {}
     sha = None
 
 # 페이지 설정
@@ -65,6 +67,10 @@ if "year" not in st.session_state or "month" not in st.session_state:
 
 if "expander_open" not in st.session_state:
     st.session_state.expander_open = False
+
+# 팀 설정 초기화
+if "team" not in st.session_state:
+    st.session_state.team = "A"
 
 year = st.session_state.year
 month = st.session_state.month
@@ -106,7 +112,7 @@ months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "
 years = range(year-1, year+1)  # 원하는 년도 범위를 설정합니다.
 
 # 현재 년도와 월을 기준으로 인덱스를 설정합니다.
-current_index = 6  # the current month is in the middle of the range
+current_index = (year - (year - 1)) * 12 + (month - 1)
 
 # Add a list to hold the desired months
 desired_months = []
@@ -119,7 +125,7 @@ selected_year_month = st.selectbox(
     "", 
     options=desired_months,
     format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
-    index=current_index  # the current month is in the middle of the range
+    index=5  # the current month is in the middle of the range
 )
 
 # 선택한 년도와 월로 변경
@@ -140,9 +146,9 @@ for day in month_days:
     if day[1] == month:
         date_str = f"{day[0]}-{day[1]:02d}-{day[2]:02d}"
         date = datetime(day[0], day[1], day[2])
-        if date_str not in schedule_data["schedule"]:
-            schedule_data["schedule"][date_str] = get_shift(date, schedule_data["team"])
-        background = shift_colors[schedule_data["schedule"][date_str]]
+        if date_str not in schedule_data:
+            schedule_data[date_str] = get_shift(date, st.session_state.get("team", "A"))
+        background = shift_colors[schedule_data[date_str]]
         day_style = "font-weight: bold; text-align: center; padding: 10px;"
         if day[3] == 5:  # Saturday
             day_style += " color: red;"
@@ -177,13 +183,12 @@ st.markdown("**주간은 9시\\~18시이고, 야간은 18시\\~9시입니다.**"
 
 # 2페이지: 스케줄 설정
 st.sidebar.title("근무 조 설정")
-team = st.sidebar.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(schedule_data.get("team", "A")))
+team = st.sidebar.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
 password_for_settings = st.sidebar.text_input("암호 입력", type="password", key="settings_password")
 
 if st.sidebar.button("설정 저장"):
     if password_for_settings == "0301":
-        schedule_data["team"] = team
-        save_schedule(schedule_data, sha)
+        st.session_state["team"] = team
         st.sidebar.success("조가 저장되었습니다.")
         st.experimental_rerun()
     else:
@@ -202,7 +207,7 @@ if st.session_state.expander_open:
         if st.button("스케줄 변경 저장"):
             if password == "0301":
                 change_date_str = change_date.strftime("%Y-%m-%d")
-                schedule_data["schedule"][change_date_str] = new_shift
+                schedule_data[change_date_str] = new_shift
                 save_schedule(schedule_data, sha)
                 st.success("스케줄이 변경되었습니다.")
                 st.session_state.expander_open = False
