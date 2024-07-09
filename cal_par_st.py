@@ -104,7 +104,7 @@ for day in month_days:
         date_str = f"{day[0]}-{day[1]:02d}-{day[2]:02d}"
         date = datetime(day[0], day[1], day[2])
         if date_str not in schedule_data:
-            schedule_data[date_str] = "비"
+            schedule_data[date_str] = get_shift(date, st.session_state.get("team", "A"))
         background = shift_colors[schedule_data[date_str]]
         week.append(f"<div style='{background}; padding:10px'>{day[2]}</div>")
     else:
@@ -125,14 +125,10 @@ st.markdown(
 # 2페이지: 스케줄 설정
 st.sidebar.title("스케줄 설정")
 team = st.sidebar.selectbox("조 선택", ["A", "B", "C", "D"])
-schedule_date = st.sidebar.date_input("날짜 선택", datetime(year, month, 1))
 
 if st.sidebar.button("설정 저장"):
-    date_str = schedule_date.strftime("%Y-%m-%d")
-    if date_str not in schedule_data:
-        schedule_data[date_str] = get_shift(schedule_date, team)
-    save_schedule(schedule_data)
-    st.sidebar.success("스케줄이 저장되었습니다.")
+    st.session_state["team"] = team
+    st.sidebar.success("조가 저장되었습니다.")
     st.experimental_rerun()
 
 # 일자 클릭 시 스케줄 변경 버튼
