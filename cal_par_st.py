@@ -167,7 +167,7 @@ for day in month_days:
         if date_str not in schedule_data:
             schedule_data[date_str] = get_shift(date, st.session_state.get("team", "A"))
         background = shift_colors[schedule_data[date_str]]
-        day_style = "font-weight: bold; text-align: center; padding: 7px; height: 50px;"  # Adjust height to ensure uniformity
+        day_style = "font-weight: bold; text-align: center; padding: 2px; height: 30px;"  # Adjust height to ensure uniformity
 
         if date.date() == today.date():  # Check if the date is today
             background = "background-color: lightblue"
@@ -181,7 +181,7 @@ for day in month_days:
         shift_text = f"<div style='color: black'>{day[2]}<br><span style='color: black;'>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"  # Always black text for shift
         week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
     else:
-        week.append("<div style='height: 50px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
+        week.append("<div style='height: 30px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
     
     if day[3] == 6:  # End of the week
         calendar_df.loc[len(calendar_df)] = week
