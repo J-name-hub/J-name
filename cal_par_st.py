@@ -104,10 +104,10 @@ st.title(f"{year}년 {month}월 교대근무 달력")
 
 # 월 선택 박스 추가
 months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
-years = range(2020, 2050)  # 원하는 년도 범위를 설정합니다.
+years = range(2024, 2050)  # 원하는 년도 범위를 설정합니다.
 
 # 현재 년도와 월을 기준으로 인덱스를 설정합니다.
-current_index = (year - 2020) * 12 + (month - 1)
+current_index = (year - 2024) * 12 + (month - 1)
 
 selected_year_month = st.selectbox(
     "", 
