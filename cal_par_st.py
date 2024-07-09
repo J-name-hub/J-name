@@ -101,12 +101,12 @@ calendar_df = pd.DataFrame(columns=["월", "화", "수", "목", "금", "토", "�
 week = []
 for day in month_days:
     if day[1] == month:
-        date_str = f"{day[2]}"
+        date_str = f"{day[0]}-{day[1]:02d}-{day[2]:02d}"
         date = datetime(day[0], day[1], day[2])
         if date_str not in schedule_data:
             schedule_data[date_str] = "비"
         background = shift_colors[schedule_data[date_str]]
-        week.append(f"<div style='{background}; padding:10px'>{date_str}</div>")
+        week.append(f"<div style='{background}; padding:10px'>{day[2]}</div>")
     else:
         week.append("")
     
@@ -135,14 +135,15 @@ if st.sidebar.button("설정 저장"):
     st.sidebar.success("스케줄이 저장되었습니다.")
     st.experimental_rerun()
 
-# 일자 클릭 시 스케줄 변경
-st.sidebar.title("일자 스케줄 변경")
-change_date = st.sidebar.date_input("변경할 날짜", datetime(year, month, 1))
-new_shift = st.sidebar.selectbox("새 스케줄", ["주", "야", "비", "올"])
+# 일자 클릭 시 스케줄 변경 버튼
+if st.button("일자 스케줄 변경"):
+    with st.expander("스케줄 변경"):
+        change_date = st.date_input("변경할 날짜", datetime(year, month, 1))
+        new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"])
 
-if st.sidebar.button("스케줄 변경"):
-    change_date_str = change_date.strftime("%Y-%m-%d")
-    schedule_data[change_date_str] = new_shift
-    save_schedule(schedule_data)
-    st.sidebar.success("스케줄이 변경되었습니다.")
-    st.experimental_rerun()
+        if st.button("스케줄 변경 저장"):
+            change_date_str = change_date.strftime("%Y-%m-%d")
+            schedule_data[change_date_str] = new_shift
+            save_schedule(schedule_data)
+            st.success("스케줄이 변경되었습니다.")
+            st.experimental_rerun()
