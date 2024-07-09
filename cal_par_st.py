@@ -177,6 +177,7 @@ elif clicked == "next":
     st.experimental_rerun()
 
 month_days = generate_calendar(year, month)
+today = datetime.today()  # 현재 날짜를 가져옵니다.
 
 calendar_df = pd.DataFrame(columns=["월", "화", "수", "목", "금", "토", "일"])
 
