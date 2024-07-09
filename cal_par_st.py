@@ -137,7 +137,7 @@ for i in range(-5, 6):
     new_date = current_date + relativedelta(months=i)
     desired_months.append((new_date.year, new_date.month))
 
-today = datetime.today()
+today = datetime.today().date()
 yesterday = today - timedelta(days=1)
 
 selected_year_month = st.selectbox(
@@ -164,15 +164,15 @@ week = []
 for day in month_days:
     if day[1] == month:
         date_str = f"{day[0]}-{day[1]:02d}-{day[2]:02d}"
-        date = datetime(day[0], day[1], day[2])
+        date = datetime(day[0], day[1], day[2]).date()
         if date_str not in schedule_data:
             schedule_data[date_str] = get_shift(date, st.session_state.get("team", "A"))
         background = shift_colors[schedule_data[date_str]]
         day_style = "font-weight: bold; text-align: center; padding: 1px; height: 55px; font-size: 18px;"  # Adjust padding to minimize spacing
 
-        if date.date() == today.date():  # Check if the date is today
+        if date == today:  # 오늘 날짜 비교
             background = "background-color: lightblue"
-        elif date.date() == yesterday.date():  # Check if the date is yesterday
+        elif date == yesterday:  # 전날 날짜 비교
             background = shift_colors[schedule_data[date_str]]
 
         if day[3] == 5:  # Saturday
