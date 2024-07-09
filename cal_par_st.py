@@ -6,11 +6,15 @@ from dateutil.relativedelta import relativedelta
 import json
 import requests
 import base64
+import os
 
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
 GITHUB_FILE_PATH = st.secrets["github"]["file_path"]
+
+# 설정 파일 경로
+TEAM_SETTINGS_FILE = "team_settings.json"
 
 # GitHub 파일 로드 함수
 def load_schedule():
@@ -46,6 +50,18 @@ def save_schedule(schedule, sha):
     else:
         st.error("스케줄 저장에 실패했습니다.")
 
+# 팀 설정 파일 로드 함수
+def load_team_settings():
+    if os.path.exists(TEAM_SETTINGS_FILE):
+        with open(TEAM_SETTINGS_FILE, "r") as f:
+            return json.load(f).get("team", "A")
+    return "A"
+
+# 팀 설정 파일 저장 함수
+def save_team_settings(team):
+    with open(TEAM_SETTINGS_FILE, "w") as f:
+        json.dump({"team": team}, f)
+
 # 초기 스케줄 데이터 로드
 schedule_data, sha = load_schedule()
 
@@ -70,7 +86,7 @@ if "expander_open" not in st.session_state:
 
 # 팀 설정 초기화
 if "team" not in st.session_state:
-    st.session_state.team = "A"  # 기본 팀 설정
+    st.session_state.team = load_team_settings()  # 파일에서 팀 설정 로드
 
 year = st.session_state.year
 month = st.session_state.month
@@ -195,7 +211,7 @@ password_for_settings = st.sidebar.text_input("암호 입력", type="password", 
 if st.sidebar.button("설정 저장"):
     if password_for_settings == "0301":
         st.session_state["team"] = team
-        st.session_state["default_team"] = team  # 선택한 팀을 세션 상태에 저장
+        save_team_settings(team)  # 선택한 팀을 파일에 저장
         st.sidebar.success("조가 저장되었습니다.")
         st.experimental_rerun()  # This line ensures the page is rerun to reflect the new team
     else:
