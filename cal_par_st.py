@@ -104,6 +104,15 @@ def get_shift(date, team):
     pattern = shift_patterns[team]
     return pattern[delta_days % len(pattern)]
 
+# 글자색 변경 함수
+def toggle_color(date_str):
+    if "color" not in schedule_data[date_str]:
+        schedule_data[date_str]["color"] = "black"
+    if schedule_data[date_str]["color"] == "black":
+        schedule_data[date_str]["color"] = "red"
+    else:
+        schedule_data[date_str]["color"] = "black"
+
 # 1페이지: 달력 보기
 st.title(f"{year}년 {month}월 교대근무 달력")
 
@@ -147,8 +156,11 @@ for day in month_days:
         date_str = f"{day[0]}-{day[1]:02d}-{day[2]:02d}"
         date = datetime(day[0], day[1], day[2])
         if date_str not in schedule_data:
-            schedule_data[date_str] = get_shift(date, st.session_state.get("team", "A"))
-        background = shift_colors[schedule_data[date_str]]
+            schedule_data[date_str] = {
+                "shift": get_shift(date, st.session_state.get("team", "A")),
+                "color": "black"
+            }
+        background = shift_colors[schedule_data[date_str]["shift"]]
         day_style = "font-weight: bold; text-align: center; padding: 10px; height: 60px;"  # Adjust height to ensure uniformity
         if day[3] == 5:  # Saturday
             day_style += " color: red;"
@@ -156,7 +168,8 @@ for day in month_days:
             day_style += " color: red;"
         else:
             day_style += " color: black;"
-        shift_text = f"<div>{day[2]}<br>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</div>"
+        text_color = schedule_data[date_str].get("color", "black")
+        shift_text = f"<div style='color: {text_color};'>{day[2]}<br>{schedule_data[date_str]['shift'] if schedule_data[date_str]['shift'] != '비' else '&nbsp;'}</div>"
         week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
     else:
         week.append("<div style='height: 60px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
@@ -207,10 +220,29 @@ if st.session_state.expander_open:
         if st.button("스케줄 변경 저장"):
             if password == "0301":
                 change_date_str = change_date.strftime("%Y-%m-%d")
-                schedule_data[change_date_str] = new_shift
+                schedule_data[change_date_str]["shift"] = new_shift
                 save_schedule(schedule_data, sha)
                 st.success("스케줄이 변경되었습니다.")
                 st.session_state.expander_open = False
+                st.experimental_rerun()
+            else:
+                st.error("암호가 일치하지 않습니다.")
+
+# 일자 공유힐 변경 버튼
+if st.button("일자 공유힐 변경"):
+    st.session_state.expander_color_open = not st.session_state.expander_color_open
+
+if st.session_state.expander_color_open:
+    with st.expander("공유힐 변경", expanded=True):
+        change_date_color = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date_color")
+        password_color = st.text_input("암호 입력", type="password", key="password_color")
+
+        if st.button("글자색 변경 저장"):
+            if password_color == "0301":
+                change_date_str = change_date_color.strftime("%Y-%m-%d")
+                toggle_color(change_date_str)
+                save_schedule(schedule_data, sha)
+                st.success("글자색이 변경되었습니다.")
                 st.experimental_rerun()
             else:
                 st.error("암호가 일치하지 않습니다.")
