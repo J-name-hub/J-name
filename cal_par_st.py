@@ -121,7 +121,6 @@ def get_shift(date, team):
     return pattern[delta_days % len(pattern)]
 
 # 1페이지: 달력 보기
-st.title(f"{month}월 교대근무 달력")
 
 # 월 선택 박스 추가
 months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
@@ -140,7 +139,7 @@ for i in range(-5, 6):
 today = datetime.today()
 
 selected_year_month = st.selectbox(
-    "", 
+    st.title(f"{month}월 교대근무 달력"), 
     options=desired_months,
     format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
     index=5  # the current month is in the middle of the range
@@ -192,7 +191,7 @@ if week:
 
 # 요일 헤더 스타일 설정
 days_header = ["월", "화", "수", "목", "금", "토", "일"]
-days_header_style = ["background-color: white; text-align: center; font-weight: bold; color: black;"] * 5 + ["background-color: white; text-align: center; font-weight: bold; color: red;"] * 2
+days_header_style = ["background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;"] * 5 + ["background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"] * 2
 calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
 
 st.markdown(
