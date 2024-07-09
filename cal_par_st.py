@@ -162,7 +162,7 @@ for day in month_days:
             day_style += " color: red;"
         else:
             day_style += " color: black;"
-        shift_text = f"<div>{day[2]}<br>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</div>"
+        shift_text = f"<div style='color: black'>{day[2]}<br>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</div>"  # Always black text for shift
         week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
     else:
         week.append("<div style='height: 60px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
