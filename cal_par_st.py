@@ -155,6 +155,12 @@ st.markdown("""
 # Placeholder에 바 콘텐츠 삽입
 bar_placeholder.markdown(bar_content, unsafe_allow_html=True)
 
+# 클릭 상태를 세션 상태로 저장
+if "clicked" not in st.session_state:
+    st.session_state.clicked = ""
+
+clicked = st.session_state.clicked
+
 # 클릭 정보 감지
 clicked = st.text_input("clicked", value="", key="clicked", type="hidden")
 
@@ -162,12 +168,14 @@ if clicked == "prev":
     new_date = datetime(year, month, 1) - relativedelta(months=1)
     st.session_state.year = new_date.year
     st.session_state.month = new_date.month
+    st.session_state.clicked = ""  # 클릭 상태 초기화
     st.experimental_rerun()
 
 elif clicked == "next":
     new_date = datetime(year, month, 1) + relativedelta(months=1)
     st.session_state.year = new_date.year
     st.session_state.month = new_date.month
+    st.session_state.clicked = ""  # 클릭 상태 초기화
     st.experimental_rerun()
 
 month_days = generate_calendar(year, month)
