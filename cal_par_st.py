@@ -3,26 +3,48 @@ import pandas as pd
 import calendar
 from datetime import datetime, timedelta
 import json
-import os
+import requests
+import base64
 
-# JSON 파일 경로 설정
-FILE_PATH = "shift_schedule.json"
+# GitHub 설정
+GITHUB_TOKEN = st.secrets["github"]["token"]
+GITHUB_REPO = st.secrets["github"]["repo"]
+GITHUB_FILE_PATH = st.secrets["github"]["file_path"]
 
-# JSON 파일 로드 함수
+# GitHub 파일 로드 함수
 def load_schedule():
-    if os.path.exists(FILE_PATH):
-        with open(FILE_PATH, "r") as file:
-            return json.load(file)
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        content = response.json()
+        file_content = base64.b64decode(content['content']).decode('utf-8')
+        return json.loads(file_content), content['sha']
     else:
-        return {}
+        return {}, None
 
-# JSON 파일 저장 함수
-def save_schedule(schedule):
-    with open(FILE_PATH, "w") as file:
-        json.dump(schedule, file)
+# GitHub 파일 저장 함수
+def save_schedule(schedule, sha):
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    message = "Update schedule"
+    content = base64.b64encode(json.dumps(schedule).encode('utf-8')).decode('utf-8')
+    data = {
+        "message": message,
+        "content": content,
+        "sha": sha
+    }
+    response = requests.put(url, headers=headers, data=json.dumps(data))
+    if response.status_code == 201 or response.status_code == 200:
+        st.success("스케줄이 저장되었습니다.")
+    else:
+        st.error("스케줄 저장에 실패했습니다.")
 
 # 초기 스케줄 데이터 로드
-schedule_data = load_schedule()
+schedule_data, sha = load_schedule()
 
 # 페이지 설정
 st.set_page_config(page_title="교대근무 달력", layout="wide")
@@ -160,7 +182,7 @@ if st.session_state.expander_open:
             if password == "0301":
                 change_date_str = change_date.strftime("%Y-%m-%d")
                 schedule_data[change_date_str] = new_shift
-                save_schedule(schedule_data)
+                save_schedule(schedule_data, sha)
                 st.success("스케줄이 변경되었습니다.")
                 st.session_state.expander_open = False
                 st.experimental_rerun()
