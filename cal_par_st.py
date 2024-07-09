@@ -112,23 +112,19 @@ def get_shift(date, team):
     return pattern[delta_days % len(pattern)]
 
 # 1페이지: 달력 보기
-st.title(f"{year}년 {month}월")
+st.title("교대근무 달력")
 
-if st.button("이전 달"):
-    st.session_state.year, st.session_state.month = get_previous_month(year, month)
-    st.experimental_rerun()
+selected_date = st.date_input("날짜 선택", datetime(year, month, 1), key="calendar_date")
+st.session_state.year = selected_date.year
+st.session_state.month = selected_date.month
 
-if st.button("다음 달"):
-    st.session_state.year, st.session_state.month = get_next_month(year, month)
-    st.experimental_rerun()
-
-month_days = generate_calendar(year, month)
+month_days = generate_calendar(st.session_state.year, st.session_state.month)
 
 calendar_df = pd.DataFrame(columns=["월", "화", "수", "목", "금", "토", "일"])
 
 week = []
 for day in month_days:
-    if day[1] == month:
+    if day[1] == st.session_state.month:
         date_str = f"{day[0]}-{day[1]:02d}-{day[2]:02d}"
         date = datetime(day[0], day[1], day[2])
         if date_str not in schedule_data:
@@ -167,13 +163,17 @@ st.markdown("**노란색 배경은 9시~18시 근무입니다.**", unsafe_allow_
 st.markdown("**회색 배경은 18시~9시 근무입니다.**", unsafe_allow_html=True)
 
 # 2페이지: 스케줄 설정
-st.sidebar.title("스케줄 설정")
+st.sidebar.title("근무 조 설정")
 team = st.sidebar.selectbox("조 선택", ["A", "B", "C", "D"])
+password_for_settings = st.sidebar.text_input("암호 입력", type="password", key="settings_password")
 
 if st.sidebar.button("설정 저장"):
-    st.session_state["team"] = team
-    st.sidebar.success("조가 저장되었습니다.")
-    st.experimental_rerun()
+    if password_for_settings == "0301":
+        st.session_state["team"] = team
+        st.sidebar.success("조가 저장되었습니다.")
+        st.experimental_rerun()
+    else:
+        st.sidebar.error("암호가 일치하지 않습니다.")
 
 # 일자 클릭 시 스케줄 변경 버튼
 if st.button("일자 스케줄 변경"):
