@@ -121,6 +121,7 @@ def get_shift(date, team):
     return pattern[delta_days % len(pattern)]
 
 # 1페이지: 달력 보기
+st.title(f"{month}월 교대근무 달력")
 
 # 월 선택 박스 추가
 months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
@@ -139,7 +140,7 @@ for i in range(-5, 6):
 today = datetime.today()
 
 selected_year_month = st.selectbox(
-    st.title(f"{month}월 교대근무 달력"), 
+    "**주간은 9시\\~18시이고, 야간은 18시\\~9시입니다.**", 
     options=desired_months,
     format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
     index=5  # the current month is in the middle of the range
@@ -198,9 +199,6 @@ st.markdown(
     calendar_df.to_html(escape=False, index=False), 
     unsafe_allow_html=True
 )
-
-# 근무 시간 설명 추가
-st.markdown("**주간은 9시\\~18시이고, 야간은 18시\\~9시입니다.**", unsafe_allow_html=True)
 
 # 2페이지: 스케줄 설정
 st.sidebar.title("근무 조 설정")
