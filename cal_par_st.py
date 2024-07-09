@@ -46,9 +46,9 @@ def save_schedule(schedule, sha):
         data["sha"] = sha
     response = requests.put(url, headers=headers, data=json.dumps(data))
     if response.status_code == 201 or response.status_code == 200:
-        st.success("스케줄이 저장되었습니다.")
+        return True
     else:
-        st.error("스케줄 저장에 실패했습니다.")
+        return False
 
 # 팀 설정 파일 로드 함수
 def load_team_settings():
@@ -102,7 +102,7 @@ shift_colors = {
     "주": "background-color: yellow",
     "야": "background-color: gray",
     "비": "background-color: white",
-    "올": "background-color: green"
+    "올": "background-color: lightgreen"
 }
 
 # 교대 근무 조 설정
@@ -170,7 +170,7 @@ for day in month_days:
         day_style = "font-weight: bold; text-align: center; padding: 10px; height: 60px;"  # Adjust height to ensure uniformity
 
         if date.date() == today.date():  # Check if the date is today
-            background = "background-color: blue"
+            background = "background-color: lightblue"
 
         if day[3] == 5:  # Saturday
             day_style += " color: red;"
@@ -235,7 +235,10 @@ if st.session_state.expander_open:
                 if password == "0301":
                     change_date_str = change_date.strftime("%Y-%m-%d")
                     schedule_data[change_date_str] = new_shift
-                    save_schedule(schedule_data, sha)
+                    if save_schedule(schedule_data, sha):
+                        st.success("스케줄이 저장되었습니다.")
+                    else:
+                        st.error("스케줄 저장에 실패했습니다.")
                     st.experimental_rerun()  # This line ensures the page is rerun to reflect the new schedule
                 else:
                     st.error("암호가 일치하지 않습니다.")
