@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import calendar
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 import json
 import requests
 import base64
@@ -113,7 +114,7 @@ current_index = (year - (year - 1)) * 12 + (month - 1)
 desired_months = []
 current_date = datetime(year, month, 1)
 for i in range(-5, 6):
-    new_date = current_date + timedelta(days=i*30)  # approximately one month per step
+    new_date = current_date + relativedelta(months=i)
     desired_months.append((new_date.year, new_date.month))
 
 selected_year_month = st.selectbox(
