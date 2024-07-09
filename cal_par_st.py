@@ -29,7 +29,7 @@ def load_state():
         color_mapping = state.get("colors", {})
         return state["pattern"], state["highlight"], state["year"], state["month"], state.get("page", 1)
     except FileNotFoundError:
-        return "AB", "A", datetime.now().year, datetime.now().month, 1
+        return "BC", "D", datetime.now().year, datetime.now().month, 1
 
 def generate_schedule(start_pattern, year, month):
     rotations = {
@@ -81,10 +81,10 @@ def update_calendar():
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col1:
-        if st.button("◀ 이전 월", key="prev_month"):
+        if st.button("◀", key="prev_month"):
             decrement_month()
     with col3:
-        if st.button("다음 월 ▶", key="next_month"):
+        if st.button("▶", key="next_month"):
             increment_month()
     
     col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
