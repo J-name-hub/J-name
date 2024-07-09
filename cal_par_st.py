@@ -167,7 +167,7 @@ for day in month_days:
         if date_str not in schedule_data:
             schedule_data[date_str] = get_shift(date, st.session_state.get("team", "A"))
         background = shift_colors[schedule_data[date_str]]
-        day_style = "font-weight: bold; text-align: center; padding: 1px; height: 50px;"  # Adjust padding to minimize spacing
+        day_style = "font-weight: bold; text-align: center; padding: 1px; height: 50px; font-size: 12px;"  # Adjust padding to minimize spacing
 
         if date.date() == today.date():  # Check if the date is today
             background = "background-color: lightblue"
