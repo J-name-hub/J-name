@@ -68,6 +68,9 @@ if "year" not in st.session_state or "month" not in st.session_state:
 if "expander_open" not in st.session_state:
     st.session_state.expander_open = False
 
+if "expander_color_open" not in st.session_state:
+    st.session_state.expander_color_open = False
+
 # 팀 설정 초기화
 if "team" not in st.session_state:
     st.session_state.team = "A"
@@ -215,8 +218,9 @@ if st.session_state.expander_open:
             if password == "0301":
                 change_date_str = change_date.strftime("%Y-%m-%d")
                 if change_date_str not in schedule_data:
-                    schedule_data[change_date_str] = {}
-                schedule_data[change_date_str]["shift"] = new_shift
+                    schedule_data[change_date_str] = {"shift": new_shift, "color": "black"}
+                else:
+                    schedule_data[change_date_str]["shift"] = new_shift
                 save_schedule(schedule_data, sha)
                 st.success("스케줄이 변경되었습니다.")
                 st.session_state.expander_open = False
