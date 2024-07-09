@@ -93,9 +93,6 @@ if st.button("다음 달"):
     st.session_state.year, st.session_state.month = get_next_month(year, month)
     st.experimental_rerun()
 
-# 근무 시간 설명 추가
-st.markdown("**노란색 배경은 9시~18시 근무입니다.**", unsafe_allow_html=True)
-
 month_days = generate_calendar(year, month)
 
 calendar_df = pd.DataFrame(columns=["월", "화", "수", "목", "금", "토", "일"])
@@ -135,6 +132,10 @@ st.markdown(
     calendar_df.to_html(escape=False, index=False), 
     unsafe_allow_html=True
 )
+
+# 근무 시간 설명 추가
+st.markdown("**노란색 배경은 9시~18시 근무입니다.**", unsafe_allow_html=True)
+st.markdown("**회색 배경은 18시~9시 근무입니다.**", unsafe_allow_html=True)
 
 # 2페이지: 스케줄 설정
 st.sidebar.title("스케줄 설정")
