@@ -121,6 +121,8 @@ for i in range(-5, 6):
     new_date = current_date + relativedelta(months=i)
     desired_months.append((new_date.year, new_date.month))
 
+today = datetime.today()
+
 selected_year_month = st.selectbox(
     f"오늘은 {today.month}월 {today.day}일 입니다.", 
     options=desired_months,
