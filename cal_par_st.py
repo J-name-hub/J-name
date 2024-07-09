@@ -61,18 +61,6 @@ def get_current_year_month():
     today = datetime.today()
     return today.year, today.month
 
-def get_next_month(year, month):
-    if month == 12:
-        return year + 1, 1
-    else:
-        return year, month + 1
-
-def get_previous_month(year, month):
-    if month == 1:
-        return year - 1, 12
-    else:
-        return year, month - 1
-
 if "year" not in st.session_state or "month" not in st.session_state:
     st.session_state.year, st.session_state.month = get_current_year_month()
 
@@ -112,19 +100,25 @@ def get_shift(date, team):
     return pattern[delta_days % len(pattern)]
 
 # 1페이지: 달력 보기
-st.title("교대근무 달력")
+st.title(f"{year}년 {month}월 교대근무 달력")
 
-selected_date = st.date_input("날짜 선택", datetime(year, month, 1), key="calendar_date")
-st.session_state.year = selected_date.year
-st.session_state.month = selected_date.month
+# 월 선택 박스 추가
+months = {i: calendar.month_name[i] for i in range(1, 13)}
+selected_month = st.selectbox("월 선택", options=range(1, 13), format_func=lambda x: f"{year}년 {months[x]}", index=month-1)
 
-month_days = generate_calendar(st.session_state.year, st.session_state.month)
+# 선택한 월로 변경
+if selected_month != month:
+    st.session_state.month = selected_month
+    month = selected_month
+    st.experimental_rerun()
+
+month_days = generate_calendar(year, month)
 
 calendar_df = pd.DataFrame(columns=["월", "화", "수", "목", "금", "토", "일"])
 
 week = []
 for day in month_days:
-    if day[1] == st.session_state.month:
+    if day[1] == month:
         date_str = f"{day[0]}-{day[1]:02d}-{day[2]:02d}"
         date = datetime(day[0], day[1], day[2])
         if date_str not in schedule_data:
