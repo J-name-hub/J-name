@@ -114,9 +114,9 @@ shift_patterns = {
     "D": shifts[-3:] + shifts[:-3],
 }
 
-def get_shift(date, team):
-    base_date = date(2000, 1, 3)  # 기준 날짜를 date 객체로 변경
-    delta_days = (date - base_date).days
+def get_shift(target_date, team):
+    base_date = datetime(2000, 1, 3).date()  # 기준 날짜를 date 객체로 변경
+    delta_days = (target_date - base_date).days
     pattern = shift_patterns[team]
     return pattern[delta_days % len(pattern)]
 
@@ -164,15 +164,15 @@ week = []
 for day in month_days:
     if day[1] == month:
         date_str = f"{day[0]}-{day[1]:02d}-{day[2]:02d}"
-        date = datetime(day[0], day[1], day[2]).date()
+        current_date = datetime(day[0], day[1], day[2]).date()
         if date_str not in schedule_data:
-            schedule_data[date_str] = get_shift(date, st.session_state.get("team", "A"))
+            schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
         background = shift_colors[schedule_data[date_str]]
         day_style = "font-weight: bold; text-align: center; padding: 1px; height: 55px; font-size: 18px;"  # Adjust padding to minimize spacing
 
-        if date == today:  # 오늘 날짜 비교
+        if current_date == today:  # 오늘 날짜 비교
             background = "background-color: lightblue"
-        elif date == yesterday:  # 전날 날짜 비교
+        elif current_date == yesterday:  # 전날 날짜 비교
             background = shift_colors[schedule_data[date_str]]
 
         if day[3] == 5:  # Saturday
