@@ -102,16 +102,6 @@ def get_shift(date, team):
 # 1페이지: 달력 보기
 st.title(f"{year}년 {month}월 교대근무 달력")
 
-# Add CSS to reduce the space between the title and the selectbox
-st.markdown(
-    """
-    <style>
-    .stSelectbox { margin-top: -20px; }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 # 월 선택 박스 추가
 months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
 years = range(year-1, year+1)  # 원하는 년도 범위를 설정합니다.
@@ -119,11 +109,18 @@ years = range(year-1, year+1)  # 원하는 년도 범위를 설정합니다.
 # 현재 년도와 월을 기준으로 인덱스를 설정합니다.
 current_index = (year - (year - 1)) * 12 + (month - 1)
 
+# Add a list to hold the desired months
+desired_months = []
+current_date = datetime(year, month, 1)
+for i in range(-5, 6):
+    new_date = current_date + timedelta(days=i*30)  # approximately one month per step
+    desired_months.append((new_date.year, new_date.month))
+
 selected_year_month = st.selectbox(
     "", 
-    options=[(y, m) for y in years for m in range(1, 13)],
+    options=desired_months,
     format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
-    index=current_index
+    index=5  # the current month is in the middle of the range
 )
 
 # 선택한 년도와 월로 변경
@@ -176,7 +173,7 @@ st.markdown(
 )
 
 # 근무 시간 설명 추가
-st.markdown("**노란색:주간, 회색:야간, 초록색:주야**", unsafe_allow_html=True)
+st.markdown("**노란색 : 주간, 회색 : 야간, 초록색 : 주야**", unsafe_allow_html=True)
 st.markdown("**주간은 9시\\~18시이고, 야간은 18시\\~9시입니다.**", unsafe_allow_html=True)
 
 # 2페이지: 스케줄 설정
