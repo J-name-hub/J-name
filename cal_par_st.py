@@ -109,7 +109,8 @@ years = range(2020, 2050)  # 원하는 년도 범위를 설정합니다.
 # 현재 년도와 월을 기준으로 인덱스를 설정합니다.
 current_index = (year - 2020) * 12 + (month - 1)
 
-selected_year_month = st.selectbox( 
+selected_year_month = st.selectbox(
+    "", 
     options=[(y, m) for y in years for m in range(1, 13)],
     format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
     index=current_index
