@@ -152,11 +152,10 @@ for day in month_days:
             schedule_data[date_str] = get_shift(date, st.session_state.get("team", "A"))
         background = shift_colors[schedule_data[date_str]]
         day_style = "font-weight: bold; text-align: center; padding: 10px; height: 60px;"  # Adjust height to ensure uniformity
-        
-        # 오늘 날짜 스타일 추가
-        if date == today:
-            day_style += " border: 2px solid orange;"
-        
+
+        if date.date() == today.date():  # Check if the date is today
+            background = "background-color: blue"
+
         if day[3] == 5:  # Saturday
             day_style += " color: red;"
         elif day[3] == 6:  # Sunday
