@@ -106,7 +106,6 @@ st.title(f"{year}년 {month}월 교대근무 달력")
 months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
 years = range(2020, 2031)  # 원하는 년도 범위를 설정합니다.
 selected_year, selected_month = st.selectbox(
-    "월 선택", 
     options=[(y, m) for y in years for m in range(1, 13)],
     format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
     index=(year - 2020) * 12 + (month - 1)
