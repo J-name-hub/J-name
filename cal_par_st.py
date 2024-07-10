@@ -160,7 +160,7 @@ if st.button("이전 월"):
 
 if st.button("다음 월"):
      selected_year_month = (year, month + 1)
-    if month == 12:
+     if month == 12:
         selected_year_month = (year + 1, 1)
 
 # 선택한 년도와 월로 변경
