@@ -209,6 +209,16 @@ for day in month_days:
 if week:
     calendar_df.loc[len(calendar_df)] = week + [""] * (7 - len(week))
 
+# 요일 헤더 스타일 설정
+days_header = ["월", "화", "수", "목", "금", "토", "일"]
+days_header_style = ["background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;"] * 5 + ["background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"] * 2
+calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
+
+st.markdown(
+    calendar_df.to_html(escape=False, index=False), 
+    unsafe_allow_html=True
+)
+
 # 다음 월 버튼 추가
 if st.button("다음 월"):
      selected_year_month = (year, month + 1)
@@ -223,16 +233,6 @@ if selected_year != year or selected_month != month:
     year = selected_year
     month = selected_month
     st.experimental_rerun()
-
-# 요일 헤더 스타일 설정
-days_header = ["월", "화", "수", "목", "금", "토", "일"]
-days_header_style = ["background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;"] * 5 + ["background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"] * 2
-calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
-
-st.markdown(
-    calendar_df.to_html(escape=False, index=False), 
-    unsafe_allow_html=True
-)
 
 # 2페이지: 스케줄 설정
 st.sidebar.title("근무 조 설정")
