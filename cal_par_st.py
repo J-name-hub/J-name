@@ -267,7 +267,7 @@ for i in range(-5, 6):
     desired_months.append((new_date.year, new_date.month))
 
 # 년 월 selectbox 추가
-selected_year_month = st.selectbox(
+selected_year_month = st.sidebar.selectbox(
     "", 
     options=desired_months,
     format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
