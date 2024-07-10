@@ -209,9 +209,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 근무 시간 설명 추가
-st.markdown("**주간은 9시\\~18시이고, 야간은 18시\\~9시입니다.**", unsafe_allow_html=True)
-
 # 2페이지: 스케줄 설정
 st.sidebar.title("근무 조 설정")
 with st.sidebar.form(key='team_settings_form'):
@@ -229,7 +226,7 @@ with st.sidebar.form(key='team_settings_form'):
             st.sidebar.error("암호가 일치하지 않습니다.")
 
 # 일자 클릭 시 스케줄 변경 버튼
-    st.sidebar.title("근무 조 설정")
+    st.sidebar.title("일자 스케줄 변경")
     with st.sidebar.form(key='schedule_change_form'):
             change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
             new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
