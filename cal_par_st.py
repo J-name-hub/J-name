@@ -229,10 +229,9 @@ with st.sidebar.form(key='team_settings_form'):
         else:
             st.sidebar.error("암호가 일치하지 않습니다.")
 
-
-
-#
-if st.sidebar.button("일자 스케줄 변경"):
+# 한번에 이동 sidebar
+st.sidebar.title("일자 스케줄 변경")
+if st.sidebar.button("변경 버튼 활성화"):
     st.session_state.expander_open = not st.session_state.expander_open
 
 if st.session_state.expander_open:
@@ -254,7 +253,6 @@ if st.session_state.expander_open:
                     st.experimental_rerun()  # This line ensures the page is rerun to reflect the new schedule
                 else:
                     st.error("암호가 일치하지 않습니다.")
-#
 
 # 한번에 이동 sidebar
 st.sidebar.title("한번에 이동")
