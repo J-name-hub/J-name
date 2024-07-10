@@ -249,6 +249,31 @@ with st.sidebar.form(key='schedule_change_form'):
             else:
                 st.sidebar.error("암호가 일치하지 않습니다.")
 
+#
+if st.sidebar.button("일자 스케줄 변경"):
+    st.session_state.expander_open = not st.session_state.expander_open
+
+if st.session_state.expander_open:
+    with st.expander("스케줄 변경", expanded=True):
+        with st.form(key='schedule_change_form'):
+            change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
+            new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
+            password = st.text_input("암호 입력", type="password", key="password")
+            change_submit_button = st.form_submit_button("스케줄 변경 저장")
+
+            if change_submit_button:
+                if password == "0301":
+                    change_date_str = change_date.strftime("%Y-%m-%d")
+                    schedule_data[change_date_str] = new_shift
+                    if save_schedule(schedule_data, sha):
+                        st.success("스케줄이 저장되었습니다.")
+                    else:
+                        st.error("스케줄 저장에 실패했습니다.")
+                    st.experimental_rerun()  # This line ensures the page is rerun to reflect the new schedule
+                else:
+                    st.error("암호가 일치하지 않습니다.")
+#
+
 # 한번에 이동 sidebar
 st.sidebar.title("한번에 이동")
 
