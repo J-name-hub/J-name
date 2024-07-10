@@ -124,7 +124,7 @@ def get_shift(target_date, team):
 # 1페이지: 달력 보기
 
 # CSS 스타일 정의
-title_style = "font-size: 24px; font-weight: bold; text-align: center;"
+title_style = "font-size: 30px; font-weight: bold; text-align: center;"
 
 # st.markdown을 사용하여 CSS 스타일 적용
 st.markdown(f"<div style='{title_style}'>{month}월 교대근무 달력</div>", unsafe_allow_html=True)
@@ -229,12 +229,9 @@ with st.sidebar.form(key='team_settings_form'):
             st.sidebar.error("암호가 일치하지 않습니다.")
 
 # 일자 클릭 시 스케줄 변경 버튼
-if st.button("일자 스케줄 변경"):
-    st.session_state.expander_open = not st.session_state.expander_open
+st.sidebar.title("일자 스케줄 변경"):
 
-if st.session_state.expander_open:
-    with st.expander("스케줄 변경", expanded=True):
-        with st.form(key='schedule_change_form'):
+    with st.sidebar.form(key='schedule_change_form'):
             change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
             new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
             password = st.text_input("암호 입력", type="password", key="password")
@@ -245,9 +242,9 @@ if st.session_state.expander_open:
                     change_date_str = change_date.strftime("%Y-%m-%d")
                     schedule_data[change_date_str] = new_shift
                     if save_schedule(schedule_data, sha):
-                        st.success("스케줄이 저장되었습니다.")
+                        st.sidebar.success("스케줄이 저장되었습니다.")
                     else:
                         st.error("스케줄 저장에 실패했습니다.")
                     st.experimental_rerun()  # This line ensures the page is rerun to reflect the new schedule
                 else:
-                    st.error("암호가 일치하지 않습니다.")
+                    st.sidebar.error("암호가 일치하지 않습니다.")
