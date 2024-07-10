@@ -230,7 +230,7 @@ with st.sidebar.form(key='team_settings_form'):
             st.sidebar.error("암호가 일치하지 않습니다.")
 
 # 일자 스케줄 변경 sidebar
-st.sidebar.title("일자 스케줄 변경")
+st.sidebar.title("스케줄 변경")
 if st.sidebar.button("버튼 활성화"):
     st.session_state.expander_open = not st.session_state.expander_open
 
@@ -263,7 +263,7 @@ months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "
 # Add a list to hold the desired months
 desired_months = []
 current_date = datetime(year, month, 1)
-for i in range(-5, 6):
+for i in range(-6, 7):
     new_date = current_date + relativedelta(months=i)
     desired_months.append((new_date.year, new_date.month))
 
