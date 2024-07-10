@@ -266,7 +266,7 @@ with st.sidebar.form(key='team_settings_form'):
             change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
             new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
             password = st.text_input("암호 입력", type="password", key="password")
-            change_submit_button = st.form_submit_button("스케줄 변경 저장")
+            change_submit_button = st.form_submit_button("변경 저장")
 
             if change_submit_button:
                 if password == "0301":
