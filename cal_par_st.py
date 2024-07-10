@@ -229,7 +229,7 @@ with st.sidebar.form(key='team_settings_form'):
         else:
             st.sidebar.error("암호가 일치하지 않습니다.")
 
-# 한번에 이동 sidebar
+# 일자 스케줄 변경 sidebar
 st.sidebar.title("일자 스케줄 변경")
 if st.sidebar.button("변경 버튼 활성화"):
     st.session_state.expander_open = not st.session_state.expander_open
@@ -254,8 +254,8 @@ if st.session_state.expander_open:
                 else:
                     st.error("암호가 일치하지 않습니다.")
 
-# 한번에 이동 sidebar
-st.sidebar.title("한번에 이동")
+# 한 번에 이동 sidebar
+st.sidebar.title("달력 한 번에 이동")
 
 # 월 선택 박스 추가
 months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
