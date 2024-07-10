@@ -150,13 +150,6 @@ for i in range(-5, 6):
 today = datetime.now(pytz.timezone('Asia/Seoul')).date()
 yesterday = today - timedelta(days=1)
 
-selected_year_month = st.selectbox(
-    "", 
-    options=desired_months,
-    format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
-    index=5  # the current month is in the middle of the range
-)
-
 # 이전 월 버튼 추가
 if st.button("이전 월"):
      selected_year_month = (year, month - 1)
@@ -164,13 +157,13 @@ if st.button("이전 월"):
         selected_year_month = (year - 1, 12)
 
 # 선택한 년도와 월로 변경
-selected_year, selected_month = selected_year_month
-if selected_year != year or selected_month != month:
-    st.session_state.year = selected_year
-    st.session_state.month = selected_month
-    year = selected_year
-    month = selected_month
-    st.experimental_rerun()
+     selected_year, selected_month = selected_year_month
+     if selected_year != year or selected_month != month:
+         st.session_state.year = selected_year
+         st.session_state.month = selected_month
+         year = selected_year
+         month = selected_month
+         st.experimental_rerun()
 
 month_days = generate_calendar(year, month)
 
@@ -225,6 +218,23 @@ if st.button("다음 월"):
      if month == 12:
         selected_year_month = (year + 1, 1)
          
+# 선택한 년도와 월로 변경
+     selected_year, selected_month = selected_year_month
+     if selected_year != year or selected_month != month:
+         st.session_state.year = selected_year
+         st.session_state.month = selected_month
+         year = selected_year
+         month = selected_month
+         st.experimental_rerun()
+
+# 년 월 selectbox 추가
+selected_year_month = st.selectbox(
+    "", 
+    options=desired_months,
+    format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
+    index=5  # the current month is in the middle of the range
+)
+
 # 선택한 년도와 월로 변경
 selected_year, selected_month = selected_year_month
 if selected_year != year or selected_month != month:
