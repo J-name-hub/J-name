@@ -224,6 +224,7 @@ if st.button("다음 월"):
      selected_year_month = (year, month + 1)
      if month == 12:
         selected_year_month = (year + 1, 1)
+    st.experimental_rerun()
 
 # 2페이지: 스케줄 설정
 st.sidebar.title("근무 조 설정")
