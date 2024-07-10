@@ -263,7 +263,7 @@ months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "
 # Add a list to hold the desired months
 desired_months = []
 current_date = datetime(year, month, 1)
-for i in range(-6, 7):
+for i in range(-5, 6):
     new_date = current_date + relativedelta(months=i)
     desired_months.append((new_date.year, new_date.month))
 
