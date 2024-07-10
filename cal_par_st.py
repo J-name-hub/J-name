@@ -262,7 +262,7 @@ current_index = (year - (year - 1)) * 12 + (month - 1)
 # Add a list to hold the desired months
 desired_months = []
 current_date = datetime(year, month, 1)
-for i in range(-10, 11):
+for i in range(-5, 6):
     new_date = current_date + relativedelta(months=i)
     desired_months.append((new_date.year, new_date.month))
 
