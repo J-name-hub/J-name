@@ -122,7 +122,12 @@ def get_shift(target_date, team):
     return pattern[delta_days % len(pattern)]
 
 # 1페이지: 달력 보기
-st.title(f"{month}월 교대근무 달력")
+
+# CSS 스타일 정의
+title_style = "font-size: 24px; font-weight: bold; text-align: center;"
+
+# st.markdown을 사용하여 CSS 스타일 적용
+st.markdown(f"<div style='{title_style}'>{month}월 교대근무 달력</div>", unsafe_allow_html=True)
 
 # 월 선택 박스 추가
 months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
