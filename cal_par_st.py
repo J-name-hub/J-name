@@ -153,6 +153,16 @@ selected_year_month = st.selectbox(
     index=5  # the current month is in the middle of the range
 )
 
+    if st.button("이전 월"):
+        selected_year_month = (year, month - 1)
+        if month == 1:
+            selected_year_month = (year - 1, 12)
+
+    if st.button("다음 월"):
+        selected_year_month = (year, month + 1)
+        if month == 12:
+            selected_year_month = (year + 1, 1)
+
 # 선택한 년도와 월로 변경
 selected_year, selected_month = selected_year_month
 if selected_year != year or selected_month != month:
