@@ -229,25 +229,7 @@ with st.sidebar.form(key='team_settings_form'):
         else:
             st.sidebar.error("암호가 일치하지 않습니다.")
 
-# 일자 클릭 시 스케줄 변경 버튼
-st.sidebar.title("일자 스케줄 변경")
-with st.sidebar.form(key='schedule_change_form'):
-        change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
-        new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
-        password = st.text_input("암호 입력", type="password", key="password")
-        change_submit_button = st.form_submit_button("변경 저장")
 
-        if change_submit_button:
-            if password == "0301":
-                change_date_str = change_date.strftime("%Y-%m-%d")
-                schedule_data[change_date_str] = new_shift
-                if save_schedule(schedule_data, sha):
-                    st.sidebar.success("스케줄이 저장되었습니다.")
-                else:
-                    st.error("스케줄 저장에 실패했습니다.")
-                st.experimental_rerun()  # This line ensures the page is rerun to reflect the new schedule
-            else:
-                st.sidebar.error("암호가 일치하지 않습니다.")
 
 #
 if st.sidebar.button("일자 스케줄 변경"):
