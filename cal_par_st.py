@@ -124,8 +124,12 @@ def get_shift(target_date, team):
 # 1페이지: 달력 보기
 
 # CSS 스타일 정의
-title_style = "font-size: 30px; font-weight: bold; text-align: center;"
+titleup_style = "font-size: 15px; font-weight: bold; text-align: center;"
+# st.markdown을 사용하여 CSS 스타일 적용
+st.markdown(f"<div style='{titleup_style}'>{year}년</div>", unsafe_allow_html=True)
 
+# CSS 스타일 정의
+title_style = "font-size: 30px; font-weight: bold; text-align: center;"
 # st.markdown을 사용하여 CSS 스타일 적용
 st.markdown(f"<div style='{title_style}'>{month}월 교대근무 달력</div>", unsafe_allow_html=True)
 
