@@ -229,8 +229,6 @@ with st.sidebar.form(key='team_settings_form'):
             st.sidebar.error("암호가 일치하지 않습니다.")
 
 # 일자 클릭 시 스케줄 변경 버튼
-st.sidebar.title("일자 스케줄 변경"):
-
     with st.sidebar.form(key='schedule_change_form'):
             change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
             new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
