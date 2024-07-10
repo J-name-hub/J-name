@@ -153,15 +153,11 @@ selected_year_month = st.selectbox(
     index=5  # the current month is in the middle of the range
 )
 
+# 이전 월 버튼 추가
 if st.button("이전 월"):
      selected_year_month = (year, month - 1)
      if month == 1:
         selected_year_month = (year - 1, 12)
-
-if st.button("다음 월"):
-     selected_year_month = (year, month + 1)
-     if month == 12:
-        selected_year_month = (year + 1, 1)
 
 # 선택한 년도와 월로 변경
 selected_year, selected_month = selected_year_month
@@ -218,6 +214,12 @@ st.markdown(
     calendar_df.to_html(escape=False, index=False), 
     unsafe_allow_html=True
 )
+
+# 다음 월 버튼 추가
+if st.button("다음 월"):
+     selected_year_month = (year, month + 1)
+     if month == 12:
+        selected_year_month = (year + 1, 1)
 
 # 2페이지: 스케줄 설정
 st.sidebar.title("근무 조 설정")
