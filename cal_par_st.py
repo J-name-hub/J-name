@@ -133,30 +133,6 @@ title_style = "font-size: 30px; font-weight: bold; text-align: center;"
 # st.markdown을 사용하여 CSS 스타일 적용
 st.markdown(f"<div style='{title_style}'>{month}월 교대근무 달력</div>", unsafe_allow_html=True)
 
-# 월 선택 박스 추가
-months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
-years = range(year-1, year+1)  # 원하는 년도 범위를 설정합니다.
-
-# 현재 년도와 월을 기준으로 인덱스를 설정합니다.
-current_index = (year - (year - 1)) * 12 + (month - 1)
-
-# Add a list to hold the desired months
-desired_months = []
-current_date = datetime(year, month, 1)
-for i in range(-5, 6):
-    new_date = current_date + relativedelta(months=i)
-    desired_months.append((new_date.year, new_date.month))
-
-today = datetime.now(pytz.timezone('Asia/Seoul')).date()
-yesterday = today - timedelta(days=1)
-
-selected_year_month = st.selectbox(
-    "", 
-    options=desired_months,
-    format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
-    index=5  # the current month is in the middle of the range
-)
-
 # 이전 월 버튼 추가
 if st.button("이전 월"):
      selected_year_month = (year, month - 1)
@@ -233,6 +209,30 @@ if selected_year != year or selected_month != month:
     year = selected_year
     month = selected_month
     st.experimental_rerun()
+
+# 월 선택 박스 추가
+months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
+years = range(year-1, year+1)  # 원하는 년도 범위를 설정합니다.
+
+# 현재 년도와 월을 기준으로 인덱스를 설정합니다.
+current_index = (year - (year - 1)) * 12 + (month - 1)
+
+# Add a list to hold the desired months
+desired_months = []
+current_date = datetime(year, month, 1)
+for i in range(-5, 6):
+    new_date = current_date + relativedelta(months=i)
+    desired_months.append((new_date.year, new_date.month))
+
+today = datetime.now(pytz.timezone('Asia/Seoul')).date()
+yesterday = today - timedelta(days=1)
+
+selected_year_month = st.selectbox(
+    "", 
+    options=desired_months,
+    format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
+    index=5  # the current month is in the middle of the range
+)
 
 # 2페이지: 스케줄 설정
 st.sidebar.title("근무 조 설정")
