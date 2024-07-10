@@ -150,13 +150,6 @@ for i in range(-5, 6):
 today = datetime.now(pytz.timezone('Asia/Seoul')).date()
 yesterday = today - timedelta(days=1)
 
-selected_year_month = st.selectbox(
-    "", 
-    options=desired_months,
-    format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
-    index=5  # the current month is in the middle of the range
-)
-
 # 이전 월 버튼 추가
 if st.button("이전 월"):
      selected_year_month = (year, month - 1)
@@ -233,6 +226,13 @@ if selected_year != year or selected_month != month:
     year = selected_year
     month = selected_month
     st.experimental_rerun()
+
+selected_year_month = st.selectbox(
+    "", 
+    options=desired_months,
+    format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
+    index=5  # the current month is in the middle of the range
+)
 
 # 2페이지: 스케줄 설정
 st.sidebar.title("근무 조 설정")
