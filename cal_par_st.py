@@ -213,6 +213,42 @@ if st.button("다음 월"):
          month = selected_month
          st.experimental_rerun()
 
+# 2페이지: 스케줄 설정
+st.sidebar.title("근무 조 설정")
+with st.sidebar.form(key='team_settings_form'):
+    team = st.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
+    password_for_settings = st.text_input("암호 입력", type="password", key="settings_password")
+    submit_button = st.form_submit_button("설정 저장")
+
+    if submit_button:
+        if password_for_settings == "0301":
+            st.session_state["team"] = team
+            save_team_settings(team)  # 선택한 팀을 파일에 저장
+            st.sidebar.success("조가 저장되었습니다.")
+            st.experimental_rerun()  # This line ensures the page is rerun to reflect the new team
+        else:
+            st.sidebar.error("암호가 일치하지 않습니다.")
+
+# 일자 클릭 시 스케줄 변경 버튼
+st.sidebar.title("일자 스케줄 변경")
+with st.sidebar.form(key='schedule_change_form'):
+        change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
+        new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
+        password = st.text_input("암호 입력", type="password", key="password")
+        change_submit_button = st.form_submit_button("변경 저장")
+
+        if change_submit_button:
+            if password == "0301":
+                change_date_str = change_date.strftime("%Y-%m-%d")
+                schedule_data[change_date_str] = new_shift
+                if save_schedule(schedule_data, sha):
+                    st.sidebar.success("스케줄이 저장되었습니다.")
+                else:
+                    st.error("스케줄 저장에 실패했습니다.")
+                st.experimental_rerun()  # This line ensures the page is rerun to reflect the new schedule
+            else:
+                st.sidebar.error("암호가 일치하지 않습니다.")
+
 # 월 선택 박스 추가
 months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
 years = range(year-1, year+1)  # 원하는 년도 범위를 설정합니다.
@@ -243,39 +279,3 @@ if selected_year != year or selected_month != month:
     year = selected_year
     month = selected_month
     st.experimental_rerun()
-
-# 2페이지: 스케줄 설정
-st.sidebar.title("근무 조 설정")
-with st.sidebar.form(key='team_settings_form'):
-    team = st.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
-    password_for_settings = st.text_input("암호 입력", type="password", key="settings_password")
-    submit_button = st.form_submit_button("설정 저장")
-
-    if submit_button:
-        if password_for_settings == "0301":
-            st.session_state["team"] = team
-            save_team_settings(team)  # 선택한 팀을 파일에 저장
-            st.sidebar.success("조가 저장되었습니다.")
-            st.experimental_rerun()  # This line ensures the page is rerun to reflect the new team
-        else:
-            st.sidebar.error("암호가 일치하지 않습니다.")
-
-# 일자 클릭 시 스케줄 변경 버튼
-    st.sidebar.title("일자 스케줄 변경")
-    with st.sidebar.form(key='schedule_change_form'):
-            change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
-            new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
-            password = st.text_input("암호 입력", type="password", key="password")
-            change_submit_button = st.form_submit_button("변경 저장")
-
-            if change_submit_button:
-                if password == "0301":
-                    change_date_str = change_date.strftime("%Y-%m-%d")
-                    schedule_data[change_date_str] = new_shift
-                    if save_schedule(schedule_data, sha):
-                        st.sidebar.success("스케줄이 저장되었습니다.")
-                    else:
-                        st.error("스케줄 저장에 실패했습니다.")
-                    st.experimental_rerun()  # This line ensures the page is rerun to reflect the new schedule
-                else:
-                    st.sidebar.error("암호가 일치하지 않습니다.")
