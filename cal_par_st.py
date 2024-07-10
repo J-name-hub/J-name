@@ -231,7 +231,7 @@ with st.sidebar.form(key='team_settings_form'):
 
 # 일자 스케줄 변경 sidebar
 st.sidebar.title("일자 스케줄 변경")
-if st.sidebar.button("변경 버튼 활성화"):
+if st.sidebar.button("버튼 활성화"):
     st.session_state.expander_open = not st.session_state.expander_open
 
 if st.session_state.expander_open:
