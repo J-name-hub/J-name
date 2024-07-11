@@ -254,6 +254,32 @@ if st.session_state.expander_open:
                 else:
                     st.error("암호가 일치하지 않습니다.")
 
+# Sidebar title and button
+st.sidebar.title("메모 변경")
+if st.sidebar.button("버튼 활성화"):
+    st.session_state.expander_open = not st.session_state.expander_open
+
+# If expander is open
+if st.session_state.expander_open:
+    with st.expander("메모 변경", expanded=True):
+        with st.form(key='memo_change_form'):
+            memo_date = st.date_input("메모 날짜", datetime.now(), key="memo_date")
+            memo_text = st.text_area("메모 내용", key="memo_text")
+            password = st.text_input("암호 입력", type="password", key="password")
+            memo_submit_button = st.form_submit_button("메모 저장")
+
+            if memo_submit_button:
+                if password == "0301":
+                    memo_date_str = memo_date.strftime("%Y-%m-%d")
+                    memo_data[memo_date_str] = memo_text
+                    if save_memo(memo_data, sha):
+                        st.success("메모가 저장되었습니다.")
+                    else:
+                        st.error("메모 저장에 실패했습니다.")
+                    st.experimental_rerun()  # This line ensures the page is rerun to reflect the new memo
+                else:
+                    st.error("암호가 일치하지 않습니다.")
+
 # 달력 이동 sidebar
 st.sidebar.title("달력 이동")
 
