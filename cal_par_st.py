@@ -254,6 +254,10 @@ if st.session_state.expander_open:
                 else:
                     st.error("암호가 일치하지 않습니다.")
 
+# Initialize session state
+if 'expander_open' not in st.session_state:
+    st.session_state.expander_open = False
+
 # Sidebar title and button
 st.sidebar.title("메모 변경")
 if st.sidebar.button("버튼 활성화"):
