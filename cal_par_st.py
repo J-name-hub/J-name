@@ -8,6 +8,7 @@ import requests
 import base64
 import os
 import pytz
+import holidays
 
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
@@ -16,6 +17,12 @@ GITHUB_FILE_PATH = st.secrets["github"]["file_path"]
 
 # 설정 파일 경로
 TEAM_SETTINGS_FILE = "team_settings.json"
+
+# 공휴일 정보를 불러오는 함수
+def get_holidays(year):
+    kr_holidays = holidays.KR(years=year)
+    holiday_dict = {(date.month, date.day): name for date, name in kr_holidays.items()}
+    return holiday_dict
 
 # GitHub 파일 로드 함수
 def load_schedule():
@@ -121,6 +128,9 @@ def get_shift(target_date, team):
     pattern = shift_patterns[team]
     return pattern[delta_days % len(pattern)]
 
+# 공휴일 정보 가져오기
+holidays = get_holidays(year)
+
 # 1페이지: 달력 보기
 
 # CSS 스타일 정의
@@ -138,18 +148,17 @@ yesterday = today - timedelta(days=1)
 
 # 이전 월 버튼 추가
 if st.button("이전 월"):
-     selected_year_month = (year, month - 1)
-     if month == 1:
+    selected_year_month = (year, month - 1)
+    if month == 1:
         selected_year_month = (year - 1, 12)
 
-# 선택한 년도와 월로 변경
-     selected_year, selected_month = selected_year_month
-     if selected_year != year or selected_month != month:
-         st.session_state.year = selected_year
-         st.session_state.month = selected_month
-         year = selected_year
-         month = selected_month
-         st.experimental_rerun()
+    selected_year, selected_month = selected_year_month
+    if selected_year != year or selected_month != month:
+        st.session_state.year = selected_year
+        st.session_state.month = selected_month
+        year = selected_year
+        month = selected_month
+        st.experimental_rerun()
 
 month_days = generate_calendar(year, month)
 
@@ -170,12 +179,12 @@ for day in month_days:
         elif current_date == yesterday:  # 전날 날짜 비교
             background = shift_colors[schedule_data[date_str]]
 
-        if day[3] == 5:  # Saturday
-            day_style += " color: red;"
-        elif day[3] == 6:  # Sunday
+        holiday = holidays.get((current_date.month, current_date.day))
+        if day[3] == 5 or day[3] == 6 or holiday:  # Saturday or Sunday or holiday
             day_style += " color: red;"
         else:
             day_style += " color: black;"
+
         shift_text = f"<div style='color: black'>{day[2]}<br><span style='color: black;'>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"  # Always black text for shift
         week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
     else:
@@ -200,18 +209,17 @@ st.markdown(
 
 # 다음 월 버튼 추가
 if st.button("다음 월"):
-     selected_year_month = (year, month + 1)
-     if month == 12:
+    selected_year_month = (year, month + 1)
+    if month == 12:
         selected_year_month = (year + 1, 1)
          
-# 선택한 년도와 월로 변경
-     selected_year, selected_month = selected_year_month
-     if selected_year != year or selected_month != month:
-         st.session_state.year = selected_year
-         st.session_state.month = selected_month
-         year = selected_year
-         month = selected_month
-         st.experimental_rerun()
+    selected_year, selected_month = selected_year_month
+    if selected_year != year or selected_month != month:
+        st.session_state.year = selected_year
+        st.session_state.month = selected_month
+        year = selected_year
+        month = selected_month
+        st.experimental_rerun()
 
 # 2페이지: 스케줄 설정
 st.sidebar.title("근무 조 설정")
