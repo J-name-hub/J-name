@@ -68,7 +68,7 @@ def save_team_settings(team):
 
 # 공휴일 정보 로드 함수
 def load_holidays(year, month):
-    url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?solYear={year}&solMonth={month:02d}&Servicekey={HOLIDAY_API_KEY}"
+    url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?solYear={year}&solMonth={month}&Servicekey={HOLIDAY_API_KEY}"
     response = requests.get(url)
     holidays = set()
     if response.status_code == 200:
