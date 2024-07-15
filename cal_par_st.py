@@ -14,25 +14,6 @@ GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
 GITHUB_FILE_PATH = st.secrets["github"]["file_path"]
 
-# 대한민국 공휴일 API 키
-HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
-
-# 공휴일 정보 로드 함수
-def load_holidays(year):
-    url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey={HOLIDAY_API_KEY}&solYear={year}&numOfRows=100"
-    response = requests.get(url)
-    holidays = []
-    if response.status_code == 200:
-        data = response.json()
-        if 'response' in data and 'body' in data['response'] and 'items' in data['response']['body']:
-            items = data['response']['body']['items']['item']
-            for item in items:
-                holidays.append(item['locdate'])
-    return holidays
-
-# 설정 파일 경로
-TEAM_SETTINGS_FILE = "team_settings.json"
-
 # GitHub 파일 로드 함수
 def load_schedule():
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
@@ -87,6 +68,28 @@ if not schedule_data:
     schedule_data = {}
     sha = None
 
+# 대한민국 공휴일 API 키
+HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
+
+# 공휴일 정보 로드 함수
+def load_holidays(year):
+    url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey={HOLIDAY_API_KEY}&solYear={year}&numOfRows=100"
+    response = requests.get(url)
+    holidays = []
+    if response.status_code == 200:
+        data = response.json()
+        if 'response' in data and 'body' in data['response'] and 'items' in data['response']['body']:
+            items = data['response']['body']['items']['item']
+            for item in items:
+                holidays.append(item['locdate'])
+    return holidays
+
+# 공휴일 로드
+holidays = load_holidays(year)
+
+# 설정 파일 경로
+TEAM_SETTINGS_FILE = "team_settings.json"
+
 # 페이지 설정
 st.set_page_config(page_title="교대근무 달력", layout="wide")
 
@@ -136,9 +139,6 @@ def get_shift(target_date, team):
     delta_days = (target_date - base_date).days
     pattern = shift_patterns[team]
     return pattern[delta_days % len(pattern)]
-
-# 공휴일 로드
-holidays = load_holidays(year)
 
 # 1페이지: 달력 보기
 
