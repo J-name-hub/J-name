@@ -204,20 +204,20 @@ if week:
 
 # 요일 헤더 스타일 설정
 days_header = ["월", "화", "수", "목", "금", "토", "일"]
-days_header_style = ["background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;"] * 5 + ["background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"] * 2
-calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
+days_header_style = ["background-color: white; text-align: center; font-weight: bold; height: 50px; font-size: 18px;"] * 5 + ["background-color: white; color: red; text-align: center; font-weight: bold; height: 50px; font-size: 18px;", "background-color: white; color: red; text-align: center; font-weight: bold; height: 50px; font-size: 18px;"]
 
-st.markdown(
-    calendar_df.to_html(escape=False, index=False), 
-    unsafe_allow_html=True
-)
+styled_header = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
+styled_calendar = pd.DataFrame([styled_header], columns=calendar_df.columns).append(calendar_df, ignore_index=True)
+
+# 달력 HTML 출력
+st.write(styled_calendar.to_html(escape=False, index=False), unsafe_allow_html=True)
 
 # 다음 월 버튼 추가
 if st.button("다음 월"):
      selected_year_month = (year, month + 1)
      if month == 12:
         selected_year_month = (year + 1, 1)
-         
+
 # 선택한 년도와 월로 변경
      selected_year, selected_month = selected_year_month
      if selected_year != year or selected_month != month:
