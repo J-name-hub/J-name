@@ -67,8 +67,8 @@ def save_team_settings(team):
         json.dump({"team": team}, f)
 
 # 공휴일 정보 로드 함수
-def load_holidays(year, month):
-    url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?solYear={year}&solMonth={month}&Servicekey={HOLIDAY_API_KEY}"
+def load_holidays(year):
+    url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey={HOLIDAY_API_KEY}&solYear={year}&numOfRows=100&_type=json"
     response = requests.get(url)
     holidays = set()
     if response.status_code == 200:
@@ -110,7 +110,7 @@ year = st.session_state.year
 month = st.session_state.month
 
 # 공휴일 로드
-holidays = load_holidays(year, month)
+holidays = load_holidays(year)
 
 # 달력 생성
 def generate_calendar(year, month):
