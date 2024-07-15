@@ -1,21 +1,18 @@
 import streamlit as st
-import requests
-import json
-from datetime import datetime, timedelta
-import calendar
 import pandas as pd
-import pytz
+import calendar
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+import json
+import requests
 import base64
 import os
+import pytz
 
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
 GITHUB_FILE_PATH = st.secrets["github"]["file_path"]
-
-# 대한민국 공휴일 API 키
-HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
 
 # 설정 파일 경로
 TEAM_SETTINGS_FILE = "team_settings.json"
@@ -66,29 +63,6 @@ def save_team_settings(team):
     with open(TEAM_SETTINGS_FILE, "w") as f:
         json.dump({"team": team}, f)
 
-# 공휴일 정보 로드 함수
-def load_holidays(year, month):
-    url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey={HOLIDAY_API_KEY}&solYear={year}&solMonth={month:02d}&_type=json"
-    holidays = set()
-    
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json()
-            if 'response' in data and 'body' in data['response'] and 'items' in data['response']['body']:
-                items = data['response']['body']['items']['item']
-                for item in items:
-                    locdate = str(item['locdate'])
-                    holidays.add(locdate)
-            else:
-                print("API 응답 구조가 예상과 다릅니다:", data)
-        else:
-            print("API 요청 실패:", response.status_code)
-    except Exception as e:
-        print("오류 발생:", e)
-    
-    return holidays
-
 # 초기 스케줄 데이터 로드
 schedule_data, sha = load_schedule()
 
@@ -117,9 +91,6 @@ if "team" not in st.session_state:
 
 year = st.session_state.year
 month = st.session_state.month
-
-# 공휴일 로드
-holidays = load_holidays(year)
 
 # 달력 생성
 def generate_calendar(year, month):
@@ -150,11 +121,16 @@ def get_shift(target_date, team):
     pattern = shift_patterns[team]
     return pattern[delta_days % len(pattern)]
 
+# 1페이지: 달력 보기
+
 # CSS 스타일 정의
 titleup_style = "font-size: 18px; font-weight: bold; text-align: center;"
+# st.markdown을 사용하여 CSS 스타일 적용
 st.markdown(f"<div style='{titleup_style}'>{year}년</div>", unsafe_allow_html=True)
 
+# CSS 스타일 정의
 title_style = "font-size: 30px; font-weight: bold; text-align: center;"
+# st.markdown을 사용하여 CSS 스타일 적용
 st.markdown(f"<div style='{title_style}'>{month}월 교대근무 달력</div>", unsafe_allow_html=True)
 
 today = datetime.now(pytz.timezone('Asia/Seoul')).date()
@@ -162,18 +138,18 @@ yesterday = today - timedelta(days=1)
 
 # 이전 월 버튼 추가
 if st.button("이전 월"):
-    selected_year_month = (year, month - 1)
-    if month == 1:
+     selected_year_month = (year, month - 1)
+     if month == 1:
         selected_year_month = (year - 1, 12)
-    
-    # 선택한 년도와 월로 변경
-    selected_year, selected_month = selected_year_month
-    if selected_year != year or selected_month != month:
-        st.session_state.year = selected_year
-        st.session_state.month = selected_month
-        year = selected_year
-        month = selected_month
-        st.experimental_rerun()
+
+# 선택한 년도와 월로 변경
+     selected_year, selected_month = selected_year_month
+     if selected_year != year or selected_month != month:
+         st.session_state.year = selected_year
+         st.session_state.month = selected_month
+         year = selected_year
+         month = selected_month
+         st.experimental_rerun()
 
 month_days = generate_calendar(year, month)
 
@@ -194,9 +170,9 @@ for day in month_days:
         elif current_date == yesterday:  # 전날 날짜 비교
             background = shift_colors[schedule_data[date_str]]
 
-        if current_date.weekday() == 5:  # Saturday
+        if day[3] == 5:  # Saturday
             day_style += " color: red;"
-        elif current_date.weekday() == 6 or date_str.replace("-", "") in holidays:  # Sunday or holiday
+        elif day[3] == 6:  # Sunday
             day_style += " color: red;"
         else:
             day_style += " color: black;"
@@ -224,18 +200,18 @@ st.markdown(
 
 # 다음 월 버튼 추가
 if st.button("다음 월"):
-    selected_year_month = (year, month + 1)
-    if month == 12:
+     selected_year_month = (year, month + 1)
+     if month == 12:
         selected_year_month = (year + 1, 1)
-    
-    # 선택한 년도와 월로 변경
-    selected_year, selected_month = selected_year_month
-    if selected_year != year or selected_month != month:
-        st.session_state.year = selected_year
-        st.session_state.month = selected_month
-        year = selected_year
-        month = selected_month
-        st.experimental_rerun()
+         
+# 선택한 년도와 월로 변경
+     selected_year, selected_month = selected_year_month
+     if selected_year != year or selected_month != month:
+         st.session_state.year = selected_year
+         st.session_state.month = selected_month
+         year = selected_year
+         month = selected_month
+         st.experimental_rerun()
 
 # 2페이지: 스케줄 설정
 st.sidebar.title("근무 조 설정")
