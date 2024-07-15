@@ -1,18 +1,21 @@
 import streamlit as st
-import pandas as pd
-import calendar
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
-import json
 import requests
+import json
+from datetime import datetime, timedelta
+import calendar
+import pandas as pd
+import pytz
+from dateutil.relativedelta import relativedelta
 import base64
 import os
-import pytz
 
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
 GITHUB_FILE_PATH = st.secrets["github"]["file_path"]
+
+# 대한민국 공휴일 API 키
+HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
 
 # 설정 파일 경로
 TEAM_SETTINGS_FILE = "team_settings.json"
@@ -63,6 +66,19 @@ def save_team_settings(team):
     with open(TEAM_SETTINGS_FILE, "w") as f:
         json.dump({"team": team}, f)
 
+# 공휴일 정보 로드 함수
+def load_holidays(year):
+    url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey={HOLIDAY_API_KEY}&solYear={year}&numOfRows=100&_type=json"
+    response = requests.get(url)
+    holidays = []
+    if response.status_code == 200:
+        data = response.json()
+        if 'response' in data and 'body' in data['response'] and 'items' in data['response']['body']:
+            items = data['response']['body']['items']['item']
+            for item in items:
+                holidays.append(item['locdate'])
+    return holidays
+
 # 초기 스케줄 데이터 로드
 schedule_data, sha = load_schedule()
 
@@ -91,6 +107,9 @@ if "team" not in st.session_state:
 
 year = st.session_state.year
 month = st.session_state.month
+
+# 공휴일 로드
+holidays = load_holidays(year)
 
 # 달력 생성
 def generate_calendar(year, month):
@@ -121,16 +140,11 @@ def get_shift(target_date, team):
     pattern = shift_patterns[team]
     return pattern[delta_days % len(pattern)]
 
-# 1페이지: 달력 보기
-
 # CSS 스타일 정의
 titleup_style = "font-size: 18px; font-weight: bold; text-align: center;"
-# st.markdown을 사용하여 CSS 스타일 적용
 st.markdown(f"<div style='{titleup_style}'>{year}년</div>", unsafe_allow_html=True)
 
-# CSS 스타일 정의
 title_style = "font-size: 30px; font-weight: bold; text-align: center;"
-# st.markdown을 사용하여 CSS 스타일 적용
 st.markdown(f"<div style='{title_style}'>{month}월 교대근무 달력</div>", unsafe_allow_html=True)
 
 today = datetime.now(pytz.timezone('Asia/Seoul')).date()
@@ -170,9 +184,9 @@ for day in month_days:
         elif current_date == yesterday:  # 전날 날짜 비교
             background = shift_colors[schedule_data[date_str]]
 
-        if day[3] == 5:  # Saturday
+        if current_date.weekday() == 5:  # Saturday
             day_style += " color: red;"
-        elif day[3] == 6:  # Sunday
+        elif current_date.weekday() == 6 or int(date_str.replace("-", "")) in holidays:  # Sunday or holiday
             day_style += " color: red;"
         else:
             day_style += " color: black;"
@@ -200,86 +214,26 @@ st.markdown(
 
 # 다음 월 버튼 추가
 if st.button("다음 월"):
-     selected_year_month = (year, month + 1)
-     if month == 12:
+    selected_year_month = (year, month + 1)
+    if month == 12:
         selected_year_month = (year + 1, 1)
-         
-# 선택한 년도와 월로 변경
-     selected_year, selected_month = selected_year_month
-     if selected_year != year or selected_month != month:
-         st.session_state.year = selected_year
-         st.session_state.month = selected_month
-         year = selected_year
-         month = selected_month
-         st.experimental_rerun()
+    
+    # 선택한 년도와 월로 변경
+    selected_year, selected_month = selected_year_month
+    if selected_year != year or selected_month != month:
+        st.session_state.year = selected_year
+        st.session_state.month = selected_month
+        year = selected_year
+        month = selected_month
+        st.experimental_rerun()
 
-# 2페이지: 스케줄 설정
-st.sidebar.title("근무 조 설정")
-with st.sidebar.form(key='team_settings_form'):
-    team = st.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
-    password_for_settings = st.text_input("암호 입력", type="password", key="settings_password")
-    submit_button = st.form_submit_button("설정 저장")
-
-    if submit_button:
-        if password_for_settings == "0301":
-            st.session_state["team"] = team
-            save_team_settings(team)  # 선택한 팀을 파일에 저장
-            st.sidebar.success("조가 저장되었습니다.")
-            st.experimental_rerun()  # This line ensures the page is rerun to reflect the new team
-        else:
-            st.sidebar.error("암호가 일치하지 않습니다.")
-
-# 일자 스케줄 변경 sidebar
-st.sidebar.title("스케줄 변경")
-if st.sidebar.button("버튼 활성화"):
-    st.session_state.expander_open = not st.session_state.expander_open
-
-if st.session_state.expander_open:
-    with st.expander("스케줄 변경", expanded=True):
-        with st.form(key='schedule_change_form'):
-            change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
-            new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
-            password = st.text_input("암호 입력", type="password", key="password")
-            change_submit_button = st.form_submit_button("스케줄 변경 저장")
-
-            if change_submit_button:
-                if password == "0301":
-                    change_date_str = change_date.strftime("%Y-%m-%d")
-                    schedule_data[change_date_str] = new_shift
-                    if save_schedule(schedule_data, sha):
-                        st.success("스케줄이 저장되었습니다.")
-                    else:
-                        st.error("스케줄 저장에 실패했습니다.")
-                    st.experimental_rerun()  # This line ensures the page is rerun to reflect the new schedule
-                else:
-                    st.error("암호가 일치하지 않습니다.")
-
-# 달력 이동 sidebar
-st.sidebar.title("달력 이동")
-
-# 월 선택 박스 추가
-months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
-
-# Add a list to hold the desired months
-desired_months = []
-current_date = datetime(year, month, 1)
-for i in range(-5, 6):
-    new_date = current_date + relativedelta(months=i)
-    desired_months.append((new_date.year, new_date.month))
-
-# 년 월 selectbox 추가
-selected_year_month = st.sidebar.selectbox(
-    "", 
-    options=desired_months,
-    format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
-    index=5  # the current month is in the middle of the range
-)
-
-# 선택한 년도와 월로 변경
-selected_year, selected_month = selected_year_month
-if selected_year != year or selected_month != month:
-    st.session_state.year = selected_year
-    st.session_state.month = selected_month
-    year = selected_year
-    month = selected_month
-    st.experimental_rerun()
+with st.expander("설정", expanded=st.session_state.expander_open):
+    selected_team = st.selectbox("팀 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
+    if st.button("설정 저장"):
+        st.session_state.team = selected_team
+        save_team_settings(selected_team)
+        st.success("설정이 저장되었습니다.")
+        st.experimental_rerun()
+    if st.button("설정 닫기"):
+        st.session_state.expander_open = False
+        st.experimental_rerun()
