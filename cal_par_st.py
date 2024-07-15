@@ -14,6 +14,22 @@ GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
 GITHUB_FILE_PATH = st.secrets["github"]["file_path"]
 
+# 대한민국 공휴일 API 키
+HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
+
+# 공휴일 정보 로드 함수
+def load_holidays(year):
+    url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey={HOLIDAY_API_KEY}&solYear={year}&numOfRows=100"
+    response = requests.get(url)
+    holidays = []
+    if response.status_code == 200:
+        data = response.json()
+        if 'response' in data and 'body' in data['response'] and 'items' in data['response']['body']:
+            items = data['response']['body']['items']['item']
+            for item in items:
+                holidays.append(item['locdate'])
+    return holidays
+
 # 설정 파일 경로
 TEAM_SETTINGS_FILE = "team_settings.json"
 
@@ -91,22 +107,6 @@ if "team" not in st.session_state:
 
 year = st.session_state.year
 month = st.session_state.month
-
-# 대한민국 공휴일 API 키
-HOLIDAY_API_KEY = "D3DM3eD6TiFGE/pjmEGHIJ0QIRrUvsdiKUpyF4tDbLkBgzWicKU7IDytAf6pard5FJCSsOLKNxqhsQJSpZqF3Q=="
-
-# 공휴일 정보 로드 함수
-def load_holidays(year):
-    url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey={HOLIDAY_API_KEY}&solYear={year}&numOfRows=100"
-    response = requests.get(url)
-    holidays = []
-    if response.status_code == 200:
-        data = response.json()
-        if 'response' in data and 'body' in data['response'] and 'items' in data['response']['body']:
-            items = data['response']['body']['items']['item']
-            for item in items:
-                holidays.append(item['locdate'])
-    return holidays
 
 # 달력 생성
 def generate_calendar(year, month):
