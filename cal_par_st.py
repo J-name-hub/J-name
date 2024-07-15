@@ -67,17 +67,26 @@ def save_team_settings(team):
         json.dump({"team": team}, f)
 
 # 공휴일 정보 로드 함수
-def load_holidays(year):
+def load_holidays(year, month):
     url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey={HOLIDAY_API_KEY}&solYear={year}&solMonth={month:02d}&_type=json"
-    response = requests.get(url)
     holidays = set()
-    if response.status_code == 200:
-        data = response.json()
-        if 'response' in data and 'body' in data['response'] and 'items' in data['response']['body']:
-            items = data['response']['body']['items']['item']
-            for item in items:
-                locdate = str(item['locdate'])
-                holidays.add(locdate)
+    
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            if 'response' in data and 'body' in data['response'] and 'items' in data['response']['body']:
+                items = data['response']['body']['items']['item']
+                for item in items:
+                    locdate = str(item['locdate'])
+                    holidays.add(locdate)
+            else:
+                print("API 응답 구조가 예상과 다릅니다:", data)
+        else:
+            print("API 요청 실패:", response.status_code)
+    except Exception as e:
+        print("오류 발생:", e)
+    
     return holidays
 
 # 초기 스케줄 데이터 로드
