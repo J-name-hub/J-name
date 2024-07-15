@@ -152,18 +152,16 @@ yesterday = today - timedelta(days=1)
 
 # 이전 월 버튼 추가
 if st.button("이전 월"):
-     selected_year_month = (year, month - 1)
-     if month == 1:
+    selected_year_month = (year, month - 1)
+    if month == 1:
         selected_year_month = (year - 1, 12)
-
-# 선택한 년도와 월로 변경
-     selected_year, selected_month = selected_year_month
-     if selected_year != year or selected_month != month:
-         st.session_state.year = selected_year
-         st.session_state.month = selected_month
-         year = selected_year
-         month = selected_month
-         st.experimental_rerun()
+    selected_year, selected_month = selected_year_month
+    if selected_year != year or selected_month != month:
+        st.session_state.year = selected_year
+        st.session_state.month = selected_month
+        year = selected_year
+        month = selected_month
+        st.experimental_rerun()
 
 month_days = generate_calendar(year, month)
 
@@ -205,28 +203,28 @@ calendar_df = pd.DataFrame(calendar_data, columns=["월", "화", "수", "목", "
 
 # 요일 헤더 스타일 설정
 days_header = ["월", "화", "수", "목", "금", "토", "일"]
-days_header_style = ["background-color: white; text-align: center; font-weight: bold; height: 50px; font-size: 18px;"] * 5 + ["background-color: white; color: red; text-align: center; font-weight: bold; height: 50px; font-size: 18px;", "background-color: white; color: red; text-align: center; font-weight: bold; height: 50px; font-size: 18px;"]
+days_header_style = "font-weight: bold; text-align: center; background-color: lightgray; height: 50px; font-size: 18px;"
 
-styled_header = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
-styled_calendar = pd.DataFrame([styled_header], columns=calendar_df.columns).append(calendar_df, ignore_index=True)
+# 헤더 스타일링
+styled_header = [f"<div style='{days_header_style}'>{day}</div>" for day in days_header]
+styled_calendar = pd.DataFrame([styled_header] + calendar_data, columns=calendar_df.columns)
 
 # 달력 HTML 출력
 st.write(styled_calendar.to_html(escape=False, index=False), unsafe_allow_html=True)
 
 # 다음 월 버튼 추가
 if st.button("다음 월"):
-     selected_year_month = (year, month + 1)
-     if month == 12:
+    selected_year_month = (year, month + 1)
+    if month == 12:
         selected_year_month = (year + 1, 1)
 
-# 선택한 년도와 월로 변경
-     selected_year, selected_month = selected_year_month
-     if selected_year != year or selected_month != month:
-         st.session_state.year = selected_year
-         st.session_state.month = selected_month
-         year = selected_year
-         month = selected_month
-         st.experimental_rerun()
+    selected_year, selected_month = selected_year_month
+    if selected_year != year or selected_month != month:
+        st.session_state.year = selected_year
+        st.session_state.month = selected_month
+        year = selected_year
+        month = selected_month
+        st.experimental_rerun()
 
 # 2페이지: 스케줄 설정
 st.sidebar.title("근무 조 설정")
@@ -246,7 +244,7 @@ with st.sidebar.form(key='team_settings_form'):
 
 # 일자 스케줄 변경 sidebar
 st.sidebar.title("스케줄 변경")
-if st.sidebar.button("버튼 활성화"):
+if st.sidebar.button("스케줄 변경 활성화"):
     st.session_state.expander_open = not st.session_state.expander_open
 
 if st.session_state.expander_open:
