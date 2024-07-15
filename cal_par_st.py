@@ -167,8 +167,7 @@ if st.button("이전 월"):
 
 month_days = generate_calendar(year, month)
 
-calendar_df = pd.DataFrame(columns=["월", "화", "수", "목", "금", "토", "일"])
-
+calendar_data = []
 week = []
 for day in month_days:
     if day[1] == month:
@@ -196,11 +195,13 @@ for day in month_days:
         week.append("<div style='height: 55px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
     
     if day[3] == 6:  # End of the week
-        calendar_df.loc[len(calendar_df)] = week
+        calendar_data.append(week)
         week = []
 
 if week:
-    calendar_df.loc[len(calendar_df)] = week + [""] * (7 - len(week))
+    calendar_data.append(week + [""] * (7 - len(week)))
+
+calendar_df = pd.DataFrame(calendar_data, columns=["월", "화", "수", "목", "금", "토", "일"])
 
 # 요일 헤더 스타일 설정
 days_header = ["월", "화", "수", "목", "금", "토", "일"]
