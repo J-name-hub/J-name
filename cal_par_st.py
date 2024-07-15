@@ -205,11 +205,16 @@ calendar_df = pd.DataFrame(calendar_data, columns=["월", "화", "수", "목", "
 days_header = ["월", "화", "수", "목", "금", "토", "일"]
 days_header_style = "font-weight: bold; text-align: center; background-color: lightgray; height: 50px; font-size: 18px;"
 
-# 헤더 스타일링
-styled_header = [f"<div style='{days_header_style}'>{day}</div>" for day in days_header]
-styled_calendar = pd.DataFrame([styled_header] + calendar_data, columns=calendar_df.columns)
+# 달력 데이터 생성
+calendar_data = []
+
+# 달력 생성
+for week in calendar_df.values:
+    styled_week = [f"<div style='{days_header_style}'>{day}</div>" if isinstance(day, str) else "" for day in week]
+    calendar_data.append(styled_week)
 
 # 달력 HTML 출력
+styled_calendar = pd.DataFrame(calendar_data, columns=calendar_df.columns)
 st.write(styled_calendar.to_html(escape=False, index=False), unsafe_allow_html=True)
 
 # 다음 월 버튼 추가
