@@ -203,7 +203,6 @@ calendar_df = pd.DataFrame(calendar_data, columns=["월", "화", "수", "목", "
 
 # 요일 헤더 스타일 설정
 days_header = ["월", "화", "수", "목", "금", "토", "일"]
-days_header_style = "font-weight: bold; text-align: center; background-color: lightgray; height: 50px; font-size: 18px;"
 
 # 달력 데이터 생성
 calendar_data = []
