@@ -9,15 +9,13 @@ from dateutil.relativedelta import relativedelta
 import base64
 import os
 
-# GitHub 설정
+# GitHub 설정, 공휴일 API 키 등은 스트림릿 시크릿 설정에서 가져옴
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
 GITHUB_FILE_PATH = st.secrets["github"]["file_path"]
-
-# 대한민국 공휴일 API 키
 HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
 
-# 설정 파일 경로
+# 팀 설정 파일 경로
 TEAM_SETTINGS_FILE = "team_settings.json"
 
 # GitHub 파일 로드 함수
@@ -181,12 +179,9 @@ for day in month_days:
         elif current_date == yesterday:  # 전날 날짜 비교
             background = shift_colors[schedule_data[date_str]]
 
-        if current_date.weekday() == 5:  # Saturday
+        if current_date.weekday() == 5 or date_str.replace("-", "") in holidays:  # Saturday or holiday
             day_style += " color: red;"
-        elif current_date.weekday() == 6 or date_str.replace("-", "") in holidays:  # Sunday or holiday
-            day_style += " color: red;"
-        else:
-            day_style += " color: black;"
+
         shift_text = f"<div>{day[2]}<br><span>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"  # Remove inline color for shift text
         week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
     else:
@@ -203,14 +198,14 @@ calendar_df = pd.DataFrame(calendar_data, columns=["월", "화", "수", "목", "
 
 # 요일 헤더 스타일 설정
 days_header = ["월", "화", "수", "목", "금", "토", "일"]
-days_header_style = ["background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;"] * 5 + ["background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"] * 2
+days_header_style = ["background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;"] * 5 + ["background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"]
 
 # 달력 데이터 생성
 calendar_data = []
 
 # 달력 생성
 for week in calendar_df.values:
-    styled_week = [f"<div style='{days_header_style}'>{day}</div>" if isinstance(day, str) else "" for day in week]
+    styled_week = [f"<div style='{days_header_style[i]}'>{day}</div>" if isinstance(day, str) else "" for i, day in enumerate(week)]
     calendar_data.append(styled_week)
 
 # 달력 HTML 출력
