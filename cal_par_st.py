@@ -281,7 +281,7 @@ if st.session_state.expander_open:
             password = st.text_input("암호 입력", type="password", key="password")
             change_submit_button = st.form_submit_button("스케줄 변경 저장")
 
-            if change_submit_button):
+            if change_submit_button:
                 if password == "0301":
                     change_date_str = change_date.strftime("%Y-%m-%d")
                     schedule_data[change_date_str] = new_shift
