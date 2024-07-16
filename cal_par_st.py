@@ -268,14 +268,17 @@ def group_holidays(holiday_info, month):
 grouped_holidays = group_holidays(holiday_info, month)
 
 # 그룹화된 공휴일 설명 출력
+holiday_descriptions = []
 for group in grouped_holidays:
     if len(group) > 1:
         start_date = datetime.strptime(group[0], "%Y-%m-%d").day
         end_date = datetime.strptime(group[-1], "%Y-%m-%d").day
-        st.markdown(f"**{start_date}일 ~ {end_date}일**: {holiday_info[group[0]]}")
+        holiday_descriptions.append(f"**{start_date}일 ~ {end_date}일**: {holiday_info[group[0]]}")
     else:
         single_date = datetime.strptime(group[0], "%Y-%m-%d").day
-        st.markdown(f"**{single_date}일**: {holiday_info[group[0]]}")
+        holiday_descriptions.append(f"**{single_date}일**: {holiday_info[group[0]]}")
+
+st.markdown(" / ".join(holiday_descriptions))
 
 # 사이드바: 근무 조 설정
 st.sidebar.title("근무 조 설정")
