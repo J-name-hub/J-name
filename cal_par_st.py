@@ -178,7 +178,11 @@ if st.button("이전 월"):
 
 month_days = generate_calendar(year, month)
 
-calendar_data = {day: ['&nbsp;'] * 7 for day in range(1, 7)}
+# 달력 데이터 초기화
+calendar_data = []
+week = []
+
+# 달력 데이터 생성
 for day in month_days:
     if day[1] == month:
         date_str = f"{day[0]}-{day[1]:02d}-{day[2]:02d}"
@@ -201,17 +205,30 @@ for day in month_days:
             day_style += " color: black;"
 
         shift_text = f"<div>{day[2]}<br><span>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"
-        calendar_data[day[3] + 1].append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
+        week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
     else:
-        calendar_data[day[3] + 1].append("<div style='height: 55px;'>&nbsp;</div>")
+        week.append("<div style='height: 55px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
 
-calendar_df = pd.DataFrame(calendar_data).T
+    if day[3] == 6:  # 일요일이 주의 끝
+        calendar_data.append(week)
+        week = []
+
+if week:
+    calendar_data.append(week + ["<div style='height: 55px;'>&nbsp;</div>"] * (7 - len(week)))
+
+calendar_df = pd.DataFrame(calendar_data, columns=["일", "월", "화", "수", "목", "금", "토"])
 
 # 요일 헤더 스타일 설정
 days_header = ["일", "월", "화", "수", "목", "금", "토"]
-days_header_style = ["background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"] + \
-    ["background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;"] * 5 + \
-    ["background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"]
+days_header_style = [
+    "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;",
+    "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
+    "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
+    "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
+    "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
+    "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
+    "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"
+]
 
 calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
 
