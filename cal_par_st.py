@@ -71,6 +71,7 @@ def load_holidays(year):
     url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey={HOLIDAY_API_KEY}&solYear={year}&numOfRows=100&_type=json"
     response = requests.get(url)
     holidays = []
+    holiday_info = {}
     if response.status_code == 200:
         try:
             data = response.json()
@@ -78,12 +79,18 @@ def load_holidays(year):
                 items = data['response']['body']['items']['item']
                 if isinstance(items, list):
                     for item in items:
-                        holidays.append(str(item['locdate']))
+                        locdate = str(item['locdate'])
+                        date_str = datetime.strptime(locdate, "%Y%m%d").strftime("%Y-%m-%d")
+                        holidays.append(date_str)
+                        holiday_info[date_str] = item['dateName']
                 elif isinstance(items, dict):  # 공휴일이 한 개일 경우
-                    holidays.append(str(items['locdate']))
+                    locdate = str(items['locdate'])
+                    date_str = datetime.strptime(locdate, "%Y%m%d").strftime("%Y-%m-%d")
+                    holidays.append(date_str)
+                    holiday_info[date_str] = items['dateName']
         except (json.JSONDecodeError, KeyError):
             pass  # 공휴일이 없는 경우 오류를 무시
-    return holidays
+    return holidays, holiday_info
 
 # 초기 스케줄 데이터 로드
 schedule_data, sha = load_schedule()
@@ -115,8 +122,7 @@ year = st.session_state.year
 month = st.session_state.month
 
 # 공휴일 로드
-holidays = load_holidays(year)
-holidays = [datetime.strptime(day, "%Y%m%d").strftime("%Y-%m-%d") for day in holidays]  # 공휴일 형식 변환
+holidays, holiday_info = load_holidays(year)
 
 # 달력 생성
 def generate_calendar(year, month):
@@ -213,6 +219,11 @@ st.markdown(
     calendar_df.to_html(escape=False, index=False), 
     unsafe_allow_html=True
 )
+
+# 공휴일 설명 추가
+st.markdown("### 공휴일 설명")
+for date, name in holiday_info.items():
+    st.markdown(f"**{date}**: {name}")
 
 # 다음 월 버튼 추가
 if st.button("다음 월"):
