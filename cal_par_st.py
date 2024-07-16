@@ -126,8 +126,8 @@ holidays, holiday_info = load_holidays(year)
 
 # 달력 생성
 def generate_calendar(year, month):
-    cal = calendar.Calendar()
-    month_days = cal.itermonthdays4(year, month)
+    cal = calendar.Calendar(firstweekday=6)  # 일요일이 첫번째로 오도록 설정
+    month_days = cal.monthdayscalendar(year, month)
     return month_days
 
 # 조 색상 설정
@@ -180,41 +180,36 @@ month_days = generate_calendar(year, month)
 
 # 달력 데이터 초기화
 calendar_data = []
-week = []
 
 # 달력 데이터 생성
-for day in month_days:
-    if day[1] == month:
-        date_str = f"{day[0]}-{day[1]:02d}-{day[2]:02d}"
-        current_date = datetime(day[0], day[1], day[2]).date()
-        if date_str not in schedule_data:
-            schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
-        background = shift_colors[schedule_data[date_str]]
-        day_style = "font-weight: bold; text-align: center; padding: 1px; height: 55px; font-size: 18px;"
-
-        if current_date == today:
-            background = "background-color: lightblue"
-        elif current_date == yesterday:
+for week in month_days:
+    week_data = []
+    for day in week:
+        if day != 0:
+            date_str = f"{year}-{month:02d}-{day:02d}"
+            current_date = datetime(year, month, day).date()
+            if date_str not in schedule_data:
+                schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
             background = shift_colors[schedule_data[date_str]]
+            day_style = "font-weight: bold; text-align: center; padding: 1px; height: 55px; font-size: 18px;"
 
-        if current_date.weekday() == 5:
-            day_style += " color: red;"
-        elif current_date.weekday() == 6 or date_str in holidays:
-            day_style += " color: red;"
+            if current_date == today:
+                background = "background-color: lightblue"
+            elif current_date == yesterday:
+                background = shift_colors[schedule_data[date_str]]
+
+            if current_date.weekday() == 5:
+                day_style += " color: red;"
+            elif current_date.weekday() == 6 or date_str in holidays:
+                day_style += " color: red;"
+            else:
+                day_style += " color: black;"
+
+            shift_text = f"<div>{day}<br><span>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"
+            week_data.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
         else:
-            day_style += " color: black;"
-
-        shift_text = f"<div>{day[2]}<br><span>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"
-        week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
-    else:
-        week.append("<div style='height: 55px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
-
-    if day[3] == 6:  # 일요일이 주의 끝
-        calendar_data.append(week)
-        week = []
-
-if week:
-    calendar_data.append(week + ["<div style='height: 55px;'>&nbsp;</div>"] * (7 - len(week)))
+            week_data.append("<div style='height: 55px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
+    calendar_data.append(week_data)
 
 calendar_df = pd.DataFrame(calendar_data, columns=["일", "월", "화", "수", "목", "금", "토"])
 
@@ -237,11 +232,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 공휴일 설명 추가
-st.markdown("### 공휴일 설명")
-for date, name in holiday_info.items():
-    st.markdown(f"**{date}**: {name}")
-
 # 다음 월 버튼 추가
 if st.button("다음 월"):
     selected_year_month = (year, month + 1)
@@ -255,6 +245,12 @@ if st.button("다음 월"):
         year = selected_year
         month = selected_month
         st.experimental_rerun()
+
+# 공휴일 설명 추가
+st.markdown("### 공휴일 설명")
+for date, name in holiday_info.items():
+    if datetime.strptime(date, "%Y-%m-%d").month == month:
+        st.markdown(f"**{date}**: {name}")
 
 # 2페이지: 스케줄 설정
 st.sidebar.title("근무 조 설정")
@@ -285,7 +281,7 @@ if st.session_state.expander_open:
             password = st.text_input("암호 입력", type="password", key="password")
             change_submit_button = st.form_submit_button("스케줄 변경 저장")
 
-            if change_submit_button:
+            if change_submit_button):
                 if password == "0301":
                     change_date_str = change_date.strftime("%Y-%m-%d")
                     schedule_data[change_date_str] = new_shift
