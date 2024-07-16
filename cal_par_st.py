@@ -9,28 +9,6 @@ from dateutil.relativedelta import relativedelta
 import base64
 import os
 
-# 기본 테마 설정
-default_theme = {
-    "primaryColor": "#4CAF50",
-    "backgroundColor": "#FFFFFF",
-    "secondaryBackgroundColor": "#F0F2F6",
-    "textColor": "#000000",
-    "font": "sans serif"
-}
-
-# 테마를 설정 파일에 저장하는 함수
-def save_theme(theme):
-    os.makedirs(".streamlit", exist_ok=True)  # .streamlit 폴더가 없으면 생성
-    with open(".streamlit/config.toml", "w") as f:
-        f.write("[theme]\n")
-        for key, value in theme.items():
-            f.write(f"{key} = \"{value}\"\n")
-
-# Streamlit 실행 시 기본 테마 설정
-if not os.path.exists(".streamlit/config.toml"):
-    save_theme(default_theme)
-    st.experimental_rerun()  # 페이지 갱신
-
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
@@ -291,15 +269,37 @@ grouped_holidays = group_holidays(holiday_info, month)
 
 # 그룹화된 공휴일 설명 출력
 holiday_descriptions = []
-for group in grouped_holidays:
-    if len(group) > 1:
-        start_date = datetime.strptime(group[0], "%Y-%m-%d").day
-        end_date = datetime.strptime(group[-1], "%Y-%m-%d").day
-        for date in group:
-            holiday_descriptions.append(f"{datetime.strptime(date, '%Y-%m-%d').day}일: {holiday_info[date]}")
+current_group = []
+
+for date in sorted(holiday_info.keys()):
+    holiday_name = holiday_info[date]
+    current_date = datetime.strptime(date, "%Y-%m-%d")
+    
+    if current_group:
+        last_date = datetime.strptime(current_group[-1], "%Y-%m-%d")
+        if (current_date - last_date).days == 1 and holiday_info[current_group[-1]] == holiday_name:
+            current_group.append(date)
+        else:
+            if len(current_group) > 1:
+                start_day = datetime.strptime(current_group[0], "%Y-%m-%d").day
+                end_day = datetime.strptime(current_group[-1], "%Y-%m-%d").day
+                holiday_descriptions.append(f"{start_day}일~{end_day}일: {holiday_info[current_group[0]]}")
+            else:
+                single_day = datetime.strptime(current_group[0], "%Y-%m-%d").day
+                holiday_descriptions.append(f"{single_day}일: {holiday_info[current_group[0]]}")
+            current_group = [date]
     else:
-        single_date = datetime.strptime(group[0], "%Y-%m-%d").day
-        holiday_descriptions.append(f"{single_date}일: {holiday_info[group[0]]}")
+        current_group = [date]
+
+# 마지막 그룹 추가
+if current_group:
+    if len(current_group) > 1:
+        start_day = datetime.strptime(current_group[0], "%Y-%m-%d").day
+        end_day = datetime.strptime(current_group[-1], "%Y-%m-%d").day
+        holiday_descriptions.append(f"{start_day}일~{end_day}일: {holiday_info[current_group[0]]}")
+    else:
+        single_day = datetime.strptime(current_group[0], "%Y-%m-%d").day
+        holiday_descriptions.append(f"{single_day}일: {holiday_info[current_group[0]]}")
 
 st.markdown(" / ".join(holiday_descriptions))
 
