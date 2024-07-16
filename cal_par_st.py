@@ -182,12 +182,16 @@ for day in month_days:
         elif current_date == yesterday:  # 전날 날짜 비교
             background = shift_colors[schedule_data[date_str]]
 
-        if day[3] == 5:  # Saturday
+        # 공휴일 우선 체크
+        if date_str.replace("-", "") in holidays:  # Holiday
             day_style += " color: red;"
-        elif day[3] == 6 or date_str.replace("-", "") in holidays:  # Sunday or holiday
+        elif day[3] == 5:  # Saturday
+            day_style += " color: red;"
+        elif day[3] == 6:  # Sunday
             day_style += " color: red;"
         else:
             day_style += " color: black;"
+        
         shift_text = f"<div style='color: black'>{day[2]}<br><span style='color: black;'>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"  # Always black text for shift
         week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
     else:
