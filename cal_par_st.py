@@ -72,11 +72,18 @@ def load_holidays(year):
     response = requests.get(url)
     holidays = []
     if response.status_code == 200:
-        data = response.json()
-        if 'response' in data and 'body' in data['response'] and 'items' in data['response']['body']:
-            items = data['response']['body']['items']['item']
-            for item in items:
-                holidays.append(str(item['locdate']))
+        try:
+            data = response.json()
+            if 'response' in data and 'body' in data['response'] and 'items' in data['response']['body']:
+                items = data['response']['body']['items']['item']
+                for item in items:
+                    holidays.append(str(item['locdate']))
+        except json.JSONDecodeError:
+            st.error("Failed to decode JSON response")
+            st.write(response.text)  # 디버깅을 위한 응답 본문 출력
+    else:
+        st.error(f"Failed to fetch holidays: {response.status_code}")
+        st.write(response.text)  # 디버깅을 위한 응답 본문 출력
     return holidays
 
 # 초기 스케줄 데이터 로드
