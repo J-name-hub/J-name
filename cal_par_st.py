@@ -63,7 +63,7 @@ def load_team_settings():
 
 # 팀 설정 파일 저장 함수
 def save_team_settings(team):
-    with open(TEAM_SETTINGS_FILE, "w") as f):
+    with open(TEAM_SETTINGS_FILE, "w") as f:
         json.dump({"team": team}, f)
 
 # 공휴일 정보 로드 함수
