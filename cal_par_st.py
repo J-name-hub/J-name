@@ -63,7 +63,7 @@ def load_team_settings():
 
 # 팀 설정 파일 저장 함수
 def save_team_settings(team):
-    with open(TEAM_SETTINGS_FILE, "w") as f:
+    with open(TEAM_SETTINGS_FILE, "w") as f):
         json.dump({"team": team}, f)
 
 # 공휴일 정보 로드 함수
@@ -182,16 +182,12 @@ for day in month_days:
         elif current_date == yesterday:  # 전날 날짜 비교
             background = shift_colors[schedule_data[date_str]]
 
-        # 공휴일 우선 체크
-        if date_str.replace("-", "") in holidays:  # Holiday
+        if day[3] == 5:  # Saturday
             day_style += " color: red;"
-        elif day[3] == 5:  # Saturday
-            day_style += " color: red;"
-        elif day[3] == 6:  # Sunday
+        elif day[3] == 6 or date_str.replace("-", "") in holidays:  # Sunday or holiday
             day_style += " color: red;"
         else:
             day_style += " color: black;"
-        
         shift_text = f"<div style='color: black'>{day[2]}<br><span style='color: black;'>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"  # Always black text for shift
         week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
     else:
