@@ -172,9 +172,7 @@ if st.button("이전 월"):
 
 month_days = generate_calendar(year, month)
 
-calendar_df = pd.DataFrame(columns=["월", "화", "수", "목", "금", "토", "일"])
-
-week = []
+calendar_data = {day: ['&nbsp;'] * 7 for day in range(1, 7)}
 for day in month_days:
     if day[1] == month:
         date_str = f"{day[0]}-{day[1]:02d}-{day[2]:02d}"
@@ -182,42 +180,33 @@ for day in month_days:
         if date_str not in schedule_data:
             schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
         background = shift_colors[schedule_data[date_str]]
-        day_style = "font-weight: bold; text-align: center; padding: 1px; height: 55px; font-size: 18px;"  # Adjust padding to minimize spacing
+        day_style = "font-weight: bold; text-align: center; padding: 1px; height: 55px; font-size: 18px;"
 
-        if current_date == today:  # 오늘 날짜 비교
+        if current_date == today:
             background = "background-color: lightblue"
-        elif current_date == yesterday:  # 전날 날짜 비교
+        elif current_date == yesterday:
             background = shift_colors[schedule_data[date_str]]
 
-        if day[3] == 5:  # Saturday
+        if current_date.weekday() == 5:
             day_style += " color: red;"
-        elif day[3] == 6 or date_str in holidays:  # Sunday or holiday
+        elif current_date.weekday() == 6 or date_str in holidays:
             day_style += " color: red;"
         else:
             day_style += " color: black;"
-        shift_text = f"<div>{day[2]}<br><span>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"  # Always black text for shift
-        week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
-    else:
-        week.append("<div style='height: 55px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
-    
-    if day[3] == 6:  # End of the week
-        calendar_df.loc[len(calendar_df)] = week
-        week = []
 
-if week:
-    calendar_df.loc[len(calendar_df)] = week + [""] * (7 - len(week))
+        shift_text = f"<div>{day[2]}<br><span>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"
+        calendar_data[day[3] + 1].append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
+    else:
+        calendar_data[day[3] + 1].append("<div style='height: 55px;'>&nbsp;</div>")
+
+calendar_df = pd.DataFrame(calendar_data).T
 
 # 요일 헤더 스타일 설정
-days_header = ["월", "화", "수", "목", "금", "토", "일"]
-days_header_style = [
-    "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
-    "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
-    "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
-    "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
-    "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
-    "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;",
-    "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"
-]
+days_header = ["일", "월", "화", "수", "목", "금", "토"]
+days_header_style = ["background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"] + \
+    ["background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;"] * 5 + \
+    ["background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"]
+
 calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
 
 st.markdown(
