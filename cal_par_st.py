@@ -9,6 +9,28 @@ from dateutil.relativedelta import relativedelta
 import base64
 import os
 
+# 기본 테마 설정
+default_theme = {
+    "primaryColor": "#4CAF50",
+    "backgroundColor": "#FFFFFF",
+    "secondaryBackgroundColor": "#F0F2F6",
+    "textColor": "#000000",
+    "font": "sans serif"
+}
+
+# 테마를 설정 파일에 저장하는 함수
+def save_theme(theme):
+    os.makedirs(".streamlit", exist_ok=True)  # .streamlit 폴더가 없으면 생성
+    with open(".streamlit/config.toml", "w") as f:
+        f.write("[theme]\n")
+        for key, value in theme.items():
+            f.write(f"{key} = \"{value}\"\n")
+
+# Streamlit 실행 시 기본 테마 설정
+if not os.path.exists(".streamlit/config.toml"):
+    save_theme(default_theme)
+    st.experimental_rerun()  # 페이지 갱신
+
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
