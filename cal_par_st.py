@@ -185,13 +185,11 @@ for day in month_days:
 
         if day[3] == 5:  # Saturday
             day_style += " color: red;"
-        elif day[3] == 6:  # Sunday
-            day_style += " color: red;"
-        elif date_str in holidays:  # Holiday
+        elif day[3] == 6 or date_str in holidays:  # Sunday or holiday
             day_style += " color: red;"
         else:
             day_style += " color: black;"
-        shift_text = f"<div style='color: black'>{day[2]}<br><span style='color: black;'>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"  # Always black text for shift
+        shift_text = f"<div>{day[2]}<br><span>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"  # Always black text for shift
         week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
     else:
         week.append("<div style='height: 55px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
