@@ -210,7 +210,9 @@ calendar_data = []
 
 # 달력 생성
 for week in calendar_df.values:
-    styled_week = [f"<div style='{days_header_style}'>{day}</div>" if isinstance(day, str) else "" for day in week]
+    styled_week = []
+    for day, header_style in zip(week, days_header_style):
+        styled_week.append(f"<div style='{header_style}'>{day}</div>" if isinstance(day, str) else day)
     calendar_data.append(styled_week)
 
 # 달력 HTML 출력
