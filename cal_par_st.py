@@ -192,9 +192,9 @@ for week in month_days:
                 background = shift_colors[schedule_data[date_str]]
 
             if current_date.weekday() == 5:
-                day_style += " color: lightred;"
+                day_style += " color: red;"
             elif current_date.weekday() == 6 or date_str in holidays:
-                day_style += " color: lightred;"
+                day_style += " color: red;"
             else:
                 day_style += " color: black;"
 
@@ -209,13 +209,13 @@ calendar_df = pd.DataFrame(calendar_data, columns=["일", "월", "화", "수", "
 # 요일 헤더 스타일 설정
 days_header = ["일", "월", "화", "수", "목", "금", "토"]
 days_header_style = [
-    "background-color: white; text-align: center; font-weight: bold; color: lightred; font-size: 18px;",
+    "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;",
     "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
     "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
     "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
     "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
     "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
-    "background-color: white; text-align: center; font-weight: bold; color: lightred; font-size: 18px;"
+    "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"
 ]
 
 calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
