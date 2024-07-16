@@ -185,7 +185,9 @@ for day in month_days:
 
         if day[3] == 5:  # Saturday
             day_style += " color: red;"
-        elif day[3] == 6 or date_str in holidays:  # Sunday or holiday
+        elif day[3] == 6:  # Sunday
+            day_style += " color: red;"
+        elif date_str in holidays:  # Holiday
             day_style += " color: red;"
         else:
             day_style += " color: black;"
