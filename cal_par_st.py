@@ -9,15 +9,6 @@ from dateutil.relativedelta import relativedelta
 import base64
 import os
 
-# 기본 테마 설정
-default_theme = {
-    "primaryColor": "#4CAF50",
-    "backgroundColor": "#FFFFFF",
-    "secondaryBackgroundColor": "#F0F2F6",
-    "textColor": "#000000",
-    "font": "sans serif"
-}
-
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
