@@ -76,14 +76,13 @@ def load_holidays(year):
             data = response.json()
             if 'response' in data and 'body' in data['response'] and 'items' in data['response']['body']:
                 items = data['response']['body']['items']['item']
-                for item in items:
-                    holidays.append(str(item['locdate']))
-        except json.JSONDecodeError:
-            st.error("Failed to decode JSON response")
-            st.write(response.text)  # 디버깅을 위한 응답 본문 출력
-    else:
-        st.error(f"Failed to fetch holidays: {response.status_code}")
-        st.write(response.text)  # 디버깅을 위한 응답 본문 출력
+                if isinstance(items, list):
+                    for item in items:
+                        holidays.append(str(item['locdate']))
+                elif isinstance(items, dict):  # 공휴일이 한 개일 경우
+                    holidays.append(str(items['locdate']))
+        except (json.JSONDecodeError, KeyError):
+            pass  # 공휴일이 없는 경우 오류를 무시
     return holidays
 
 # 초기 스케줄 데이터 로드
