@@ -110,6 +110,7 @@ month = st.session_state.month
 
 # 공휴일 로드
 holidays = load_holidays(year)
+holidays = [datetime.strptime(day, "%Y%m%d").strftime("%Y-%m-%d") for day in holidays]  # 공휴일 형식 변환
 
 # 달력 생성
 def generate_calendar(year, month):
@@ -184,7 +185,7 @@ for day in month_days:
 
         if day[3] == 5:  # Saturday
             day_style += " color: red;"
-        elif day[3] == 6 or date_str.replace("-", "") in holidays:  # Sunday or holiday
+        elif day[3] == 6 or date_str in holidays:  # Sunday or holiday
             day_style += " color: red;"
         else:
             day_style += " color: black;"
