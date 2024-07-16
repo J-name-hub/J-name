@@ -198,13 +198,30 @@ for week in month_days:
             else:
                 day_style += " color: black;"
 
-            shift_text = f"<div>{day}<br><span>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"
-            week_data.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
+            week_data.append((day, schedule_data[date_str], background, day_style))
         else:
-            week_data.append("<div style='height: 55px;'>&nbsp;</div>")  # 빈 셀 높이 맞춤
+            week_data.append((None, None, None, None))
     calendar_data.append(week_data)
 
+# DataFrame 생성
 calendar_df = pd.DataFrame(calendar_data, columns=["일", "월", "화", "수", "목", "금", "토"])
+
+# 날짜 셀과 근무 셀을 분리하여 DataFrame 재구성
+split_calendar_data = []
+for week in calendar_data:
+    split_week = []
+    for day, shift, background, day_style in week:
+        if day:
+            date_cell = f"<div style='{day_style}'>{day}</div>"
+            shift_cell = f"<div style='{background}; {day_style}'>{shift}</div>"
+        else:
+            date_cell = "<div style='height: 55px;'>&nbsp;</div>"
+            shift_cell = "<div style='height: 55px;'>&nbsp;</div>"
+        split_week.append((date_cell, shift_cell))
+    split_calendar_data.append(split_week)
+
+# 새로운 DataFrame 생성
+split_calendar_df = pd.DataFrame(split_calendar_data, columns=["일", "월", "화", "수", "목", "금", "토"])
 
 # 요일 헤더 스타일 설정
 days_header = ["일", "월", "화", "수", "목", "금", "토"]
@@ -218,11 +235,21 @@ days_header_style = [
     "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"
 ]
 
-calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
+# 날짜와 근무 헤더
+date_header = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
+shift_header = [f"<div style='{style}'>근무</div>" for style in days_header_style]
+
+# 새로운 DataFrame의 컬럼 이름 설정
+split_calendar_df.columns = date_header
+split_calendar_df_shift = split_calendar_df.copy()
+split_calendar_df_shift.columns = shift_header
+
+# 날짜와 근무 두 개의 DataFrame 합치기
+combined_calendar_df = pd.concat([split_calendar_df, split_calendar_df_shift], keys=["날짜", "근무"], axis=1)
 
 # 달력 HTML 표시
 st.markdown(
-    calendar_df.to_html(escape=False, index=False), 
+    combined_calendar_df.to_html(escape=False, index=False), 
     unsafe_allow_html=True
 )
 
@@ -242,41 +269,40 @@ if st.button("다음 월"):
 
 # 공휴일 설명
 # 이어지는 공휴일 그룹화 함수
-def group_holidays(holiday_info, month):
+def group_holidays_by_name(holiday_info, month):
     holidays = [date for date in sorted(holiday_info.keys()) if datetime.strptime(date, "%Y-%m-%d").month == month]
     grouped_holidays = []
     current_group = []
+    current_name = ""
 
-    for i, holiday in enumerate(holidays):
-        if not current_group:
+    for holiday in holidays:
+        holiday_name = holiday_info[holiday]
+        if not current_group or holiday_name == current_name:
             current_group.append(holiday)
+            current_name = holiday_name
         else:
-            last_holiday = datetime.strptime(current_group[-1], "%Y-%m-%d")
-            current_holiday = datetime.strptime(holiday, "%Y-%m-%d")
-            if (current_holiday - last_holiday).days == 1:
-                current_group.append(holiday)
-            else:
-                grouped_holidays.append(current_group)
-                current_group = [holiday]
+            grouped_holidays.append((current_group, current_name))
+            current_group = [holiday]
+            current_name = holiday_name
     
     if current_group:
-        grouped_holidays.append(current_group)
+        grouped_holidays.append((current_group, current_name))
 
     return grouped_holidays
 
 # 현재 달의 공휴일 그룹화
-grouped_holidays = group_holidays(holiday_info, month)
+grouped_holidays = group_holidays_by_name(holiday_info, month)
 
 # 그룹화된 공휴일 설명 출력
 holiday_descriptions = []
-for group in grouped_holidays:
+for group, name in grouped_holidays:
     if len(group) > 1:
         start_date = datetime.strptime(group[0], "%Y-%m-%d").day
         end_date = datetime.strptime(group[-1], "%Y-%m-%d").day
-        holiday_descriptions.append(f"{start_date}일 ~ {end_date}일: {holiday_info[group[0]]}")
+        holiday_descriptions.append(f"{start_date}일 ~ {end_date}일: {name}")
     else:
         single_date = datetime.strptime(group[0], "%Y-%m-%d").day
-        holiday_descriptions.append(f"{single_date}일: {holiday_info[group[0]]}")
+        holiday_descriptions.append(f"{single_date}일: {name}")
 
 st.markdown(" / ".join(holiday_descriptions))
 
