@@ -240,9 +240,7 @@ if st.button("다음 월"):
         month = selected_month
         st.experimental_rerun()
 
-# 공휴일 설명 추가
-st.markdown("### 공휴일 설명")
-
+# 공휴일 설명
 # 이어지는 공휴일 그룹화 함수
 def group_holidays(holiday_info, month):
     holidays = [date for date in sorted(holiday_info.keys()) if datetime.strptime(date, "%Y-%m-%d").month == month]
