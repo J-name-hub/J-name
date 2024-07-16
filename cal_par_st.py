@@ -247,9 +247,11 @@ if st.button("다음 월"):
         st.experimental_rerun()
 
 # 공휴일 설명 추가
+st.markdown("### 공휴일 설명")
+
 # 이어지는 공휴일 처리 함수
-def group_holidays(holiday_info):
-    holidays = sorted(holiday_info.keys())
+def group_holidays(holiday_info, month):
+    holidays = [date for date in sorted(holiday_info.keys()) if datetime.strptime(date, "%Y-%m-%d").month == month]
     grouped_holidays = []
     current_group = []
 
@@ -271,17 +273,17 @@ def group_holidays(holiday_info):
     return grouped_holidays
 
 # 공휴일 그룹핑
-grouped_holidays = group_holidays(holiday_info)
+grouped_holidays = group_holidays(holiday_info, month)
 
 # 그룹핑된 공휴일 설명 출력
 for group in grouped_holidays:
     if len(group) > 1:
         start_date = datetime.strptime(group[0], "%Y-%m-%d").day
         end_date = datetime.strptime(group[-1], "%Y-%m-%d").day
-        st.markdown(f"**{start_date}일 ~ {end_date}일** : {holiday_info[group[0]]}")
+        st.markdown(f"**{start_date}일 ~ {end_date}일**: {holiday_info[group[0]]}")
     else:
         single_date = datetime.strptime(group[0], "%Y-%m-%d").day
-        st.markdown(f"**{single_date}일** : {holiday_info[group[0]]}")
+        st.markdown(f"**{single_date}일**: {holiday_info[group[0]]}")
 
 # 2페이지: 스케줄 설정
 st.sidebar.title("근무 조 설정")
