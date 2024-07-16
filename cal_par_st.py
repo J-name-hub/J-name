@@ -165,7 +165,8 @@ if st.button("이전 월"):
 
 month_days = generate_calendar(year, month)
 
-calendar_data = []
+calendar_df = pd.DataFrame(columns=["월", "화", "수", "목", "금", "토", "일"])
+
 week = []
 for day in month_days:
     if day[1] == month:
@@ -181,25 +182,23 @@ for day in month_days:
         elif current_date == yesterday:  # 전날 날짜 비교
             background = shift_colors[schedule_data[date_str]]
 
-        if current_date.weekday() == 5:  # Saturday
+        if day[3] == 5:  # Saturday
             day_style += " color: red;"
-        elif current_date.weekday() == 6 or date_str.replace("-", "") in holidays:  # Sunday or holiday
+        elif day[3] == 6:  # Sunday
             day_style += " color: red;"
         else:
             day_style += " color: black;"
-        shift_text = f"<div>{day[2]}<br><span>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"  # Remove inline color for shift text
+        shift_text = f"<div style='color: black'>{day[2]}<br><span style='color: black;'>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"  # Always black text for shift
         week.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
     else:
         week.append("<div style='height: 55px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
     
     if day[3] == 6:  # End of the week
-        calendar_data.append(week)
+        calendar_df.loc[len(calendar_df)] = week
         week = []
 
 if week:
-    calendar_data.append(week + [""] * (7 - len(week)))
-
-calendar_df = pd.DataFrame(calendar_data, columns=["월", "화", "수", "목", "금", "토", "일"])
+    calendar_df.loc[len(calendar_df)] = week + [""] * (7 - len(week))
 
 # 요일 헤더 스타일 설정
 days_header = ["월", "화", "수", "목", "금", "토", "일"]
@@ -212,20 +211,12 @@ days_header_style = [
     "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;",
     "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"
 ]
+calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
 
-# 달력 데이터 생성
-calendar_data = []
-
-# 달력 생성
-for week in calendar_df.values:
-    styled_week = []
-    for day, header_style in zip(week, days_header_style):
-        styled_week.append(f"<div style='{header_style}'>{day}</div>" if isinstance(day, str) else day)
-    calendar_data.append(styled_week)
-
-# 달력 HTML 출력
-styled_calendar = pd.DataFrame(calendar_data, columns=calendar_df.columns)
-st.write(styled_calendar.to_html(escape=False, index=False), unsafe_allow_html=True)
+st.markdown(
+    calendar_df.to_html(escape=False, index=False), 
+    unsafe_allow_html=True
+)
 
 # 다음 월 버튼 추가
 if st.button("다음 월"):
