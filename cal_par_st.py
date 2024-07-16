@@ -20,7 +20,7 @@ HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
 # 설정 파일 경로
 TEAM_SETTINGS_FILE = "team_settings.json"
 
-# GitHub 파일 로드 함수
+# GitHub에서 스케줄 파일 로드
 def load_schedule():
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
@@ -32,7 +32,7 @@ def load_schedule():
     else:
         return {}, None
 
-# GitHub 파일 저장 함수
+# GitHub에 스케줄 파일 저장
 def save_schedule(schedule, sha):
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
     headers = {
@@ -46,27 +46,22 @@ def save_schedule(schedule, sha):
         "content": content,
         "sha": sha
     }
-    if sha:
-        data["sha"] = sha
     response = requests.put(url, headers=headers, data=json.dumps(data))
-    if response.status_code == 201 or response.status_code == 200:
-        return True
-    else:
-        return False
+    return response.status_code in (200, 201)
 
-# 팀 설정 파일 로드 함수
+# 팀 설정 파일 로드
 def load_team_settings():
     if os.path.exists(TEAM_SETTINGS_FILE):
         with open(TEAM_SETTINGS_FILE, "r") as f:
             return json.load(f).get("team", "A")
     return "A"
 
-# 팀 설정 파일 저장 함수
+# 팀 설정 파일 저장
 def save_team_settings(team):
     with open(TEAM_SETTINGS_FILE, "w") as f:
         json.dump({"team": team}, f)
 
-# 공휴일 정보 로드 함수
+# 공휴일 정보 로드
 def load_holidays(year):
     url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey={HOLIDAY_API_KEY}&solYear={year}&numOfRows=100&_type=json"
     response = requests.get(url)
@@ -92,22 +87,23 @@ def load_holidays(year):
             pass  # 공휴일이 없는 경우 오류를 무시
     return holidays, holiday_info
 
-# 초기 스케줄 데이터 로드
+# 스케줄 데이터 초기 로드
 schedule_data, sha = load_schedule()
 
-# 파일이 없을 경우 기본 값 설정
+# 기본 스케줄 데이터 설정
 if not schedule_data:
     schedule_data = {}
     sha = None
 
-# 페이지 설정
+# Streamlit 페이지 설정
 st.set_page_config(page_title="교대근무 달력", layout="wide")
 
-# 월 이동 버튼 설정
+# 현재 연도와 월을 얻기 위한 함수
 def get_current_year_month():
     today = datetime.now(pytz.timezone('Asia/Seoul'))
     return today.year, today.month
 
+# 세션 상태 초기화
 if "year" not in st.session_state or "month" not in st.session_state:
     st.session_state.year, st.session_state.month = get_current_year_month()
 
@@ -124,13 +120,12 @@ month = st.session_state.month
 # 공휴일 로드
 holidays, holiday_info = load_holidays(year)
 
-# 달력 생성
+# 달력 생성 함수
 def generate_calendar(year, month):
     cal = calendar.Calendar(firstweekday=6)  # 일요일이 첫번째로 오도록 설정
-    month_days = cal.monthdayscalendar(year, month)
-    return month_days
+    return cal.monthdayscalendar(year, month)
 
-# 조 색상 설정
+# 근무 조 설정
 shift_colors = {
     "주": "background-color: yellow",
     "야": "background-color: gray",
@@ -138,7 +133,6 @@ shift_colors = {
     "올": "background-color: lightgreen"
 }
 
-# 교대 근무 조 설정
 shifts = ["주", "야", "비", "비"]
 shift_patterns = {
     "A": shifts,
@@ -147,13 +141,14 @@ shift_patterns = {
     "D": shifts[-3:] + shifts[:-3],
 }
 
+# 날짜에 해당하는 근무 조를 얻는 함수
 def get_shift(target_date, team):
-    base_date = datetime(2000, 1, 3).date()  # 기준 날짜를 date 객체로 변경
+    base_date = datetime(2000, 1, 3).date()
     delta_days = (target_date - base_date).days
     pattern = shift_patterns[team]
     return pattern[delta_days % len(pattern)]
 
-# CSS 스타일 정의
+# 페이지 제목 설정
 titleup_style = "font-size: 18px; font-weight: bold; text-align: center;"
 st.markdown(f"<div style='{titleup_style}'>{year}년</div>", unsafe_allow_html=True)
 
@@ -163,7 +158,7 @@ st.markdown(f"<div style='{title_style}'>{month}월 교대근무 달력</div>", 
 today = datetime.now(pytz.timezone('Asia/Seoul')).date()
 yesterday = today - timedelta(days=1)
 
-# 이전 월 버튼 추가
+# 이전 월 버튼
 if st.button("이전 월"):
     selected_year_month = (year, month - 1)
     if month == 1:
@@ -178,10 +173,8 @@ if st.button("이전 월"):
 
 month_days = generate_calendar(year, month)
 
-# 달력 데이터 초기화
-calendar_data = []
-
 # 달력 데이터 생성
+calendar_data = []
 for week in month_days:
     week_data = []
     for day in week:
@@ -208,7 +201,7 @@ for week in month_days:
             shift_text = f"<div>{day}<br><span>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"
             week_data.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
         else:
-            week_data.append("<div style='height: 55px;'>&nbsp;</div>")  # Ensure empty cells also have the same height
+            week_data.append("<div style='height: 55px;'>&nbsp;</div>")  # 빈 셀 높이 맞춤
     calendar_data.append(week_data)
 
 calendar_df = pd.DataFrame(calendar_data, columns=["일", "월", "화", "수", "목", "금", "토"])
@@ -227,12 +220,13 @@ days_header_style = [
 
 calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
 
+# 달력 HTML 표시
 st.markdown(
     calendar_df.to_html(escape=False, index=False), 
     unsafe_allow_html=True
 )
 
-# 다음 월 버튼 추가
+# 다음 월 버튼
 if st.button("다음 월"):
     selected_year_month = (year, month + 1)
     if month == 12:
@@ -247,7 +241,9 @@ if st.button("다음 월"):
         st.experimental_rerun()
 
 # 공휴일 설명 추가
-# 이어지는 공휴일 처리 함수
+st.markdown("### 공휴일 설명")
+
+# 이어지는 공휴일 그룹화 함수
 def group_holidays(holiday_info, month):
     holidays = [date for date in sorted(holiday_info.keys()) if datetime.strptime(date, "%Y-%m-%d").month == month]
     grouped_holidays = []
@@ -270,20 +266,20 @@ def group_holidays(holiday_info, month):
 
     return grouped_holidays
 
-# 공휴일 그룹핑
+# 현재 달의 공휴일 그룹화
 grouped_holidays = group_holidays(holiday_info, month)
 
-# 그룹핑된 공휴일 설명 출력
+# 그룹화된 공휴일 설명 출력
 for group in grouped_holidays:
     if len(group) > 1:
         start_date = datetime.strptime(group[0], "%Y-%m-%d").day
         end_date = datetime.strptime(group[-1], "%Y-%m-%d").day
-        st.markdown(f"**{start_date}일 ~ {end_date}일** : {holiday_info[group[0]]}")
+        st.markdown(f"**{start_date}일 ~ {end_date}일**: {holiday_info[group[0]]}")
     else:
         single_date = datetime.strptime(group[0], "%Y-%m-%d").day
-        st.markdown(f"**{single_date}일** : {holiday_info[group[0]]}")
+        st.markdown(f"**{single_date}일**: {holiday_info[group[0]]}")
 
-# 2페이지: 스케줄 설정
+# 사이드바: 근무 조 설정
 st.sidebar.title("근무 조 설정")
 with st.sidebar.form(key='team_settings_form'):
     team = st.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
@@ -295,11 +291,11 @@ with st.sidebar.form(key='team_settings_form'):
             st.session_state["team"] = team
             save_team_settings(team)  # 선택한 팀을 파일에 저장
             st.sidebar.success("조가 저장되었습니다.")
-            st.experimental_rerun()  # This line ensures the page is rerun to reflect the new team
+            st.experimental_rerun()  # 페이지 갱신
         else:
             st.sidebar.error("암호가 일치하지 않습니다.")
 
-# 일자 스케줄 변경 sidebar
+# 사이드바: 일자 스케줄 변경
 st.sidebar.title("스케줄 변경")
 if st.sidebar.button("스케줄 변경 활성화"):
     st.session_state.expander_open = not st.session_state.expander_open
@@ -320,17 +316,16 @@ if st.session_state.expander_open:
                         st.success("스케줄이 저장되었습니다.")
                     else:
                         st.error("스케줄 저장에 실패했습니다.")
-                    st.experimental_rerun()  # This line ensures the page is rerun to reflect the new schedule
+                    st.experimental_rerun()  # 페이지 갱신
                 else:
                     st.error("암호가 일치하지 않습니다.")
 
-# 달력 이동 sidebar
+# 사이드바: 달력 이동
 st.sidebar.title("달력 이동")
 
 # 월 선택 박스 추가
 months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
 
-# Add a list to hold the desired months
 desired_months = []
 current_date = datetime(year, month, 1)
 for i in range(-5, 6):
@@ -342,7 +337,7 @@ selected_year_month = st.sidebar.selectbox(
     "", 
     options=desired_months,
     format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
-    index=5  # the current month is in the middle of the range
+    index=5  # 현재 달이 중간에 오도록 설정
 )
 
 # 선택한 년도와 월로 변경
