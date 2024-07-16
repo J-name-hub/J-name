@@ -198,30 +198,13 @@ for week in month_days:
             else:
                 day_style += " color: black;"
 
-            week_data.append((day, schedule_data[date_str], background, day_style))
+            shift_text = f"<div>{day}<br><span>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"
+            week_data.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
         else:
-            week_data.append((None, None, None, None))
+            week_data.append("<div style='height: 55px;'>&nbsp;</div>")  # 빈 셀 높이 맞춤
     calendar_data.append(week_data)
 
-# DataFrame 생성
 calendar_df = pd.DataFrame(calendar_data, columns=["일", "월", "화", "수", "목", "금", "토"])
-
-# 날짜 셀과 근무 셀을 분리하여 DataFrame 재구성
-split_calendar_data = []
-for week in calendar_data:
-    split_week = []
-    for day, shift, background, day_style in week:
-        if day:
-            date_cell = f"<div style='{day_style}'>{day}</div>"
-            shift_cell = f"<div style='{background}; {day_style}'>{shift}</div>"
-        else:
-            date_cell = "<div style='height: 55px;'>&nbsp;</div>"
-            shift_cell = "<div style='height: 55px;'>&nbsp;</div>"
-        split_week.append((date_cell, shift_cell))
-    split_calendar_data.append(split_week)
-
-# 새로운 DataFrame 생성
-split_calendar_df = pd.DataFrame(split_calendar_data, columns=["일", "월", "화", "수", "목", "금", "토"])
 
 # 요일 헤더 스타일 설정
 days_header = ["일", "월", "화", "수", "목", "금", "토"]
@@ -235,21 +218,11 @@ days_header_style = [
     "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"
 ]
 
-# 날짜와 근무 헤더
-date_header = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
-shift_header = [f"<div style='{style}'>근무</div>" for style in days_header_style]
-
-# 새로운 DataFrame의 컬럼 이름 설정
-split_calendar_df.columns = date_header
-split_calendar_df_shift = split_calendar_df.copy()
-split_calendar_df_shift.columns = shift_header
-
-# 날짜와 근무 두 개의 DataFrame 합치기
-combined_calendar_df = pd.concat([split_calendar_df, split_calendar_df_shift], keys=["날짜", "근무"], axis=1)
+calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
 
 # 달력 HTML 표시
 st.markdown(
-    combined_calendar_df.to_html(escape=False, index=False), 
+    calendar_df.to_html(escape=False, index=False), 
     unsafe_allow_html=True
 )
 
