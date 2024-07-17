@@ -3,7 +3,7 @@ import folium
 from folium.plugins import MarkerCluster
 import requests
 from geopy.distance import geodesic
-from streamlit_folium import folium_static
+from streamlit_folium import st_folium
 
 # Streamlit secrets에서 API 키 가져오기
 API_KEY = st.secrets["api"]["API_KEY"]
@@ -19,7 +19,7 @@ st.title("영종도 및 반경 2km 내 낙뢰 발생 지도")
 st.write("기상청 낙뢰 API를 활용하여 영종도 및 반경 2km 내에서 발생한 낙뢰를 지도에 표시합니다.")
 
 # 데이터 가져오기 함수
-@st.cache
+@st.cache_data
 def get_lightning_data():
     params = {
         'serviceKey': API_KEY,
@@ -57,6 +57,6 @@ if data:
             ).add_to(marker_cluster)
     
     # 지도 출력
-    folium_static(m)
+    st_folium(m, width=725)
 else:
     st.write("낙뢰 데이터를 가져올 수 없습니다.")
