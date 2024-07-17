@@ -19,7 +19,7 @@ st.title("영종도 및 반경 2km 내 낙뢰 발생 지도")
 st.write("기상청 낙뢰 API를 활용하여 영종도 및 반경 2km 내에서 발생한 낙뢰를 지도에 표시합니다.")
 
 # 데이터 가져오기 함수
-@st.cache_data
+@st.cache
 def get_lightning_data():
     params = {
         'serviceKey': API_KEY,
