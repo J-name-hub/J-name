@@ -12,12 +12,12 @@ API_KEY = st.secrets["api"]["API_KEY"]
 # 기상청 낙뢰 API URL
 API_URL = "http://apis.data.go.kr/1360000/LivingWthrIdxServiceV2/getLightningSts"
 
-# 영종도 중심 좌표
-yeongjongdo_center = (37.4935, 126.4900)
+# 대한민국 중심 좌표
+korea_center = (36.5, 127.5)
 
 # Streamlit 설정
-st.title("영종도 및 반경 2km 내 낙뢰 발생 지도")
-st.write("기상청 낙뢰 API를 활용하여 영종도 및 반경 2km 내에서 발생한 낙뢰를 지도에 표시합니다.")
+st.title("대한민국 낙뢰 발생 지도")
+st.write("기상청 낙뢰 API를 활용하여 대한민국 전역의 낙뢰 발생 지점을 지도에 표시합니다.")
 
 # 날짜 입력 받기
 selected_date = st.date_input("날짜를 선택하세요", datetime.today())
@@ -46,7 +46,7 @@ if data:
     items = data.get('response', {}).get('body', {}).get('items', {}).get('item', [])
     
     # 지도 생성
-    m = folium.Map(location=yeongjongdo_center, zoom_start=13)
+    m = folium.Map(location=korea_center, zoom_start=7)
     marker_cluster = MarkerCluster().add_to(m)
     
     for item in items:
@@ -54,13 +54,11 @@ if data:
         lon = float(item.get('lon', 0))
         location = (lat, lon)
         
-        # 영종도 중심으로부터 반경 2km 내에 있는지 확인
-        if geodesic(yeongjongdo_center, location).km <= 2:
-            folium.Marker(
-                location=location,
-                popup=f"낙뢰 발생 위치: {location}",
-                icon=folium.Icon(color='red', icon='bolt')
-            ).add_to(marker_cluster)
+        folium.Marker(
+            location=location,
+            popup=f"낙뢰 발생 위치: {location}",
+            icon=folium.Icon(color='red', icon='bolt')
+        ).add_to(marker_cluster)
     
     # 지도 출력
     st_folium(m, width=725)
