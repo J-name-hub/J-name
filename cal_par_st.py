@@ -215,111 +215,32 @@ days_header_style = [
     "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
     "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
     "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
-    "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"
+    "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;",
 ]
 
-calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
-
-# 달력 HTML 표시
-st.markdown(
-    calendar_df.to_html(escape=False, index=False), 
-    unsafe_allow_html=True
+# 달력 출력
+st.write(
+    calendar_df.style.apply(lambda _: days_header_style, axis=1).set_properties(**{"text-align": "center"})
+    .applymap(lambda _: "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;", subset=pd.IndexSlice[:, days_header[1:6]])
+    .applymap(lambda _: "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;", subset=pd.IndexSlice[:, [days_header[0], days_header[6]]])
+    .applymap(lambda x: "height: 55px;", subset=pd.IndexSlice[:, :])
+    .set_table_styles({"": {"selector": "table", "props": [("border-collapse", "collapse"), ("width", "100%")]}}, overwrite=False)
+    .set_table_styles({"": {"selector": "th", "props": [("border", "1px solid black"), ("padding", "5px")]}}, overwrite=False)
+    .set_table_styles({"": {"selector": "td", "props": [("border", "1px solid black"), ("padding", "5px")]}}, overwrite=False)
+    .hide(axis="index")
+    .hide(axis="columns")
+    .to_html(), unsafe_allow_html=True
 )
 
-# 다음 월 버튼
-if st.button("다음 월"):
-    selected_year_month = (year, month + 1)
-    if month == 12:
-        selected_year_month = (year + 1, 1)
-
-    selected_year, selected_month = selected_year_month
-    if selected_year != year or selected_month != month:
-        st.session_state.year = selected_year
-        st.session_state.month = selected_month
-        year = selected_year
-        month = selected_month
-        st.experimental_rerun()
-
-# 공휴일 설명
-# 이어지는 공휴일 그룹화 함수
-def group_holidays(holiday_info, month):
-    holidays = [date for date in sorted(holiday_info.keys()) if datetime.strptime(date, "%Y-%m-%d").month == month]
-    grouped_holidays = []
-    current_group = []
-
-    for i, holiday in enumerate(holidays):
-        if not current_group:
-            current_group.append(holiday)
-        else:
-            last_holiday = datetime.strptime(current_group[-1], "%Y-%m-%d")
-            current_holiday = datetime.strptime(holiday, "%Y-%m-%d")
-            if (current_holiday - last_holiday).days == 1:
-                current_group.append(holiday)
-            else:
-                grouped_holidays.append(current_group)
-                current_group = [holiday]
-
-    if current_group:
-        grouped_holidays.append(current_group)
-
-    return grouped_holidays
-
-# 현재 달의 공휴일 그룹화
-grouped_holidays = group_holidays(holiday_info, month)
-
-# 그룹화된 공휴일 설명 출력
-holiday_descriptions = []
-for group in grouped_holidays:
-    if len(group) > 1:
-        start_date = datetime.strptime(group[0], "%Y-%m-%d").day
-        end_date = datetime.strptime(group[-1], "%Y-%m-%d").day
-        holiday_descriptions.append(f"{start_date}일 ~ {end_date}일: {holiday_info[group[0]]}")
-    else:
-        single_date = datetime.strptime(group[0], "%Y-%m-%d").day
-        holiday_descriptions.append(f"{single_date}일: {holiday_info[group[0]]}")
-
-st.markdown(" / ".join(holiday_descriptions))
-
-# 사이드바: 근무 조 설정
-st.sidebar.title("근무 조 설정")
-with st.sidebar.form(key='team_settings_form'):
-    team = st.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
-    password_for_settings = st.text_input("암호 입력", type="password", key="settings_password")
-    submit_button = st.form_submit_button("설정 저장")
-
-    if submit_button:
-        if password_for_settings == "0301":
-            st.session_state["team"] = team
-            save_team_settings(team)  # 선택한 팀을 파일에 저장
-            st.sidebar.success("조가 저장되었습니다.")
-            st.experimental_rerun()  # 페이지 갱신
-        else:
-            st.sidebar.error("암호가 일치하지 않습니다.")
-
-# 사이드바: 일자 스케줄 변경
-st.sidebar.title("스케줄 변경")
-if st.sidebar.button("스케줄 변경 활성화"):
-    st.session_state.expander_open = not st.session_state.expander_open
-
-if st.session_state.expander_open:
-    with st.expander("스케줄 변경", expanded=True):
-        with st.form(key='schedule_change_form'):
-            change_date = st.date_input("변경할 날짜", datetime(year, month, 1), key="change_date")
-            new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
-            password = st.text_input("암호 입력", type="password", key="password")
-            change_submit_button = st.form_submit_button("스케줄 변경 저장")
-
-            if change_submit_button:
-                if password == "0301":
-                    change_date_str = change_date.strftime("%Y-%m-%d")
-                    schedule_data[change_date_str] = new_shift
-                    if save_schedule(schedule_data, sha):
-                        st.success("스케줄이 저장되었습니다.")
-                    else:
-                        st.error("스케줄 저장에 실패했습니다.")
-                    st.experimental_rerun()  # 페이지 갱신
-                else:
-                    st.error("암호가 일치하지 않습니다.")
+# 사이드바: 팀 설정
+st.sidebar.title("팀 설정")
+team = st.sidebar.selectbox(
+    "팀 선택",
+    options=["A", "B", "C", "D"],
+    index=["A", "B", "C", "D"].index(st.session_state.team)
+)
+st.session_state.team = team
+save_team_settings(team)
 
 # 사이드바: 달력 이동
 st.sidebar.title("달력 이동")
@@ -335,10 +256,11 @@ for i in range(-5, 6):
 
 # 년 월 selectbox 추가
 selected_year_month = st.sidebar.selectbox(
-    "", 
+    "Select Month and Year",  # Provide a meaningful label here
     options=desired_months,
     format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
-    index=5  # 현재 달이 중간에 오도록 설정
+    index=5,  # 현재 달이 중간에 오도록 설정
+    label_visibility="collapsed"  # This will hide the label visually but still provide it for accessibility
 )
 
 # 선택한 년도와 월로 변경
@@ -349,3 +271,23 @@ if selected_year != year or selected_month != month:
     year = selected_year
     month = selected_month
     st.experimental_rerun()
+
+# 다음 월 버튼
+if st.button("다음 월"):
+    selected_year_month = (year, month + 1)
+    if month == 12:
+        selected_year_month = (year + 1, 1)
+    selected_year, selected_month = selected_year_month
+    if selected_year != year or selected_month != month:
+        st.session_state.year = selected_year
+        st.session_state.month = selected_month
+        year = selected_year
+        month = selected_month
+        st.experimental_rerun()
+
+# 스케줄 저장
+if st.button("스케줄 저장"):
+    if save_schedule(schedule_data, sha):
+        st.success("스케줄이 성공적으로 저장되었습니다.")
+    else:
+        st.error("스케줄 저장 중 오류가 발생했습니다.")
