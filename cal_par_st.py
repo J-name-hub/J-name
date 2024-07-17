@@ -3,6 +3,7 @@ import requests
 import folium
 from streamlit_folium import folium_static
 from datetime import datetime, timedelta
+import xml.etree.ElementTree as ET
 
 def get_lightning_data(api_key, start_date, end_date):
     url = "http://apis.data.go.kr/1360000/LgtngOccurInfoService/getLgtngOccurInfo"
@@ -10,7 +11,7 @@ def get_lightning_data(api_key, start_date, end_date):
         'serviceKey': api_key,
         'numOfRows': '1000',
         'pageNo': '1',
-        'dataType': 'json',  # 'JSON'에서 'json'으로 변경
+        'dataType': 'XML',  # JSON 대신 XML 요청
         'startDt': start_date,
         'endDt': end_date,
         'startHh': '00',
@@ -20,11 +21,20 @@ def get_lightning_data(api_key, start_date, end_date):
     st.write("API 응답 상태 코드:", response.status_code)
     st.write("API 응답 내용:", response.text)
     
-    try:
-        return response.json()
-    except requests.exceptions.JSONDecodeError as e:
-        st.error(f"JSON 디코딩 오류: {str(e)}")
+    if response.status_code == 200:
+        try:
+            root = ET.fromstring(response.content)
+            items = root.findall('.//item')
+            return [item_to_dict(item) for item in items]
+        except ET.ParseError as e:
+            st.error(f"XML 파싱 오류: {str(e)}")
+            return None
+    else:
+        st.error(f"API 요청 실패: 상태 코드 {response.status_code}")
         return None
+
+def item_to_dict(item):
+    return {child.tag: child.text for child in item}
 
 def main():
     st.title("영종도 낙뢰 발생 확인")
@@ -48,40 +58,33 @@ def main():
 
             if lightning_data is None:
                 st.error("API 응답을 처리하는 데 문제가 발생했습니다.")
-            elif 'response' in lightning_data:
-                if 'body' in lightning_data['response']:
-                    items = lightning_data['response']['body'].get('items', {}).get('item', [])
-                    if not items:
-                        st.info("해당 기간에 낙뢰 데이터가 없습니다.")
-                    else:
-                        # 지도 생성
-                        m = folium.Map(location=[yeongjeong_lat, yeongjeong_lon], zoom_start=11)
-
-                        # 낙뢰 데이터를 지도에 표시
-                        yeongjeong_strikes = []
-                        for strike in items:
-                            lat, lon = float(strike['lat']), float(strike['lon'])
-                            folium.Marker(
-                                [lat, lon],
-                                popup=f"낙뢰 발생 시간: {strike['occrDt']} {strike['occrTm']}",
-                                icon=folium.Icon(color='red', icon='bolt', prefix='fa')
-                            ).add_to(m)
-
-                            # 영종도 주변 낙뢰 확인
-                            if 37.4 <= lat <= 37.6 and 126.3 <= lon <= 126.6:
-                                yeongjeong_strikes.append(strike)
-
-                        # Streamlit에 지도 표시
-                        folium_static(m)
-
-                        if yeongjeong_strikes:
-                            st.warning(f"영종도 주변에서 {len(yeongjeong_strikes)}건의 낙뢰가 발생했습니다.")
-                        else:
-                            st.success("영종도 주변에서 낙뢰 발생이 없습니다.")
-                else:
-                    st.error("API 응답에 'body' 데이터가 없습니다.")
+            elif not lightning_data:
+                st.info("해당 기간에 낙뢰 데이터가 없습니다.")
             else:
-                st.error("API 응답 형식이 올바르지 않습니다.")
+                # 지도 생성
+                m = folium.Map(location=[yeongjeong_lat, yeongjeong_lon], zoom_start=11)
+
+                # 낙뢰 데이터를 지도에 표시
+                yeongjeong_strikes = []
+                for strike in lightning_data:
+                    lat, lon = float(strike['lat']), float(strike['lon'])
+                    folium.Marker(
+                        [lat, lon],
+                        popup=f"낙뢰 발생 시간: {strike['occrDt']} {strike['occrTm']}",
+                        icon=folium.Icon(color='red', icon='bolt', prefix='fa')
+                    ).add_to(m)
+
+                    # 영종도 주변 낙뢰 확인
+                    if 37.4 <= lat <= 37.6 and 126.3 <= lon <= 126.6:
+                        yeongjeong_strikes.append(strike)
+
+                # Streamlit에 지도 표시
+                folium_static(m)
+
+                if yeongjeong_strikes:
+                    st.warning(f"영종도 주변에서 {len(yeongjeong_strikes)}건의 낙뢰가 발생했습니다.")
+                else:
+                    st.success("영종도 주변에서 낙뢰 발생이 없습니다.")
         else:
             st.warning("API 키를 입력해주세요.")
 
