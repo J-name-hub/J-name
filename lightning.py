@@ -4,6 +4,7 @@ from folium.plugins import MarkerCluster
 import requests
 from geopy.distance import geodesic
 from streamlit_folium import st_folium
+from datetime import datetime
 
 # Streamlit secrets에서 API 키 가져오기
 API_KEY = st.secrets["api"]["API_KEY"]
@@ -18,14 +19,19 @@ yeongjongdo_center = (37.4935, 126.4900)
 st.title("영종도 및 반경 2km 내 낙뢰 발생 지도")
 st.write("기상청 낙뢰 API를 활용하여 영종도 및 반경 2km 내에서 발생한 낙뢰를 지도에 표시합니다.")
 
+# 날짜 입력 받기
+selected_date = st.date_input("날짜를 선택하세요", datetime.today())
+selected_date_str = selected_date.strftime("%Y%m%d")  # API에 맞는 형식으로 변환
+
 # 데이터 가져오기 함수
 @st.cache
-def get_lightning_data():
+def get_lightning_data(date):
     params = {
         'serviceKey': API_KEY,
         'pageNo': '1',
         'numOfRows': '100',
-        'dataType': 'JSON'
+        'dataType': 'JSON',
+        'searchDate': date
     }
     response = requests.get(API_URL, params=params)
     if response.status_code == 200:
@@ -35,7 +41,7 @@ def get_lightning_data():
         return None
 
 # 낙뢰 데이터를 가져와서 필터링
-data = get_lightning_data()
+data = get_lightning_data(selected_date_str)
 if data:
     items = data.get('response', {}).get('body', {}).get('items', {}).get('item', [])
     
