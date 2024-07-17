@@ -220,13 +220,11 @@ days_header_style = [
 
 # 달력 출력
 st.write(
-    calendar_df.style.apply(lambda _: days_header_style, axis=1).set_properties(**{"text-align": "center"})
+    calendar_df.style.apply(lambda _: days_header_style, axis=1)
+    .set_properties(**{"text-align": "center"})
     .applymap(lambda _: "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;", subset=pd.IndexSlice[:, days_header[1:6]])
     .applymap(lambda _: "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;", subset=pd.IndexSlice[:, [days_header[0], days_header[6]]])
     .applymap(lambda x: "height: 55px;", subset=pd.IndexSlice[:, :])
-    .set_table_styles({"": {"selector": "table", "props": [("border-collapse", "collapse"), ("width", "100%")]}}, overwrite=False)
-    .set_table_styles({"": {"selector": "th", "props": [("border", "1px solid black"), ("padding", "5px")]}}, overwrite=False)
-    .set_table_styles({"": {"selector": "td", "props": [("border", "1px solid black"), ("padding", "5px")]}}, overwrite=False)
     .hide(axis="index")
     .hide(axis="columns")
     .to_html(), unsafe_allow_html=True
