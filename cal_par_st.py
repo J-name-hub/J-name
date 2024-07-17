@@ -5,7 +5,7 @@ from streamlit_folium import folium_static
 from datetime import datetime, timedelta
 
 def get_lightning_data(api_key, start_date, end_date):
-    url = "http://apis.data.go.kr/1360000/LgtngSkStateInfoService/getLgtngOccurInfo"
+    url = "http://apis.data.go.kr/1360000/LgtngOccurInfoService/getLgtngOccurInfo"
     params = {
         'serviceKey': api_key,
         'numOfRows': '1000',
@@ -51,7 +51,7 @@ def main():
                     lat, lon = float(strike['lat']), float(strike['lon'])
                     folium.Marker(
                         [lat, lon],
-                        popup=f"낙뢰 발생 시간: {strike['tm']}",
+                        popup=f"낙뢰 발생 시간: {strike['occrDt']} {strike['occrTm']}",
                         icon=folium.Icon(color='red', icon='bolt', prefix='fa')
                     ).add_to(m)
 
