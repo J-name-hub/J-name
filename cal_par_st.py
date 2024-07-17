@@ -1,3 +1,13 @@
+import subprocess
+
+def install_packages():
+    packages = ["matplotlib", "Pillow"]
+    for package in packages:
+        subprocess.run(["pip", "install", package])
+
+install_packages()
+
+
 import streamlit as st
 import requests
 import json
