@@ -1,5 +1,1 @@
 streamlit
-folium
-geopy
-requests
-streamlit-folium
