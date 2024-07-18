@@ -159,7 +159,7 @@ today = datetime.now(pytz.timezone('Asia/Seoul')).date()
 yesterday = today - timedelta(days=1)
 
 # 이전 월 버튼 (좌측 정렬)
-prev_month_button = st.button("◀ 이전 월", key="prev_month", use_container_width=True)
+prev_month_button = st.button("이전 월", key="prev_month", use_container_width=True)
 st.markdown(
     """
     <style>
@@ -240,7 +240,7 @@ st.markdown(
 )
 
 # 다음 월 버튼 (우측 정렬)
-next_month_button = st.button("다음 월 ▶", key="next_month", use_container_width=True)
+next_month_button = st.button("다음 월", key="next_month", use_container_width=True)
 st.markdown(
     """
     <style>
