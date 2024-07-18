@@ -6,6 +6,8 @@ from streamlit_folium import st_folium
 from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
 from math import radians, sin, cos, sqrt, atan2
+import pandas as pd
+import altair as alt
 
 # Streamlit secrets에서 API 키 가져오기
 API_KEY = st.secrets["api"]["API_KEY"]
@@ -70,11 +72,13 @@ with col1:
         current_index = time_options.index(selected_time)
         if current_index > 0:
             selected_time = time_options[current_index - 1]
+            st.experimental_rerun()
 with col3:
     if st.button("10분 후"):
         current_index = time_options.index(selected_time)
         if current_index < len(time_options) - 1:
             selected_time = time_options[current_index + 1]
+            st.experimental_rerun()
 
 # 선택한 날짜와 시간을 결합하여 datetime 객체 생성
 selected_datetime = datetime.combine(selected_date, selected_time.time())
@@ -109,6 +113,36 @@ def get_lightning_data(datetime_str):
 
 # 낙뢰 데이터를 가져와서 필터링
 data = get_lightning_data(selected_datetime_str)
+
+# 영종도 관련 옵션에 대한 시간별 낙뢰 횟수 계산
+if map_range in ['영종도 내', '영종도 반경 2km 이내']:
+    hourly_data = {}
+    for hour in range(24):
+        hour_str = f"{hour:02d}"
+        hour_data = get_lightning_data(selected_date.strftime("%Y%m%d") + hour_str + "00")
+        if hour_data:
+            count = 0
+            for item in hour_data:
+                lat = float(item.find('wgs84Lat').text)
+                lon = float(item.find('wgs84Lon').text)
+                if map_range == '영종도 내':
+                    if 37.4667 <= lat <= 37.5167 and 126.4333 <= lon <= 126.5333:
+                        count += 1
+                elif map_range == '영종도 반경 2km 이내':
+                    if haversine_distance(YEONGJONG_CENTER[0], YEONGJONG_CENTER[1], lat, lon) <= 2:
+                        count += 1
+            hourly_data[hour] = count
+    
+    # 시간별 낙뢰 횟수 차트 생성
+    df = pd.DataFrame(list(hourly_data.items()), columns=['Hour', 'Count'])
+    chart = alt.Chart(df).mark_bar().encode(
+        x='Hour:O',
+        y='Count:Q'
+    ).properties(
+        title=f"{selected_date.strftime('%Y-%m-%d')} {map_range} 시간별 낙뢰 횟수"
+    )
+    st.altair_chart(chart, use_container_width=True)
+
 if data:
     # 지도 생성
     if map_range == '대한민국 전체':
