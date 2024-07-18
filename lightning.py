@@ -4,6 +4,8 @@ from folium.plugins import MarkerCluster
 import requests
 from streamlit_folium import st_folium
 from datetime import datetime, timedelta
+import xml.etree.ElementTree as ET
+import json
 
 # Streamlit secrets에서 API 키 가져오기
 API_KEY = st.secrets["api"]["API_KEY"]
@@ -42,21 +44,38 @@ def get_lightning_data(datetime_str):
             'dateTime': datetime_str  # 날짜 및 시간 (YYYYMMDDHHMM)
         }
         response = requests.get(API_URL, params=params)
-        
+
         # 응답 상태 확인
         if response.ok:
             try:
-                data = response.json()
+                root = ET.fromstring(response.content)
+
+                # XML 데이터를 JSON 형식으로 변환하기 위한 함수
+                def xml_to_dict(element):
+                    data_dict = {}
+                    if len(element) == 0:
+                        return element.text
+                    for child in element:
+                        if child.tag not in data_dict:
+                            data_dict[child.tag] = xml_to_dict(child)
+                        else:
+                            if not isinstance(data_dict[child.tag], list):
+                                data_dict[child.tag] = [data_dict[child.tag]]
+                            data_dict[child.tag].append(xml_to_dict(child))
+                    return data_dict
+
+                # JSON 변환
+                data = xml_to_dict(root)
                 return data
-            except ValueError as e:
-                st.error(f"JSON 디코딩 오류: {str(e)}")
+            except ET.ParseError as e:
+                st.error(f"XML 파싱 오류: {str(e)}")
                 st.write(response.text)  # 오류 응답 내용 출력
                 return None
         else:
             st.error(f"API 요청 실패: 상태 코드 {response.status_code}")
             st.write(response.text)  # 오류 응답 내용 출력
             return None
-        
+
     except requests.exceptions.RequestException as e:
         st.error(f"API 요청 중 오류 발생: {str(e)}")
         return None
@@ -66,22 +85,22 @@ data = get_lightning_data(selected_datetime_str)
 if data:
     if 'response' in data and 'body' in data['response']:
         items = data['response']['body']['items']['item']
-        
+
         # 지도 생성
         m = folium.Map(location=korea_center, zoom_start=7)
         marker_cluster = MarkerCluster().add_to(m)
-        
+
         for item in items:
-            lat = float(item['lgtLat'])
-            lon = float(item['lgtLon'])
+            lat = float(item['wgs84Lat'])
+            lon = float(item['wgs84Lon'])
             location = (lat, lon)
-            
+
             folium.Marker(
                 location=location,
                 popup=f"낙뢰 발생 위치: 위도 {lat}, 경도 {lon}",
                 icon=folium.Icon(color='red', icon='bolt')
             ).add_to(marker_cluster)
-        
+
         # 지도 출력
         st_folium(m, width=725)
     else:
