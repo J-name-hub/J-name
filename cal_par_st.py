@@ -241,17 +241,7 @@ st.markdown(
 
 # 다음 월 버튼 (우측 정렬)
 next_month_button = st.button("다음 월", key="next_month", use_container_width=True)
-st.markdown(
-    """
-    <style>
-    div.stButton > button:last-child {
-        width: 100%;
-        text-align: right !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+
 
 if next_month_button:
     selected_year_month = (year, month + 1)
