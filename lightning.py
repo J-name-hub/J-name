@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 API_KEY = st.secrets["api"]["API_KEY"]
 
 # 기상청 낙뢰 API URL
-API_URL = "http://apis.data.go.kr/1360000/LivingWthrIdxServiceV2/getLightningSttusList"
+API_URL = "http://apis.data.go.kr/1360000/LgtInfoService/getLgt"
 
 # 대한민국 중심 좌표
 korea_center = (36.5, 127.5)
@@ -21,17 +21,17 @@ st.write("기상청 낙뢰 API를 활용하여 대한민국 전역의 낙뢰 발
 
 # 날짜 입력 받기
 selected_date = st.date_input("날짜를 선택하세요", datetime.today() - timedelta(days=1))
-selected_date_str = selected_date.strftime("%Y%m%d")  # API에 맞는 형식으로 변환
+selected_date_str = selected_date.strftime("%Y%m%d%H%M")  # API에 맞는 형식으로 변환 (YYYYMMDDHHmm)
 
 # 데이터 가져오기 함수
 @st.cache_data
-def get_lightning_data(date):
+def get_lightning_data(datetime_str):
     params = {
         'serviceKey': API_KEY,
-        'pageNo': '1',
         'numOfRows': '100',
-        'dataType': 'JSON',
-        'date': date
+        'pageNo': '1',
+        'lgtType': '1',   # 낙뢰 유형 (1: 지상 낙뢰, 2: 지중 낙뢰)
+        'dateTime': datetime_str  # 날짜 및 시간 (YYYYMMDDHHmm)
     }
     response = requests.get(API_URL, params=params)
     if response.status_code == 200:
@@ -51,8 +51,8 @@ if data and 'response' in data and 'body' in data['response']:
     marker_cluster = MarkerCluster().add_to(m)
     
     for item in items:
-        lat = float(item['lat'])
-        lon = float(item['lon'])
+        lat = float(item['lgtLat'])
+        lon = float(item['lgtLon'])
         location = (lat, lon)
         
         folium.Marker(
