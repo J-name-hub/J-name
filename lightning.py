@@ -65,6 +65,13 @@ time_options = generate_time_options(selected_date)
 # 현재 선택된 시간의 인덱스 찾기 (한국 시간 기준)
 default_time = datetime.now(korea_tz).replace(minute=(datetime.now(korea_tz).minute // 10) * 10, second=0, microsecond=0)
 
+# 현재 선택된 시간의 인덱스 찾기 (한국 시간 기준)
+try:
+    default_index = time_options.index(min(time_options, key=lambda d: abs(d - default_time)))
+except ValueError:
+    # default_time이 time_options에 없을 경우 첫 번째 인덱스로 설정
+    default_index = 0
+
 # Selectbox로 시간 선택
 selected_time = st.selectbox("시간을 선택하세요", time_options, index=default_index, format_func=lambda x: x.strftime("%H:%M"))
 
@@ -82,13 +89,6 @@ with col3:
         if current_index < len(time_options) - 1:
             selected_time = time_options[current_index + 1]
             st.experimental_rerun()
-
-# 현재 선택된 시간의 인덱스 찾기 (한국 시간 기준)
-try:
-    default_index = time_options.index(min(time_options, key=lambda d: abs(d - default_time)))
-except ValueError:
-    # default_time이 time_options에 없을 경우 첫 번째 인덱스로 설정
-    default_index = 0
 
 # 선택한 날짜와 시간을 결합하여 datetime 객체 생성
 selected_datetime = datetime.combine(selected_date, selected_time.time())
