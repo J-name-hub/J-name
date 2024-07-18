@@ -18,9 +18,14 @@ korea_center = (36.5, 127.5)
 st.title("대한민국 낙뢰 발생 지도")
 st.write("기상청 낙뢰 API를 활용하여 대한민국 전역의 낙뢰 발생 지점을 지도에 표시합니다.")
 
-# 날짜 입력 받기
-selected_date = st.date_input("날짜를 선택하세요", datetime.today() - timedelta(days=1))
-selected_date_str = selected_date.strftime("%Y%m%d%H%M")  # API에 맞는 형식으로 변환 (YYYYMMDDHHmm)
+# 날짜 및 시간 설정
+selected_datetime = st.datetime_input("날짜와 시간을 선택하세요", datetime.today() - timedelta(days=1))
+selected_datetime_str = selected_datetime.strftime("%Y%m%d%H%M")  # API에 맞는 형식으로 변환 (YYYYMMDDHHMM)
+
+# 10분 간격으로 분 조정
+selected_minute = selected_datetime.minute // 10 * 10
+selected_datetime = selected_datetime.replace(minute=selected_minute)
+selected_datetime_str = selected_datetime.strftime("%Y%m%d%H%M")  # 다시 포맷팅
 
 # 데이터 가져오기 함수
 @st.cache_data
@@ -31,7 +36,7 @@ def get_lightning_data(datetime_str):
             'numOfRows': '100',
             'pageNo': '1',
             'lgtType': '1',   # 낙뢰 유형 (1: 지상 낙뢰, 2: 지중 낙뢰)
-            'dateTime': datetime_str  # 날짜 및 시간 (YYYYMMDDHHmm)
+            'dateTime': datetime_str  # 날짜 및 시간 (YYYYMMDDHHMM)
         }
         response = requests.get(API_URL, params=params)
         
@@ -53,7 +58,7 @@ def get_lightning_data(datetime_str):
         return None
 
 # 낙뢰 데이터를 가져와서 필터링
-data = get_lightning_data(selected_date_str)
+data = get_lightning_data(selected_datetime_str)
 if data and 'response' in data and 'body' in data['response']:
     items = data['response']['body']['items']['item']
     
