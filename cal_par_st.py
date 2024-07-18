@@ -349,5 +349,3 @@ if selected_year != year or selected_month != month:
     year = selected_year
     month = selected_month
     st.rerun()
-
-
