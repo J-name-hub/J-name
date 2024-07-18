@@ -3,3 +3,4 @@ folium
 requests
 geopy
 streamlit_folium
+shapely
