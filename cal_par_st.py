@@ -83,10 +83,10 @@ def generate_calendar(year, month):
 
 # 근무 조 설정
 shift_colors = {
-    "주": "background-color: yellow",
-    "야": "background-color: lightgray",
-    "비": "background-color: white",
-    "올": "background-color: lightgreen"
+    "주": "background-color: #ffeb3b",  # 밝은 노란색
+    "야": "background-color: #bdbdbd",  # 밝은 회색
+    "비": "background-color: #ffffff",  # 흰색
+    "올": "background-color: #a5d6a7"   # 밝은 녹색
 }
 
 shifts = ["주", "야", "비", "비"]
@@ -106,10 +106,10 @@ def get_shift(target_date, team):
 
 # 페이지 제목 설정
 def set_page_titles(year, month):
-    titleup_style = "font-size: 18px; font-weight: bold; text-align: center;"
+    titleup_style = "font-size: 18px; font-weight: bold; text-align: center; margin-top: 10px;"
     st.markdown(f"<div style='{titleup_style}'>{year}년</div>", unsafe_allow_html=True)
 
-    title_style = "font-size: 30px; font-weight: bold; text-align: center;"
+    title_style = "font-size: 36px; font-weight: bold; text-align: center; margin-bottom: 20px;"
     st.markdown(f"<div style='{title_style}'>{month}월 교대근무 달력</div>", unsafe_allow_html=True)
 
 # 세션 상태 초기화
@@ -140,10 +140,10 @@ def generate_calendar_data(year, month, schedule_data, holidays):
                 if date_str not in schedule_data:
                     schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
                 background = shift_colors[schedule_data[date_str]]
-                day_style = "font-weight: bold; text-align: center; padding: 1px; height: 55px; font-size: 18px;"
+                day_style = "font-weight: bold; text-align: center; padding: 5px; height: 60px; font-size: 20px; border: 1px solid #ddd;"
 
                 if current_date == today:
-                    background = "background-color: lightblue"
+                    background = "background-color: #90caf9"  # 밝은 파란색
                 elif current_date == yesterday:
                     background = shift_colors[schedule_data[date_str]]
 
@@ -155,7 +155,7 @@ def generate_calendar_data(year, month, schedule_data, holidays):
                 shift_text = f"<div>{day}<br><span>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"
                 week_data.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
             else:
-                week_data.append("<div style='height: 55px;'>&nbsp;</div>")  # 빈 셀 높이 맞춤
+                week_data.append("<div style='height: 60px;'>&nbsp;</div>")  # 빈 셀 높이 맞춤
         calendar_data.append(week_data)
     
     return pd.DataFrame(calendar_data, columns=["일", "월", "화", "수", "목", "금", "토"])
@@ -164,9 +164,9 @@ def generate_calendar_data(year, month, schedule_data, holidays):
 def style_calendar_df(calendar_df):
     days_header = ["일", "월", "화", "수", "목", "금", "토"]
     days_header_style = [
-        "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;",
-        *["background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;"] * 5,
-        "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"
+        "background-color: #fff; text-align: center; font-weight: bold; color: red; font-size: 20px; border: 1px solid #ddd;",
+        *["background-color: #fff; text-align: center; font-weight: bold; color: black; font-size: 20px; border: 1px solid #ddd;"] * 5,
+        "background-color: #fff; text-align: center; font-weight: bold; color: red; font-size: 20px; border: 1px solid #ddd;"
     ]
 
     calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
@@ -193,11 +193,11 @@ def group_holidays(holiday_info, month):
 
     return grouped_holidays
 
-# 그룹화된 공휴일 설명 출력
+# 공휴일 설명 표시
 def display_holiday_descriptions(holiday_info, month):
     grouped_holidays = group_holidays(holiday_info, month)
     holiday_descriptions = []
-    
+
     for group in grouped_holidays:
         if len(group) > 1:
             start_date = datetime.strptime(group[0], "%Y-%m-%d").day
