@@ -2,7 +2,6 @@ import streamlit as st
 import folium
 from folium.plugins import MarkerCluster
 import requests
-from geopy.distance import geodesic
 from streamlit_folium import st_folium
 from datetime import datetime, timedelta
 
@@ -26,19 +25,31 @@ selected_date_str = selected_date.strftime("%Y%m%d%H%M")  # API에 맞는 형식
 # 데이터 가져오기 함수
 @st.cache_data
 def get_lightning_data(datetime_str):
-    params = {
-        'serviceKey': API_KEY,
-        'numOfRows': '100',
-        'pageNo': '1',
-        'lgtType': '1',   # 낙뢰 유형 (1: 지상 낙뢰, 2: 지중 낙뢰)
-        'dateTime': datetime_str  # 날짜 및 시간 (YYYYMMDDHHmm)
-    }
-    response = requests.get(API_URL, params=params)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        st.error(f"데이터를 가져오는 데 실패했습니다. 상태 코드: {response.status_code}")
-        st.write(response.text)  # 응답 내용 출력
+    try:
+        params = {
+            'serviceKey': API_KEY,
+            'numOfRows': '100',
+            'pageNo': '1',
+            'lgtType': '1',   # 낙뢰 유형 (1: 지상 낙뢰, 2: 지중 낙뢰)
+            'dateTime': datetime_str  # 날짜 및 시간 (YYYYMMDDHHmm)
+        }
+        response = requests.get(API_URL, params=params)
+        
+        # 응답 상태 확인
+        if response.ok:
+            data = response.json()
+            return data
+        else:
+            st.error(f"API 요청 실패: 상태 코드 {response.status_code}")
+            st.write(response.text)  # 오류 응답 내용 출력
+            return None
+        
+    except requests.exceptions.RequestException as e:
+        st.error(f"API 요청 중 오류 발생: {str(e)}")
+        return None
+    except ValueError as e:
+        st.error(f"JSON 디코딩 오류: {str(e)}")
+        st.write(response.text)  # 오류 응답 내용 출력
         return None
 
 # 낙뢰 데이터를 가져와서 필터링
@@ -57,7 +68,7 @@ if data and 'response' in data and 'body' in data['response']:
         
         folium.Marker(
             location=location,
-            popup=f"낙뢰 발생 위치: {location}",
+            popup=f"낙뢰 발생 위치: 위도 {lat}, 경도 {lon}",
             icon=folium.Icon(color='red', icon='bolt')
         ).add_to(marker_cluster)
     
