@@ -53,7 +53,7 @@ def generate_time_options(selected_date):
     time_options = []
     for hour in range(24):
         for minute in range(0, 60, 10):
-            time_options.append(datetime.combine(selected_date, datetime.min.time()).replace(hour=hour, minute=minute))
+            time_options.append(datetime.combine(selected_date, datetime.min.time()).replace(hour=hour, minute=minute, tzinfo=korea_tz))
     return time_options
 
 # 날짜 입력 받기 (한국 시간 기준)
