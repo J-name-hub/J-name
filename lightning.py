@@ -50,64 +50,64 @@ def get_lightning_data(datetime_str):
     try:
         params = {
             'serviceKey': API_KEY,
-            'numOfRows': '1000',  # 더 많은 데이터를 요청
+            'numOfRows': '1000',
             'pageNo': '1',
-            'lgtType': '1',   # 낙뢰 유형 (1: 지상 낙뢰, 2: 지중 낙뢰)
-            'dateTime': datetime_str  # 날짜 및 시간 (YYYYMMDDHHMM)
+            'lgtType': '1',
+            'dateTime': datetime_str
         }
         response = requests.get(API_URL, params=params)
         if response.ok:
             root = ET.fromstring(response.content)
             items = root.findall('.//item')
-            if not items:
-                st.write(f"No data for {datetime_str}")  # 데이터가 없는 경우 로그
             return items
         else:
             st.error(f"API 요청 실패: 상태 코드 {response.status_code}")
-            st.write(response.text)
             return None
     except requests.exceptions.RequestException as e:
         st.error(f"API 요청 중 오류 발생: {str(e)}")
         return None
 
 # 특정 날짜의 모든 낙뢰 데이터를 가져오는 함수
+@st.cache_data
 def get_all_lightning_data(date):
     all_data = []
     for hour in range(24):
-        for minute in range(0, 60, 10):  # 10분 단위로 요청
-            hour_str = f"{hour:02d}"
-            minute_str = f"{minute:02d}"
-            datetime_str = date.strftime("%Y%m%d") + hour_str + minute_str
-            data = get_lightning_data(datetime_str)
-            if data:
-                all_data.extend(data)
+        hour_str = f"{hour:02d}"
+        datetime_str = date.strftime("%Y%m%d") + hour_str + "00"
+        data = get_lightning_data(datetime_str)
+        if data:
+            all_data.extend(data)
     return all_data
 
 # 날짜 입력 받기 (한국 시간 기준)
 selected_date = st.date_input("날짜를 선택하세요", datetime.now(korea_tz).date() - timedelta(days=1))
 
-# 선택한 날짜의 모든 낙뢰 데이터 가져오기
+# 데이터 로딩
+data_load_state = st.text('데이터를 불러오는 중...')
 all_data = get_all_lightning_data(selected_date)
+data_load_state.text('데이터 로딩 완료!')
 
-# 낙뢰가 있는 시간만 추출
-lightning_times = sorted(set([datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) for item in all_data]))
+# 'All' 또는 시간별 선택
+time_selection = st.radio("데이터 표시 방식:", ('All', '시간별'))
 
-# 시간 옵션 생성
-time_options = [datetime.combine(selected_date, datetime.min.time()).replace(hour=t.hour, minute=t.minute, tzinfo=korea_tz) for t in lightning_times]
-time_options.insert(0, "All")  # 'All' 옵션 추가
-
-# 현재 시간이 선택된 날짜와 같은 날이면 현재 시간까지만 표시
-if selected_date == datetime.now(korea_tz).date():
-    current_time = datetime.now(korea_tz)
-    time_options = [t for t in time_options if t == "All" or t <= current_time]
-
-# 시간 선택
-selected_time = st.selectbox("시간을 선택하세요", time_options, format_func=lambda x: "All" if x == "All" else x.strftime("%H:%M"))
-
-# 선택된 시간에 따라 데이터 필터링
-if selected_time == "All":
+if time_selection == 'All':
     filtered_data = all_data
 else:
+    # 낙뢰가 있는 시간만 추출
+    lightning_times = sorted(set([datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) for item in all_data]))
+    
+    # 시간 옵션 생성
+    time_options = [datetime.combine(selected_date, datetime.min.time()).replace(hour=t.hour, minute=t.minute, tzinfo=korea_tz) for t in lightning_times]
+    
+    # 현재 시간이 선택된 날짜와 같은 날이면 현재 시간까지만 표시
+    if selected_date == datetime.now(korea_tz).date():
+        current_time = datetime.now(korea_tz)
+        time_options = [t for t in time_options if t <= current_time]
+    
+    # 시간 선택
+    selected_time = st.selectbox("시간을 선택하세요", time_options, format_func=lambda x: x.strftime("%H:%M"))
+    
+    # 선택된 시간에 따라 데이터 필터링
     filtered_data = [item for item in all_data if abs((datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) - selected_time).total_seconds()) <= 600]  # 10분 이내
 
 # 영종도 관련 옵션에 대한 시간별 낙뢰 횟수 계산
@@ -137,6 +137,10 @@ if map_range in ['영종도 내', '영종도 반경 2km 이내']:
         title=f"{selected_date.strftime('%Y-%m-%d')} {map_range} 시간별 낙뢰 횟수"
     )
     st.altair_chart(chart, use_container_width=True)
+
+# 총 낙뢰 횟수 표시
+total_lightning = sum(hourly_data.values())
+st.write(f"총 낙뢰 횟수: {total_lightning}")
 
 if filtered_data:
     # 지도 생성
@@ -196,7 +200,7 @@ else:
     st.write("선택한 시간에 낙뢰 데이터가 없습니다.")
 
 # 시간 범위 설명
-if selected_time == "All":
+if time_selection == "All":
     st.write(f"{selected_date.strftime('%Y-%m-%d')}의 모든 낙뢰 데이터를 표시합니다.")
 else:
     st.write(f"선택한 시간 {selected_time.strftime('%H:%M')}의 낙뢰 데이터를 표시합니다.")
