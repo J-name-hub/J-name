@@ -18,14 +18,17 @@ korea_center = (36.5, 127.5)
 st.title("대한민국 낙뢰 발생 지도")
 st.write("기상청 낙뢰 API를 활용하여 대한민국 전역의 낙뢰 발생 지점을 지도에 표시합니다.")
 
-# 날짜 및 시간 설정
-selected_datetime = st.datetime_input("날짜와 시간을 선택하세요", datetime.today() - timedelta(days=1))
-selected_datetime_str = selected_datetime.strftime("%Y%m%d%H%M")  # API에 맞는 형식으로 변환 (YYYYMMDDHHMM)
+# 날짜 입력 받기
+selected_date = st.date_input("날짜를 선택하세요", datetime.today() - timedelta(days=1))
+selected_time = st.time_input("시간을 선택하세요", datetime.now().time())
+
+# 선택한 날짜와 시간을 결합하여 datetime 객체 생성
+selected_datetime = datetime.combine(selected_date, selected_time)
 
 # 10분 간격으로 분 조정
 selected_minute = selected_datetime.minute // 10 * 10
-selected_datetime = selected_datetime.replace(minute=selected_minute)
-selected_datetime_str = selected_datetime.strftime("%Y%m%d%H%M")  # 다시 포맷팅
+selected_datetime = selected_datetime.replace(minute=selected_minute, second=0, microsecond=0)
+selected_datetime_str = selected_datetime.strftime("%Y%m%d%H%M")  # API 형식 (YYYYMMDDHHMM)
 
 # 데이터 가져오기 함수
 @st.cache_data
