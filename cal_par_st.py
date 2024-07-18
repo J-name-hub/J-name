@@ -158,21 +158,8 @@ st.markdown(f"<div style='{title_style}'>{month}월 교대근무 달력</div>", 
 today = datetime.now(pytz.timezone('Asia/Seoul')).date()
 yesterday = today - timedelta(days=1)
 
-# 이전 월 버튼 (좌측 정렬)
-prev_month_button = st.button("이전 월", key="prev_month", use_container_width=True)
-st.markdown(
-    """
-    <style>
-    div.stButton > button:first-child {
-        width: 100%;
-        text-align: left !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-if prev_month_button:
+# 이전 월 버튼
+if st.button("이전 월"):
     selected_year_month = (year, month - 1)
     if month == 1:
         selected_year_month = (year - 1, 12)
@@ -239,11 +226,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 다음 월 버튼 (우측 정렬)
-next_month_button = st.button("다음 월", key="next_month", use_container_width=True)
-
-
-if next_month_button:
+# 다음 월 버튼
+if st.button("다음 월"):
     selected_year_month = (year, month + 1)
     if month == 12:
         selected_year_month = (year + 1, 1)
@@ -365,3 +349,5 @@ if selected_year != year or selected_month != month:
     year = selected_year
     month = selected_month
     st.rerun()
+
+
