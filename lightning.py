@@ -50,7 +50,7 @@ def get_lightning_data(datetime_str):
     try:
         params = {
             'serviceKey': API_KEY,
-            'numOfRows': '100',
+            'numOfRows': '1000',  # 더 많은 데이터를 요청
             'pageNo': '1',
             'lgtType': '1',   # 낙뢰 유형 (1: 지상 낙뢰, 2: 지중 낙뢰)
             'dateTime': datetime_str  # 날짜 및 시간 (YYYYMMDDHHMM)
@@ -59,6 +59,8 @@ def get_lightning_data(datetime_str):
         if response.ok:
             root = ET.fromstring(response.content)
             items = root.findall('.//item')
+            if not items:
+                st.write(f"No data for {datetime_str}")  # 데이터가 없는 경우 로그
             return items
         else:
             st.error(f"API 요청 실패: 상태 코드 {response.status_code}")
@@ -72,11 +74,13 @@ def get_lightning_data(datetime_str):
 def get_all_lightning_data(date):
     all_data = []
     for hour in range(24):
-        hour_str = f"{hour:02d}"
-        datetime_str = date.strftime("%Y%m%d") + hour_str + "00"
-        data = get_lightning_data(datetime_str)
-        if data:
-            all_data.extend(data)
+        for minute in range(0, 60, 10):  # 10분 단위로 요청
+            hour_str = f"{hour:02d}"
+            minute_str = f"{minute:02d}"
+            datetime_str = date.strftime("%Y%m%d") + hour_str + minute_str
+            data = get_lightning_data(datetime_str)
+            if data:
+                all_data.extend(data)
     return all_data
 
 # 날짜 입력 받기 (한국 시간 기준)
@@ -104,7 +108,7 @@ selected_time = st.selectbox("시간을 선택하세요", time_options, format_f
 if selected_time == "All":
     filtered_data = all_data
 else:
-    filtered_data = [item for item in all_data if datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz).replace(second=0, microsecond=0) == selected_time]
+    filtered_data = [item for item in all_data if abs((datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) - selected_time).total_seconds()) <= 600]  # 10분 이내
 
 # 영종도 관련 옵션에 대한 시간별 낙뢰 횟수 계산
 if map_range in ['영종도 내', '영종도 반경 2km 이내']:
