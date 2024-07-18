@@ -84,7 +84,11 @@ with col3:
             st.experimental_rerun()
 
 # 현재 선택된 시간의 인덱스 찾기 (한국 시간 기준)
-default_index = time_options.index(min(time_options, key=lambda d: abs(d - default_time)))
+try:
+    default_index = time_options.index(min(time_options, key=lambda d: abs(d - default_time)))
+except ValueError:
+    # default_time이 time_options에 없을 경우 첫 번째 인덱스로 설정
+    default_index = 0
 
 # 선택한 날짜와 시간을 결합하여 datetime 객체 생성
 selected_datetime = datetime.combine(selected_date, selected_time.time())
