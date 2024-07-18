@@ -110,8 +110,8 @@ else:
     filtered_data = [item for item in all_data if abs((datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) - selected_time).total_seconds()) < 1800]  # 30분 이내
 
 # 영종도 관련 옵션에 대한 시간별 낙뢰 횟수 계산
+hourly_data = {}
 if map_range in ['영종도 내', '영종도 반경 2km 이내']:
-    hourly_data = {}
     for hour in range(24):
         count = 0
         for item in all_data:
@@ -138,8 +138,9 @@ if map_range in ['영종도 내', '영종도 반경 2km 이내']:
     st.altair_chart(chart, use_container_width=True)
 
 # 총 낙뢰 횟수 표시
-total_lightning = sum(hourly_data.values())
-st.write(f"총 낙뢰 횟수: {total_lightning}")
+if hourly_data:
+    total_lightning = sum(hourly_data.values())
+    st.write(f"총 낙뢰 횟수: {total_lightning}")
 
 if filtered_data:
     # 지도 생성
