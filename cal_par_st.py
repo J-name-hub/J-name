@@ -1,4 +1,4 @@
-7import streamlit as st
+import streamlit as st
 import requests
 import json
 from datetime import datetime, timedelta
