@@ -5,7 +5,6 @@ import requests
 from streamlit_folium import st_folium
 from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
-from math import radians, sin, cos, sqrt, atan2
 import pandas as pd
 import altair as alt
 import pytz
@@ -24,26 +23,15 @@ API_URL = "http://apis.data.go.kr/1360000/LgtInfoService/getLgt"
 KOREA_CENTER = (36.5, 127.5)
 YEONGJONG_CENTER = (37.4917, 126.4833)  # 영종도 중심 좌표
 
-# 영종도의 경계 좌표 (예시)
+# 영종도의 경계 좌표 (정확한 좌표로 업데이트)
 YEONGJONG_BOUNDARY = [
-    (37.4500, 126.3800), (37.4300, 126.4500), (37.4700, 126.5250),
-    (37.5100, 126.5050), (37.5050, 126.4800), (37.5000, 126.4200),
-    (37.4700, 126.3900)
+    (37.4789, 126.3900), (37.4550, 126.4150), (37.4450, 126.4450),
+    (37.4500, 126.4800), (37.4750, 126.5150), (37.5050, 126.5050),
+    (37.5150, 126.4750), (37.5100, 126.4400), (37.4950, 126.4050)
 ]
 
 # 한국 시간대 설정
 korea_tz = pytz.timezone('Asia/Seoul')
-
-# 거리 계산 함수
-def haversine_distance(lat1, lon1, lat2, lon2):
-    R = 6371  # 지구의 반경 (km)
-    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
-    c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    distance = R * c
-    return distance
 
 # pyproj를 사용한 버퍼 생성 함수
 def create_buffer(polygon, distance):
@@ -112,6 +100,8 @@ data_load_state = st.text('데이터를 불러오는 중...')
 all_data = get_all_lightning_data(selected_date)
 data_load_state.text('데이터 로딩 완료!')
 
+st.write(f"전체 데이터 수: {len(all_data)}")  # 디버그 출력
+
 # 'All' 또는 시간별 선택
 time_selection = st.radio("데이터 표시 방식:", ('All', '시간별'))
 
@@ -145,13 +135,15 @@ def filter_data(data, map_range):
         if map_range == '영종도 내':
             if yeongjong_polygon.contains(point):
                 filtered.append(item)
+                st.write(f"영종도 내 낙뢰 발견: 위도 {lat}, 경도 {lon}")  # 디버그 출력
         elif map_range == '영종도 테두리에서 반경 2km 이내':
             if yeongjong_buffer.contains(point):
                 filtered.append(item)
+                st.write(f"영종도 반경 2km 내 낙뢰 발견: 위도 {lat}, 경도 {lon}")  # 디버그 출력
         else:  # 대한민국 전체
             filtered.append(item)
     
-    print(f"필터링 결과: {len(filtered)}/{len(data)} 개의 데이터")  # 디버그 출력
+    st.write(f"필터링 결과: {len(filtered)}/{len(data)} 개의 데이터")  # 디버그 출력
     return filtered
 
 # 데이터 필터링 적용
@@ -191,8 +183,8 @@ if map_range in ['영종도 내', '영종도 테두리에서 반경 2km 이내']
         total_lightning = sum(hourly_data.values())
         st.write(f"총 낙뢰 횟수: {total_lightning}")
 
+# 지도 생성 및 마커 추가
 if filtered_data:
-    # 지도 생성
     if map_range == '대한민국 전체':
         m = folium.Map(location=KOREA_CENTER, zoom_start=7)
     else:
@@ -201,7 +193,7 @@ if filtered_data:
     marker_cluster = MarkerCluster().add_to(m)
 
     # 영종도 범위 표시
-    if map_range == '영종도 내':
+    if map_range in ['영종도 내', '영종도 테두리에서 반경 2km 이내']:
         folium.Polygon(
             locations=YEONGJONG_BOUNDARY,
             color="red",
@@ -209,7 +201,8 @@ if filtered_data:
             fillColor="red",
             fillOpacity=0.1
         ).add_to(m)
-    elif map_range == '영종도 테두리에서 반경 2km 이내':
+
+    if map_range == '영종도 테두리에서 반경 2km 이내':
         folium.Polygon(
             locations=[(lat, lon) for lon, lat in yeongjong_buffer.exterior.coords],
             color="blue",
@@ -223,7 +216,6 @@ if filtered_data:
         lon = float(item.find('wgs84Lon').text)
         location = (lat, lon)
 
-        # 발생 시간 정보 추출
         datetime_str = item.find('dateTime').text
         datetime_obj = datetime.strptime(datetime_str, "%Y%m%d%H%M%S")
         formatted_time = datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
@@ -234,10 +226,9 @@ if filtered_data:
             icon=folium.Icon(color='red', icon='bolt')
         ).add_to(marker_cluster)
 
-    # 지도 출력
     st_folium(m, width=725)
 else:
-    st.write("선택한 시간에 낙뢰 데이터가 없습니다.")
+    st.write("선택한 범위와 시간에 낙뢰 데이터가 없습니다.")
 
 # 시간 범위 설명
 if time_selection == "All":
