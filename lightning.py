@@ -10,6 +10,9 @@ import pandas as pd
 import altair as alt
 import pytz
 from shapely.geometry import Polygon, Point
+import pyproj
+from shapely.ops import transform
+from functools import partial
 
 # Streamlit secrets에서 API 키 가져오기
 API_KEY = st.secrets["api"]["API_KEY"]
@@ -23,8 +26,9 @@ YEONGJONG_CENTER = (37.4917, 126.4833)  # 영종도 중심 좌표
 
 # 영종도의 경계 좌표 (예시)
 YEONGJONG_BOUNDARY = [
-    (37.4500, 126.3800), (37.4300, 126.4500), (37.4700, 126.5250), (37.5100, 126.5050),
-    (37.5050, 126.4800), (37.5000, 126.4200), (37.4700, 126.3900)
+    (37.4500, 126.3800), (37.4300, 126.4500), (37.4700, 126.5250),
+    (37.5100, 126.5050), (37.5050, 126.4800), (37.5000, 126.4200),
+    (37.4700, 126.3900)
 ]
 
 # 한국 시간대 설정
@@ -41,11 +45,19 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     distance = R * c
     return distance
 
-# 영종도 내 위치인지 확인하는 함수
-def is_within_yeongjong(lat, lon, boundary):
-    point = Point(lon, lat)
-    polygon = Polygon(boundary)
-    return polygon.contains(point)
+# pyproj를 사용한 버퍼 생성 함수
+def create_buffer(polygon, distance):
+    proj_wgs84 = pyproj.Proj('epsg:4326')
+    proj_meters = pyproj.Proj('epsg:3857')
+    project = partial(pyproj.transform, proj_wgs84, proj_meters)
+    project_back = partial(pyproj.transform, proj_meters, proj_wgs84)
+    poly_utm = transform(project, polygon)
+    poly_utm_buffer = poly_utm.buffer(distance)
+    return transform(project_back, poly_utm_buffer)
+
+# 영종도 경계와 버퍼 생성
+yeongjong_polygon = Polygon(YEONGJONG_BOUNDARY)
+yeongjong_buffer = create_buffer(yeongjong_polygon, 2000)  # 2km 버퍼
 
 # Streamlit 설정
 st.title("대한민국 낙뢰 발생 지도")
@@ -112,7 +124,7 @@ else:
     # 30분 단위로 묶기
     def round_to_nearest_half_hour(dt):
         return dt.replace(minute=0, second=0, microsecond=0) + timedelta(minutes=30 * ((dt.minute // 30) + (1 if dt.minute % 30 > 0 else 0)))
-
+    
     rounded_times = [round_to_nearest_half_hour(t) for t in lightning_times]
     rounded_times = sorted(set(rounded_times))
     
@@ -121,6 +133,29 @@ else:
     
     # 선택된 시간에 따라 데이터 필터링
     filtered_data = [item for item in all_data if abs((datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) - selected_time).total_seconds()) < 1800]  # 30분 이내
+
+# 필터링 함수
+def filter_data(data, map_range):
+    filtered = []
+    for item in data:
+        lat = float(item.find('wgs84Lat').text)
+        lon = float(item.find('wgs84Lon').text)
+        point = Point(lon, lat)
+        
+        if map_range == '영종도 내':
+            if yeongjong_polygon.contains(point):
+                filtered.append(item)
+        elif map_range == '영종도 테두리에서 반경 2km 이내':
+            if yeongjong_buffer.contains(point):
+                filtered.append(item)
+        else:  # 대한민국 전체
+            filtered.append(item)
+    
+    print(f"필터링 결과: {len(filtered)}/{len(data)} 개의 데이터")  # 디버그 출력
+    return filtered
+
+# 데이터 필터링 적용
+filtered_data = filter_data(filtered_data, map_range)
 
 # 영종도 관련 옵션에 대한 시간별 낙뢰 횟수 계산
 if map_range in ['영종도 내', '영종도 테두리에서 반경 2km 이내']:
@@ -132,13 +167,12 @@ if map_range in ['영종도 내', '영종도 테두리에서 반경 2km 이내']
             if item_time.hour == hour:
                 lat = float(item.find('wgs84Lat').text)
                 lon = float(item.find('wgs84Lon').text)
+                point = Point(lon, lat)
                 if map_range == '영종도 내':
-                    if is_within_yeongjong(lat, lon, YEONGJONG_BOUNDARY):
+                    if yeongjong_polygon.contains(point):
                         count += 1
                 elif map_range == '영종도 테두리에서 반경 2km 이내':
-                    point = Point(lon, lat)
-                    buffer_polygon = Polygon(YEONGJONG_BOUNDARY).buffer(2 / 111)  # 2km buffer
-                    if buffer_polygon.contains(point):
+                    if yeongjong_buffer.contains(point):
                         count += 1
         hourly_data[hour] = count
 
@@ -153,10 +187,9 @@ if map_range in ['영종도 내', '영종도 테두리에서 반경 2km 이내']
         )
         st.altair_chart(chart, use_container_width=True)
 
-# 총 낙뢰 횟수 표시
-if map_range in ['영종도 내', '영종도 테두리에서 반경 2km 이내'] and sum(hourly_data.values()) > 0:
-    total_lightning = sum(hourly_data.values())
-    st.write(f"총 낙뢰 횟수: {total_lightning}")
+        # 총 낙뢰 횟수 표시
+        total_lightning = sum(hourly_data.values())
+        st.write(f"총 낙뢰 횟수: {total_lightning}")
 
 if filtered_data:
     # 지도 생성
@@ -164,7 +197,7 @@ if filtered_data:
         m = folium.Map(location=KOREA_CENTER, zoom_start=7)
     else:
         m = folium.Map(location=YEONGJONG_CENTER, zoom_start=12)
-
+    
     marker_cluster = MarkerCluster().add_to(m)
 
     # 영종도 범위 표시
@@ -177,9 +210,8 @@ if filtered_data:
             fillOpacity=0.1
         ).add_to(m)
     elif map_range == '영종도 테두리에서 반경 2km 이내':
-        buffer_polygon = Polygon(YEONGJONG_BOUNDARY).buffer(2 / 111)
         folium.Polygon(
-            locations=[(point.y, point.x) for point in buffer_polygon.exterior.coords],
+            locations=[(lat, lon) for lon, lat in yeongjong_buffer.exterior.coords],
             color="blue",
             fill=True,
             fillColor="blue",
@@ -190,15 +222,6 @@ if filtered_data:
         lat = float(item.find('wgs84Lat').text)
         lon = float(item.find('wgs84Lon').text)
         location = (lat, lon)
-
-        # 영종도 필터링
-        if map_range == '영종도 내':
-            if not is_within_yeongjong(lat, lon, YEONGJONG_BOUNDARY):
-                continue
-        elif map_range == '영종도 테두리에서 반경 2km 이내':
-            point = Point(lon, lat)
-            if not buffer_polygon.contains(point):
-                continue
 
         # 발생 시간 정보 추출
         datetime_str = item.find('dateTime').text
