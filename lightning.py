@@ -230,6 +230,29 @@ if filtered_data:
 else:
     st.write("선택한 범위와 시간에 낙뢰 데이터가 없습니다.")
 
+def filter_data(data, map_range):
+    filtered = []
+    for item in data:
+        lat = float(item.find('wgs84Lat').text)
+        lon = float(item.find('wgs84Lon').text)
+        point = Point(lon, lat)
+        
+        if map_range == '영종도 내':
+            is_inside = yeongjong_polygon.contains(point)
+            st.write(f"좌표: ({lat}, {lon}), 영종도 내부: {is_inside}")  # 디버그 출력
+            if is_inside:
+                filtered.append(item)
+        elif map_range == '영종도 테두리에서 반경 2km 이내':
+            is_inside_buffer = yeongjong_buffer.contains(point)
+            st.write(f"좌표: ({lat}, {lon}), 영종도 반경 2km 내: {is_inside_buffer}")  # 디버그 출력
+            if is_inside_buffer:
+                filtered.append(item)
+        else:  # 대한민국 전체
+            filtered.append(item)
+    
+    st.write(f"필터링 결과: {len(filtered)}/{len(data)} 개의 데이터")  # 디버그 출력
+    return filtered
+
 # 시간 범위 설명
 if time_selection == "All":
     st.write(f"{selected_date.strftime('%Y-%m-%d')}의 모든 낙뢰 데이터를 표시합니다.")
