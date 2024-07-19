@@ -95,10 +95,12 @@ def get_all_lightning_data(date):
 # 날짜 입력 받기 (한국 시간 기준)
 selected_date = st.date_input("날짜를 선택하세요", datetime.now(korea_tz).date() - timedelta(days=1))
 
-# 데이터 로딩 및 필터링
+# 데이터 로딩
 data_load_state = st.text('데이터를 불러오는 중...')
 all_data = get_all_lightning_data(selected_date)
 data_load_state.text('데이터 로딩 완료!')
+
+st.write(f"전체 데이터 수: {len(all_data)}")  # 디버그 출력
 
 def filter_data(data, map_range):
     filtered = []
@@ -108,21 +110,23 @@ def filter_data(data, map_range):
         point = Point(lon, lat)  # 경도, 위도 순서로 수정
 
         if map_range == '영종도 내':
-            if yeongjong_polygon.contains(point):
+            is_inside = yeongjong_polygon.contains(point)
+            st.write(f"좌표: ({lat}, {lon}), 영종도 내부: {is_inside}")  # 디버그 출력
+            if is_inside:
                 filtered.append(item)
         elif map_range == '영종도 테두리에서 반경 2km 이내':
-            if yeongjong_buffer.contains(point):
+            is_inside_buffer = yeongjong_buffer.contains(point)
+            st.write(f"좌표: ({lat}, {lon}), 영종도 반경 2km 내: {is_inside_buffer}")  # 디버그 출력
+            if is_inside_buffer:
                 filtered.append(item)
         else:  # 대한민국 전체
             filtered.append(item)
 
+    st.write(f"필터링 결과: {len(filtered)}/{len(data)} 개의 데이터")  # 디버그 출력
     return filtered
 
 # 데이터 필터링 적용
 filtered_data = filter_data(all_data, map_range)
-
-st.write(f"전체 데이터 수: {len(all_data)}")
-st.write(f"필터링된 데이터 수: {len(filtered_data)}")
 
 # 'All' 또는 시간별 선택
 time_selection = st.radio("데이터 표시 방식:", ('All', '시간별'))
