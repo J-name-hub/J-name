@@ -4,3 +4,4 @@ requests
 geopy
 streamlit_folium
 shapely
+pyproj
