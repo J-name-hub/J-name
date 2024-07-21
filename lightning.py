@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 # 기상청 낙뢰 관측 API에서 데이터를 가져오는 함수
 def get_lightning_data(api_key, start_time, end_time):
-    url = "http://apis.data.go.kr/1360000/LgtInfoService/getLightning"
+    base_url = "http://apis.data.go.kr/1360000/LgtInfoService/getLightning"
     all_data = []
 
     while start_time < end_time:
@@ -18,11 +18,10 @@ def get_lightning_data(api_key, start_time, end_time):
             "toTmFc": next_time.strftime("%Y%m%d%H%M"),
             "dataType": "JSON"
         }
-        st.write(f"API 요청 URL: {url}")
+        response = requests.get(base_url, params=params)
+
+        st.write(f"API 요청 URL: {base_url}")
         st.write(f"요청 파라미터: {params}")
-        
-        response = requests.get(url, params=params)
-        
         st.write(f"응답 상태 코드: {response.status_code}")
         st.write(f"응답 내용: {response.text}")
 
@@ -38,7 +37,7 @@ def get_lightning_data(api_key, start_time, end_time):
             return pd.DataFrame()  # 빈 데이터프레임 반환
 
         if "response" in data and "body" in data["response"] and "items" in data["response"]["body"]:
-            items = data["response"]["body"]["items"]
+            items = data["response"]["body"]["items"]["item"]
             all_data.extend(items)
         
         start_time = next_time
