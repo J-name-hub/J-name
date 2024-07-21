@@ -8,13 +8,12 @@ import pytz
 from dateutil.relativedelta import relativedelta
 import base64
 import os
-from cachetools import cached, TTLCache
-from concurrent.futures import ThreadPoolExecutor
 
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
 GITHUB_FILE_PATH = st.secrets["github"]["file_path"]
+HOLIDAY_FILE_PATH = st.secrets["github"]["holiday_file_path"]
 
 # 대한민국 공휴일 API 키
 HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
@@ -22,14 +21,9 @@ HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
 # 설정 파일 경로
 TEAM_SETTINGS_FILE = "team_settings.json"
 
-# 캐시 설정
-schedule_cache = TTLCache(maxsize=1, ttl=3600)  # 1시간 TTL
-holiday_cache = TTLCache(maxsize=10, ttl=86400)  # 24시간 TTL
-
-# GitHub에서 스케줄 파일 로드
-@cached(schedule_cache)
-def load_schedule():
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
+# GitHub에서 파일 로드
+def load_github_file(file_path):
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{file_path}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
@@ -39,22 +33,30 @@ def load_schedule():
     else:
         return {}, None
 
-# GitHub에 스케줄 파일 저장
-def save_schedule(schedule, sha):
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
+# GitHub에 파일 저장
+def save_github_file(file_path, content, sha):
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{file_path}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
         "Content-Type": "application/json"
     }
-    message = "Update schedule"
-    content = base64.b64encode(json.dumps(schedule).encode('utf-8')).decode('utf-8')
+    message = f"Update {file_path}"
+    encoded_content = base64.b64encode(json.dumps(content).encode('utf-8')).decode('utf-8')
     data = {
         "message": message,
-        "content": content,
+        "content": encoded_content,
         "sha": sha
     }
     response = requests.put(url, headers=headers, data=json.dumps(data))
     return response.status_code in (200, 201)
+
+# GitHub에서 스케줄 파일 로드
+def load_schedule():
+    return load_github_file(GITHUB_FILE_PATH)
+
+# GitHub에 스케줄 파일 저장
+def save_schedule(schedule, sha):
+    return save_github_file(GITHUB_FILE_PATH, schedule, sha)
 
 # 팀 설정 파일 로드
 def load_team_settings():
@@ -68,9 +70,16 @@ def save_team_settings(team):
     with open(TEAM_SETTINGS_FILE, "w") as f:
         json.dump({"team": team}, f)
 
-# 공휴일 정보 로드
-@cached(holiday_cache)
-def load_holidays(year):
+# GitHub에서 공휴일 정보 로드
+def load_holidays_data():
+    return load_github_file(HOLIDAY_FILE_PATH)
+
+# GitHub에 공휴일 정보 저장
+def save_holidays_data(holidays_data, sha):
+    return save_github_file(HOLIDAY_FILE_PATH, holidays_data, sha)
+
+# 공휴일 정보 갱신
+def update_holidays(year):
     url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey={HOLIDAY_API_KEY}&solYear={year}&numOfRows=100&_type=json"
     response = requests.get(url)
     holidays = []
@@ -96,14 +105,20 @@ def load_holidays(year):
     return holidays, holiday_info
 
 # 스케줄 데이터 초기 로드
-with ThreadPoolExecutor() as executor:
-    future_schedule = executor.submit(load_schedule)
-    schedule_data, sha = future_schedule.result()
+schedule_data, sha = load_schedule()
+
+# 공휴일 데이터 초기 로드
+holidays_data, holidays_sha = load_holidays_data()
 
 # 기본 스케줄 데이터 설정
 if not schedule_data:
     schedule_data = {}
     sha = None
+
+# 기본 공휴일 데이터 설정
+if not holidays_data:
+    holidays_data = {}
+    holidays_sha = None
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="교대근무 달력", layout="wide")
@@ -114,7 +129,7 @@ def get_current_year_month():
     return today.year, today.month
 
 # 세션 상태 초기화
-if "year" not in st.session_state:
+if "year" not in st.session_state or "month" not in st.session_state:
     st.session_state.year, st.session_state.month = get_current_year_month()
 
 if "expander_open" not in st.session_state:
@@ -128,9 +143,8 @@ year = st.session_state.year
 month = st.session_state.month
 
 # 공휴일 로드
-with ThreadPoolExecutor() as executor:
-    future_holidays = executor.submit(load_holidays, year)
-    holidays, holiday_info = future_holidays.result()
+holidays = holidays_data.get(str(year), [])
+holiday_info = holidays_data.get("info", {})
 
 # 달력 생성 함수
 def generate_calendar(year, month):
@@ -140,7 +154,7 @@ def generate_calendar(year, month):
 # 근무 조 설정
 shift_colors = {
     "주": "background-color: yellow",
-    "야": "background-color: lightgray",
+    "야": "background-color: gray",
     "비": "background-color: white",
     "올": "background-color: lightgreen"
 }
@@ -181,7 +195,7 @@ if st.button("이전 월"):
         st.session_state.month = selected_month
         year = selected_year
         month = selected_month
-        st.rerun()
+        st.experimental_rerun()
 
 month_days = generate_calendar(year, month)
 
@@ -250,7 +264,7 @@ if st.button("다음 월"):
         st.session_state.month = selected_month
         year = selected_year
         month = selected_month
-        st.rerun()
+        st.experimental_rerun()
 
 # 공휴일 설명
 # 이어지는 공휴일 그룹화 함수
@@ -285,7 +299,8 @@ for group in grouped_holidays:
     if len(group) > 1:
         start_date = datetime.strptime(group[0], "%Y-%m-%d").day
         end_date = datetime.strptime(group[-1], "%Y-%m-%d").day
-        holiday_descriptions.append(f"{start_date}일 ~ {end_date}일: {holiday_info[group[0]]}")
+        for date in group:
+            holiday_descriptions.append(f"{datetime.strptime(date, '%Y-%m-%d').day}일: {holiday_info[date]}")
     else:
         single_date = datetime.strptime(group[0], "%Y-%m-%d").day
         holiday_descriptions.append(f"{single_date}일: {holiday_info[group[0]]}")
@@ -304,7 +319,7 @@ with st.sidebar.form(key='team_settings_form'):
             st.session_state["team"] = team
             save_team_settings(team)  # 선택한 팀을 파일에 저장
             st.sidebar.success("조가 저장되었습니다.")
-            st.rerun()  # 페이지 갱신
+            st.experimental_rerun()  # 페이지 갱신
         else:
             st.sidebar.error("암호가 일치하지 않습니다.")
 
@@ -329,7 +344,7 @@ if st.session_state.expander_open:
                         st.success("스케줄이 저장되었습니다.")
                     else:
                         st.error("스케줄 저장에 실패했습니다.")
-                    st.rerun()  # 페이지 갱신
+                    st.experimental_rerun()  # 페이지 갱신
                 else:
                     st.error("암호가 일치하지 않습니다.")
 
@@ -360,4 +375,16 @@ if selected_year != year or selected_month != month:
     st.session_state.month = selected_month
     year = selected_year
     month = selected_month
-    st.rerun()
+    st.experimental_rerun()
+
+# 공휴일 정보 갱신
+st.sidebar.title("공휴일 정보 갱신")
+if st.sidebar.button("공휴일 정보 갱신"):
+    holidays, holiday_info = update_holidays(year)
+    holidays_data[str(year)] = holidays
+    holidays_data["info"] = holiday_info
+    if save_holidays_data(holidays_data, holidays_sha):
+        st.sidebar.success("공휴일 정보가 갱신되었습니다.")
+    else:
+        st.sidebar.error("공휴일 정보 갱신에 실패했습니다.")
+    st.experimental_rerun()
