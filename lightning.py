@@ -14,8 +14,11 @@ def get_lightning_data(api_key, start_time, end_time):
         "toTmFc": end_time.strftime("%Y%m%d%H%M"),
         "dataType": "JSON"
     }
+    st.write(f"API 요청 URL: {url}")
+    st.write(f"요청 파라미터: {params}")
+    
     response = requests.get(url, params=params)
-
+    
     if response.status_code != 200:
         st.error(f"API 요청 실패: {response.status_code}")
         return pd.DataFrame()  # 빈 데이터프레임 반환
@@ -24,6 +27,7 @@ def get_lightning_data(api_key, start_time, end_time):
         data = response.json()
     except requests.exceptions.JSONDecodeError:
         st.error("응답을 JSON으로 디코딩할 수 없습니다.")
+        st.write(response.text)  # 응답 내용 출력
         return pd.DataFrame()  # 빈 데이터프레임 반환
 
     if "response" in data and "body" in data["response"] and "items" in data["response"]["body"]:
@@ -31,14 +35,16 @@ def get_lightning_data(api_key, start_time, end_time):
         return pd.DataFrame(items)
     else:
         st.error("API 응답 형식이 올바르지 않습니다.")
+        st.write(data)  # 응답 데이터 출력
         return pd.DataFrame()  # 빈 데이터프레임 반환
 
-# 영종도 테두리 좌표
+# 영종도 테두리 좌표 수정 (대략적인 좌표)
 yeongjongdo_border = [
-    [37.545, 126.490],
-    [37.552, 126.490],
-    [37.552, 126.605],
-    [37.545, 126.605]
+    [37.510948, 126.492195],
+    [37.511948, 126.622195],
+    [37.611948, 126.622195],
+    [37.611948, 126.492195],
+    [37.510948, 126.492195]
 ]
 
 # Streamlit 앱 설정
@@ -64,7 +70,7 @@ else:
 lightning_data = get_lightning_data(api_key, start_time, end_time)
 
 # 지도 생성
-m = folium.Map(location=[37.548, 126.548], zoom_start=12)
+m = folium.Map(location=[37.55, 126.56], zoom_start=12)
 
 # 영종도 테두리 추가
 folium.PolyLine(yeongjongdo_border, color="blue", weight=2.5, opacity=1).add_to(m)
