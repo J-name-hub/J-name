@@ -28,6 +28,7 @@ def get_lightning_data(api_key, start_time, end_time):
         response = requests.get(url)
         if response.status_code == 200:
             data = response.json()
+            st.write(data)  # API로부터 받아온 데이터를 출력
             if 'response' in data and 'body' in data['response'] and 'items' in data['response']['body']:
                 data_list.extend(data['response']['body']['items']['item'])
         else:
@@ -68,10 +69,13 @@ folium.Polygon(locations=yeongjongdo_boundary, color='blue', fill=True, fill_opa
 # Add lightning data to the map
 if data:
     for item in data:
-        folium.Marker(
-            location=[item['lat'], item['lon']],
-            popup=f"Time: {item['date']}, Strength: {item['str']}",
-            icon=folium.Icon(color='red', icon='flash')
-        ).add_to(m)
+        if 'lat' in item and 'lon' in item:
+            folium.Marker(
+                location=[item['lat'], item['lon']],
+                popup=f"Time: {item['date']}, Strength: {item['str']}",
+                icon=folium.Icon(color='red', icon='flash')
+            ).add_to(m)
+        else:
+            st.warning("Missing latitude or longitude in data item")
 
 folium_static(m)
