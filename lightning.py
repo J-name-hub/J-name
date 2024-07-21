@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 # Streamlit secrets
 api_key = st.secrets["api"]["API_KEY"]
 
-# 영종도의 경도 및 위도 경계 정의 (약 15개의 포인트)
+# 영종도의 경도 및 위도 경계 정의 (50배 확장)
 yeongjongdo_boundary = [
     (37.479623, 126.411084), (37.476497, 126.415194), (37.471844, 126.417712),
     (37.465057, 126.419517), (37.460584, 126.426742), (37.459110, 126.433967),
@@ -17,6 +17,16 @@ yeongjongdo_boundary = [
     (37.442660, 126.436349), (37.439993, 126.429781), (37.439318, 126.423971),
     (37.441231, 126.417712), (37.445185, 126.413259), (37.450054, 126.411273),
     (37.455210, 126.409457), (37.459965, 126.409457), (37.464160, 126.410707)
+]
+
+# 중심 좌표 계산
+center_lat = sum([point[0] for point in yeongjongdo_boundary]) / len(yeongjongdo_boundary)
+center_lon = sum([point[1] for point in yeongjongdo_boundary]) / len(yeongjongdo_boundary)
+
+# 50배 확장된 범위 계산
+expanded_boundary = [
+    (center_lat + 50 * (point[0] - center_lat), center_lon + 50 * (point[1] - center_lon))
+    for point in yeongjongdo_boundary
 ]
 
 def fetch_data(url):
@@ -68,10 +78,10 @@ else:
 data = get_lightning_data(api_key, start_time, end_time)
 
 # Folium Map
-m = folium.Map(location=[37.471844, 126.417712], zoom_start=13)
+m = folium.Map(location=[center_lat, center_lon], zoom_start=10)  # 중심 좌표와 줌 레벨 수정
 
-# Boundary of Yeongjongdo
-folium.Polygon(locations=yeongjongdo_boundary, color='blue', fill=True, fill_opacity=0.2).add_to(m)
+# Boundary of expanded Yeongjongdo
+folium.Polygon(locations=expanded_boundary, color='blue', fill=True, fill_opacity=0.2).add_to(m)
 
 # Add lightning data to the map
 if data:
