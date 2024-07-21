@@ -114,8 +114,8 @@ def get_current_year_month():
     return today.year, today.month
 
 # 세션 상태 초기화
-if "year" not in st.session_state or "month" not in st.session_state:
-    st.session_state.year, st.session_state.month
+if "year" not in st.session_state:
+    st.session_state.year, st.session_state.month = get_current_year_month()
 
 if "expander_open" not in st.session_state:
     st.session_state.expander_open = False
