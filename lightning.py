@@ -38,13 +38,13 @@ def get_lightning_data(api_key, start_time, end_time):
         st.write(data)  # 응답 데이터 출력
         return pd.DataFrame()  # 빈 데이터프레임 반환
 
-# 영종도 테두리 좌표 수정 (대략적인 좌표)
+# 영종도 대략적인 해안선 좌표
 yeongjongdo_border = [
-    [37.510948, 126.492195],
-    [37.511948, 126.622195],
-    [37.611948, 126.622195],
-    [37.611948, 126.492195],
-    [37.510948, 126.492195]
+    [37.514, 126.493],
+    [37.553, 126.493],
+    [37.553, 126.635],
+    [37.514, 126.635],
+    [37.514, 126.493]
 ]
 
 # Streamlit 앱 설정
@@ -57,8 +57,8 @@ api_key = st.secrets["api"]["API_KEY"]
 time_option = st.selectbox("시간 선택", ["현재부터 -10시간", "현재부터 -24시간", "일자별 조회"])
 if time_option == "일자별 조회":
     selected_date = st.date_input("날짜 선택", datetime.now())
-    start_time = datetime(selected_date.year, selected_date.month, selected_date.day)
-    end_time = start_time + timedelta(days=1)
+    start_time = datetime(selected_date.year, selected_date.month, selected_date.day, selected_date.hour, (selected_date.minute // 10) * 10)
+    end_time = start_time + timedelta(minutes=10)
 else:
     if time_option == "현재부터 -10시간":
         start_time = datetime.now() - timedelta(hours=10)
@@ -66,11 +66,15 @@ else:
         start_time = datetime.now() - timedelta(hours=24)
     end_time = datetime.now()
 
+# 10분 단위로 시간 조정
+start_time = start_time.replace(minute=(start_time.minute // 10) * 10, second=0, microsecond=0)
+end_time = end_time.replace(minute=(end_time.minute // 10) * 10, second=0, microsecond=0)
+
 # 낙뢰 데이터 가져오기
 lightning_data = get_lightning_data(api_key, start_time, end_time)
 
 # 지도 생성
-m = folium.Map(location=[37.55, 126.56], zoom_start=12)
+m = folium.Map(location=[37.533, 126.564], zoom_start=12)
 
 # 영종도 테두리 추가
 folium.PolyLine(yeongjongdo_border, color="blue", weight=2.5, opacity=1).add_to(m)
