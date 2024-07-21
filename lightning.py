@@ -7,16 +7,17 @@ from datetime import datetime, timedelta
 
 # 기상청 낙뢰 관측 API에서 데이터를 가져오는 함수
 def get_lightning_data(api_key, start_time, end_time):
-    base_url = "http://apis.data.go.kr/1360000/LgtInfoService/getLightning"
+    base_url = "http://apis.data.go.kr/1360000/LgtInfoService/getLgt"
     all_data = []
 
     while start_time < end_time:
         next_time = start_time + timedelta(minutes=10)
         params = {
             "serviceKey": api_key,
-            "fromTmFc": start_time.strftime("%Y%m%d%H%M"),
-            "toTmFc": next_time.strftime("%Y%m%d%H%M"),
-            "dataType": "JSON"
+            "numOfRows": 100,
+            "pageNo": 1,
+            "lgtType": 1,
+            "dateTime": start_time.strftime("%Y%m%d%H%M")
         }
         response = requests.get(base_url, params=params)
 
@@ -48,13 +49,13 @@ def get_lightning_data(api_key, start_time, end_time):
         st.warning("선택한 시간 범위 내에 낙뢰 데이터가 없습니다.")
         return pd.DataFrame()  # 빈 데이터프레임 반환
 
-# 영종도 대략적인 해안선 좌표
+# 영종도 대략적인 해안선 좌표 (2배 넓게)
 yeongjongdo_border = [
-    [37.514, 126.493],
-    [37.553, 126.493],
-    [37.553, 126.635],
-    [37.514, 126.635],
-    [37.514, 126.493]
+    [37.494, 126.473],
+    [37.573, 126.473],
+    [37.573, 126.655],
+    [37.494, 126.655],
+    [37.494, 126.473]
 ]
 
 # Streamlit 앱 설정
