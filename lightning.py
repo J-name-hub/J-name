@@ -32,7 +32,7 @@ def get_lightning_data(api_key, start_time, end_time):
 
         try:
             data = response.json()
-        except requests.exceptions.JSONDecodeError:
+        except ValueError:
             st.error("응답을 JSON으로 디코딩할 수 없습니다.")
             st.write(response.text)  # 응답 내용 출력
             return pd.DataFrame()  # 빈 데이터프레임 반환
