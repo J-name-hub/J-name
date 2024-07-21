@@ -7,16 +7,31 @@ from datetime import datetime, timedelta
 
 # 기상청 낙뢰 관측 API에서 데이터를 가져오는 함수
 def get_lightning_data(api_key, start_time, end_time):
-    url = "http://apis.data.go.kr/1360000/LgtInfoService"
+    url = "http://apis.data.go.kr/1360000/LgtInfoService/getLightning"
     params = {
         "serviceKey": api_key,
-        "startDt": start_time.strftime("%Y%m%d%H%M"),
-        "endDt": end_time.strftime("%Y%m%d%H%M"),
-        "type": "json"
+        "fromTmFc": start_time.strftime("%Y%m%d%H%M"),
+        "toTmFc": end_time.strftime("%Y%m%d%H%M"),
+        "dataType": "JSON"
     }
     response = requests.get(url, params=params)
-    data = response.json()
-    return pd.DataFrame(data['response']['body']['items'])
+
+    if response.status_code != 200:
+        st.error(f"API 요청 실패: {response.status_code}")
+        return pd.DataFrame()  # 빈 데이터프레임 반환
+
+    try:
+        data = response.json()
+    except requests.exceptions.JSONDecodeError:
+        st.error("응답을 JSON으로 디코딩할 수 없습니다.")
+        return pd.DataFrame()  # 빈 데이터프레임 반환
+
+    if "response" in data and "body" in data["response"] and "items" in data["response"]["body"]:
+        items = data["response"]["body"]["items"]
+        return pd.DataFrame(items)
+    else:
+        st.error("API 응답 형식이 올바르지 않습니다.")
+        return pd.DataFrame()  # 빈 데이터프레임 반환
 
 # 영종도 테두리 좌표
 yeongjongdo_border = [
@@ -55,8 +70,11 @@ m = folium.Map(location=[37.548, 126.548], zoom_start=12)
 folium.PolyLine(yeongjongdo_border, color="blue", weight=2.5, opacity=1).add_to(m)
 
 # 낙뢰 데이터 지도에 추가
-for _, row in lightning_data.iterrows():
-    folium.Marker([row['latitude'], row['longitude']], popup=f"시간: {row['datetime']}\n강도: {row['intensity']}").add_to(m)
+if not lightning_data.empty:
+    for _, row in lightning_data.iterrows():
+        folium.Marker([row['latitude'], row['longitude']], popup=f"시간: {row['datetime']}\n강도: {row['intensity']}").add_to(m)
+else:
+    st.warning("선택한 시간 범위 내에 낙뢰 데이터가 없습니다.")
 
 # 지도 출력
 st_folium(m, width=700, height=500)
