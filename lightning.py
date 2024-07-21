@@ -4,6 +4,7 @@ import folium
 from datetime import datetime, timedelta
 import json
 from streamlit_folium import folium_static
+from concurrent.futures import ThreadPoolExecutor
 
 # Streamlit secrets
 api_key = st.secrets["api"]["API_KEY"]
@@ -18,23 +19,29 @@ yeongjongdo_boundary = [
     (37.455210, 126.409457), (37.459965, 126.409457), (37.464160, 126.410707)
 ]
 
+def fetch_data(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        if 'response' in data and 'body' in data['response'] and 'items' in data['response']['body']:
+            return data['response']['body']['items']['item']
+    return []
+
 def get_lightning_data(api_key, start_time, end_time):
-    data_list = []
+    urls = []
     current_time = start_time
 
     while current_time <= end_time:
         formatted_time = current_time.strftime('%Y%m%d%H%M')
         url = f"http://apis.data.go.kr/1360000/LgtInfoService/getLgt?serviceKey={api_key}&numOfRows=100&pageNo=1&lgtType=1&dateTime={formatted_time}&dataType=JSON"
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json()
-            st.write(data)  # API로부터 받아온 데이터를 출력
-            if 'response' in data and 'body' in data['response'] and 'items' in data['response']['body']:
-                data_list.extend(data['response']['body']['items']['item'])
-        else:
-            st.error("Failed to fetch data from API")
-            return None
+        urls.append(url)
         current_time += timedelta(minutes=10)
+
+    data_list = []
+    with ThreadPoolExecutor() as executor:
+        results = executor.map(fetch_data, urls)
+        for result in results:
+            data_list.extend(result)
 
     return data_list
 
