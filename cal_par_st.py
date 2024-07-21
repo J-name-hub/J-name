@@ -29,7 +29,10 @@ def load_github_file(file_path):
     if response.status_code == 200:
         content = response.json()
         file_content = base64.b64decode(content['content']).decode('utf-8')
-        return json.loads(file_content), content['sha']
+        try:
+            return json.loads(file_content), content['sha']
+        except json.JSONDecodeError:
+            return {}, content['sha']
     else:
         return {}, None
 
