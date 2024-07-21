@@ -18,8 +18,14 @@ def get_lightning_data(api_key, start_time, end_time):
             "toTmFc": next_time.strftime("%Y%m%d%H%M"),
             "dataType": "JSON"
         }
+        st.write(f"API 요청 URL: {url}")
+        st.write(f"요청 파라미터: {params}")
+        
         response = requests.get(url, params=params)
         
+        st.write(f"응답 상태 코드: {response.status_code}")
+        st.write(f"응답 내용: {response.text}")
+
         if response.status_code != 200:
             st.error(f"API 요청 실패: {response.status_code}")
             return pd.DataFrame()  # 빈 데이터프레임 반환
@@ -81,6 +87,10 @@ end_time = end_time.replace(minute=(end_time.minute // 10) * 10, second=0, micro
 
 # 낙뢰 데이터 가져오기
 lightning_data = get_lightning_data(api_key, start_time, end_time)
+
+# 가져온 데이터 로그 출력
+st.write("가져온 낙뢰 데이터:")
+st.write(lightning_data)
 
 # 지도 생성
 m = folium.Map(location=[37.533, 126.564], zoom_start=12)
