@@ -13,7 +13,6 @@ import os
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
 GITHUB_FILE_PATH = st.secrets["github"]["file_path"]
-HOLIDAY_FILE_PATH = st.secrets["github"]["holiday_file_path"]
 
 # 대한민국 공휴일 API 키
 HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
@@ -21,45 +20,34 @@ HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
 # 설정 파일 경로
 TEAM_SETTINGS_FILE = "team_settings.json"
 
-# GitHub에서 파일 로드
-def load_github_file(file_path):
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{file_path}"
+# GitHub에서 스케줄 파일 로드
+def load_schedule():
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         content = response.json()
         file_content = base64.b64decode(content['content']).decode('utf-8')
-        try:
-            return json.loads(file_content), content['sha']
-        except json.JSONDecodeError:
-            return {}, content['sha']
+        return json.loads(file_content), content['sha']
     else:
         return {}, None
 
-# GitHub에 파일 저장
-def save_github_file(file_path, content, sha):
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{file_path}"
+# GitHub에 스케줄 파일 저장
+def save_schedule(schedule, sha):
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
         "Content-Type": "application/json"
     }
-    message = f"Update {file_path}"
-    encoded_content = base64.b64encode(json.dumps(content).encode('utf-8')).decode('utf-8')
+    message = "Update schedule"
+    content = base64.b64encode(json.dumps(schedule).encode('utf-8')).decode('utf-8')
     data = {
         "message": message,
-        "content": encoded_content,
+        "content": content,
         "sha": sha
     }
     response = requests.put(url, headers=headers, data=json.dumps(data))
     return response.status_code in (200, 201)
-
-# GitHub에서 스케줄 파일 로드
-def load_schedule():
-    return load_github_file(GITHUB_FILE_PATH)
-
-# GitHub에 스케줄 파일 저장
-def save_schedule(schedule, sha):
-    return save_github_file(GITHUB_FILE_PATH, schedule, sha)
 
 # 팀 설정 파일 로드
 def load_team_settings():
@@ -73,16 +61,8 @@ def save_team_settings(team):
     with open(TEAM_SETTINGS_FILE, "w") as f:
         json.dump({"team": team}, f)
 
-# GitHub에서 공휴일 정보 로드
-def load_holidays_data():
-    return load_github_file(HOLIDAY_FILE_PATH)
-
-# GitHub에 공휴일 정보 저장
-def save_holidays_data(holidays_data, sha):
-    return save_github_file(HOLIDAY_FILE_PATH, holidays_data, sha)
-
-# 공휴일 정보 갱신
-def update_holidays(year):
+# 공휴일 정보 로드
+def load_holidays(year):
     url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey={HOLIDAY_API_KEY}&solYear={year}&numOfRows=100&_type=json"
     response = requests.get(url)
     holidays = []
@@ -110,18 +90,10 @@ def update_holidays(year):
 # 스케줄 데이터 초기 로드
 schedule_data, sha = load_schedule()
 
-# 공휴일 데이터 초기 로드
-holidays_data, holidays_sha = load_holidays_data()
-
 # 기본 스케줄 데이터 설정
 if not schedule_data:
     schedule_data = {}
     sha = None
-
-# 기본 공휴일 데이터 설정
-if not holidays_data:
-    holidays_data = {}
-    holidays_sha = None
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="교대근무 달력", layout="wide")
@@ -146,8 +118,7 @@ year = st.session_state.year
 month = st.session_state.month
 
 # 공휴일 로드
-holidays = holidays_data.get(str(year), [])
-holiday_info = holidays_data.get("info", {})
+holidays, holiday_info = load_holidays(year)
 
 # 달력 생성 함수
 def generate_calendar(year, month):
@@ -378,16 +349,4 @@ if selected_year != year or selected_month != month:
     st.session_state.month = selected_month
     year = selected_year
     month = selected_month
-    st.experimental_rerun()
-
-# 공휴일 정보 갱신
-st.sidebar.title("공휴일 정보 갱신")
-if st.sidebar.button("공휴일 정보 갱신"):
-    holidays, holiday_info = update_holidays(year)
-    holidays_data[str(year)] = holidays
-    holidays_data["info"] = holiday_info
-    if save_holidays_data(holidays_data, holidays_sha):
-        st.sidebar.success("공휴일 정보가 갱신되었습니다.")
-    else:
-        st.sidebar.error("공휴일 정보 갱신에 실패했습니다.")
     st.experimental_rerun()
