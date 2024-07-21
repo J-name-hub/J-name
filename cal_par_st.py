@@ -8,6 +8,8 @@ import pytz
 from dateutil.relativedelta import relativedelta
 import base64
 import os
+from cachetools import cached, TTLCache
+from concurrent.futures import ThreadPoolExecutor
 
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
@@ -20,7 +22,12 @@ HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
 # 설정 파일 경로
 TEAM_SETTINGS_FILE = "team_settings.json"
 
+# 캐시 설정
+schedule_cache = TTLCache(maxsize=1, ttl=3600)  # 1시간 TTL
+holiday_cache = TTLCache(maxsize=10, ttl=86400)  # 24시간 TTL
+
 # GitHub에서 스케줄 파일 로드
+@cached(schedule_cache)
 def load_schedule():
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
@@ -62,6 +69,7 @@ def save_team_settings(team):
         json.dump({"team": team}, f)
 
 # 공휴일 정보 로드
+@cached(holiday_cache)
 def load_holidays(year):
     url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey={HOLIDAY_API_KEY}&solYear={year}&numOfRows=100&_type=json"
     response = requests.get(url)
@@ -88,7 +96,9 @@ def load_holidays(year):
     return holidays, holiday_info
 
 # 스케줄 데이터 초기 로드
-schedule_data, sha = load_schedule()
+with ThreadPoolExecutor() as executor:
+    future_schedule = executor.submit(load_schedule)
+    schedule_data, sha = future_schedule.result()
 
 # 기본 스케줄 데이터 설정
 if not schedule_data:
@@ -105,7 +115,7 @@ def get_current_year_month():
 
 # 세션 상태 초기화
 if "year" not in st.session_state or "month" not in st.session_state:
-    st.session_state.year, st.session_state.month = get_current_year_month()
+    st.session_state.year, st.session_state.month
 
 if "expander_open" not in st.session_state:
     st.session_state.expander_open = False
@@ -118,7 +128,9 @@ year = st.session_state.year
 month = st.session_state.month
 
 # 공휴일 로드
-holidays, holiday_info = load_holidays(year)
+with ThreadPoolExecutor() as executor:
+    future_holidays = executor.submit(load_holidays, year)
+    holidays, holiday_info = future_holidays.result()
 
 # 달력 생성 함수
 def generate_calendar(year, month):
