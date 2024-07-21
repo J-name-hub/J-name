@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 # 기상청 낙뢰 관측 API에서 데이터를 가져오는 함수
 def get_lightning_data(api_key, start_time, end_time):
-    url = "YOUR_KMA_API_ENDPOINT"
+    url = "http://apis.data.go.kr/1360000/LgtInfoService"
     params = {
         "serviceKey": api_key,
         "startDt": start_time.strftime("%Y%m%d%H%M"),
