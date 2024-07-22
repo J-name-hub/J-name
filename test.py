@@ -23,10 +23,10 @@ YEONGJONG_CENTER = (37.4917, 126.4833)  # 영종도 중심 좌표
 
 # 영종도의 경계 좌표 (예시)
 YEONGJONG_BOUNDARY = [
-    (40.0000, 125.0000),  # 북서쪽 꼭짓점
-    (40.0000, 130.0000),  # 북동쪽 꼭짓점
-    (32.0000, 130.0000),  # 남동쪽 꼭짓점
-    (32.0000, 125.0000)   # 남서쪽 꼭짓점
+    (37.5452, 126.3612),  # 북서쪽 꼭짓점
+    (37.5452, 126.5802),  # 북동쪽 꼭짓점
+    (37.4122, 126.5802),  # 남동쪽 꼭짓점
+    (37.4122, 126.3612)   # 남서쪽 꼭짓점
 ]
 
 # 한국 시간대 설정
@@ -143,7 +143,7 @@ if map_range in ['영종도 내', '영종도 테두리에서 반경 2km 이내']
                 lat = float(item.find('wgs84Lat').text)
                 lon = float(item.find('wgs84Lon').text)
                 if map_range == '영종도 내':
-                    if is_within_yeongjong(lat, lon, YEONGJONG_BOUNDARY):
+                    if 37.4667 <= lat <= 37.5167 and 126.4333 <= lon <= 126.5333:
                         count += 1
                 elif map_range == '영종도 테두리에서 반경 2km 이내':
                     point = Point(lon, lat)
@@ -203,7 +203,7 @@ if filtered_data:
 
         # 영종도 필터링
         if map_range == '영종도 내':
-            if not is_within_yeongjong(lat, lon, YEONGJONG_BOUNDARY):
+            if not (37.4122 <= lat <= 37.5452 and 126.3612 <= lon <= 126.5802):
                 continue
         elif map_range == '영종도 테두리에서 반경 2km 이내':
             point = Point(lon, lat)
