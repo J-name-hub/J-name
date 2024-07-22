@@ -67,6 +67,7 @@ def get_lightning_data(datetime_str):
             'serviceKey': API_KEY,
             'numOfRows': '1000',
             'pageNo': '1',
+            'lgtType': '1',
             'dateTime': datetime_str
         }
         response = requests.get(API_URL, params=params)
