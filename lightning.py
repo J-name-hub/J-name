@@ -10,10 +10,7 @@ import altair as alt
 import pytz
 from concurrent.futures import ThreadPoolExecutor
 from shapely.geometry import Polygon, Point
-from streamlit_autorefresh import st_autorefresh
-
-# 매시간 10분마다 새로고침 (600초 = 10분)
-st_autorefresh(interval=600 * 1000)
+import time
 
 # Streamlit secrets에서 API 키 가져오기
 API_KEY = st.secrets["api"]["API_KEY"]
@@ -76,6 +73,14 @@ def get_all_lightning_data(date):
             all_data.extend(future.result())
     
     return all_data
+
+# 페이지 주기적 새로고침
+if 'last_refreshed' not in st.session_state:
+    st.session_state.last_refreshed = time.time()
+
+if time.time() - st.session_state.last_refreshed > 600:
+    st.session_state.last_refreshed = time.time()
+    st.experimental_rerun()
 
 # 날짜 입력 받기 (한국 시간 기준)
 selected_date = st.date_input("날짜를 선택하세요", datetime.now(korea_tz).date())
