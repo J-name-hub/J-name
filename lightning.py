@@ -95,7 +95,7 @@ def get_all_lightning_data(date):
     return all_data
 
 # 날짜 입력 받기 (한국 시간 기준)
-selected_date = st.date_input("날짜를 선택하세요", datetime.now(korea_tz).date() - timedelta(days=1))
+selected_date = st.date_input("날짜를 선택하세요", datetime.now(korea_tz).date())
 
 # 데이터 로딩
 data_load_state = st.text('데이터를 불러오는 중...')
