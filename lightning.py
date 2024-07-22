@@ -8,6 +8,8 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 import altair as alt
 import pytz
+from concurrent.futures import ThreadPoolExecutor
+from shapely.geometry import Polygon, Point
 
 # Streamlit secrets에서 API 키 가져오기
 API_KEY = st.secrets["api"]["API_KEY"]
@@ -16,22 +18,23 @@ API_KEY = st.secrets["api"]["API_KEY"]
 API_URL = "http://apis.data.go.kr/1360000/LgtInfoService/getLgt"
 
 # 좌표 설정
-KOREA_CENTER = (36.5, 127.5)
 YEONGJONG_CENTER = (37.4917, 126.4833)  # 영종도 중심 좌표
 
 # 영종도의 경계 좌표 (예시)
 YEONGJONG_BOUNDARY = [
-    (37.5252, 126.3612),  # 북서쪽 꼭짓점
-    (37.5252, 126.5802),  # 북동쪽 꼭짓점
+    (37.5552, 126.3612),  # 북서쪽 꼭짓점
+    (37.5552, 126.5802),  # 북동쪽 꼭짓점
     (37.4122, 126.5802),  # 남동쪽 꼭짓점
     (37.4122, 126.3612)   # 남서쪽 꼭짓점
 ]
+
+# 영종도 경계를 Polygon 객체로 변환
+yeongjong_polygon = Polygon(YEONGJONG_BOUNDARY)
 
 # 한국 시간대 설정
 korea_tz = pytz.timezone('Asia/Seoul')
 
 # 데이터 가져오기 함수
-@st.cache_data
 def get_lightning_data(datetime_str):
     try:
         params = {
@@ -47,26 +50,27 @@ def get_lightning_data(datetime_str):
             items = root.findall('.//item')
             return items
         else:
-            st.error(f"API 요청 실패: 상태 코드 {response.status_code}")
-            return None
-    except requests.exceptions.RequestException as e:
-        st.error(f"API 요청 중 오류 발생: {str(e)}")
-        return None
+            return []
+    except requests.exceptions.RequestException:
+        return []
 
-# 특정 날짜의 모든 낙뢰 데이터를 가져오는 함수
-@st.cache_data
+# 특정 날짜의 모든 낙뢰 데이터를 가져오는 함수 (병렬 처리)
 def get_all_lightning_data(date):
     all_data = []
     now = datetime.now(korea_tz)
-    for hour in range(24):
-        for minute in range(0, 60, 10):  # 10분 단위로 반복
-            if date == now.date() and (hour > now.hour or (hour == now.hour and minute > now.minute)):
-                break
-            time_str = f"{hour:02d}{minute:02d}"
-            datetime_str = date.strftime("%Y%m%d") + time_str
-            data = get_lightning_data(datetime_str)
-            if data:
-                all_data.extend(data)
+    
+    def fetch_data(hour, minute):
+        if date == now.date() and (hour > now.hour or (hour == now.hour and minute > now.minute)):
+            return []
+        time_str = f"{hour:02d}{minute:02d}"
+        datetime_str = date.strftime("%Y%m%d") + time_str
+        return get_lightning_data(datetime_str)
+    
+    with ThreadPoolExecutor() as executor:
+        futures = [executor.submit(fetch_data, hour, minute) for hour in range(24) for minute in range(0, 60, 10)]
+        for future in futures:
+            all_data.extend(future.result())
+    
     return all_data
 
 # 날짜 입력 받기 (한국 시간 기준)
@@ -105,6 +109,8 @@ else:
 
 # 영종도 관련 시간별 낙뢰 횟수 계산
 hourly_data = {}
+total_lightning = 0
+
 for hour in range(24):
     count = 0
     for item in all_data:
@@ -112,9 +118,10 @@ for hour in range(24):
         if item_time.hour == hour:
             lat = float(item.find('wgs84Lat').text)
             lon = float(item.find('wgs84Lon').text)
-            if 37.4667 <= lat <= 37.5167 and 126.4333 <= lon <= 126.5333:
+            if yeongjong_polygon.contains(Point(lon, lat)):
                 count += 1
     hourly_data[hour] = count
+    total_lightning += count
 
 if sum(hourly_data.values()) > 0:
     # 시간별 낙뢰 횟수 차트 생성
@@ -128,8 +135,7 @@ if sum(hourly_data.values()) > 0:
     st.altair_chart(chart, use_container_width=True)
 
 # 총 낙뢰 횟수 표시
-if sum(hourly_data.values()) > 0:
-    total_lightning = sum(hourly_data.values())
+if total_lightning > 0:
     st.write(f"영종도 총 낙뢰 횟수: {total_lightning}")
 
 if filtered_data:
@@ -141,9 +147,9 @@ if filtered_data:
     # 영종도 범위 표시
     folium.Polygon(
         locations=YEONGJONG_BOUNDARY,
-        color="red",
+        color="blue",
         fill=True,
-        fillColor="red",
+        fillColor="blue",
         fillOpacity=0.1
     ).add_to(m)
 
