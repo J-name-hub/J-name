@@ -67,7 +67,7 @@ def get_lightning_data(datetime_str):
             'serviceKey': API_KEY,
             'numOfRows': '1000',
             'pageNo': '1',
-            'lgtType': '2',
+            'lgtType': '2',  # 모든 낙뢰 타입을 가져오기 위해 이 줄을 삭제하거나 주석 처리하세요.
             'dateTime': datetime_str
         }
         response = requests.get(API_URL, params=params)
