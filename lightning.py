@@ -10,6 +10,10 @@ import altair as alt
 import pytz
 from concurrent.futures import ThreadPoolExecutor
 from shapely.geometry import Polygon, Point
+from streamlit_autorefresh import st_autorefresh
+
+# 매시간 10분마다 새로고침 (600초 = 10분)
+st_autorefresh(interval=600 * 1000)
 
 # Streamlit secrets에서 API 키 가져오기
 API_KEY = st.secrets["api"]["API_KEY"]
@@ -22,8 +26,8 @@ YEONGJONG_CENTER = (37.4917, 126.4833)  # 영종도 중심 좌표
 
 # 영종도의 경계 좌표 (예시)
 YEONGJONG_BOUNDARY = [
-    (37.5552, 126.3612),  # 북서쪽 꼭짓점
-    (37.5552, 126.5802),  # 북동쪽 꼭짓점
+    (37.5252, 126.3612),  # 북서쪽 꼭짓점
+    (37.5252, 126.5802),  # 북동쪽 꼭짓점
     (37.4122, 126.5802),  # 남동쪽 꼭짓점
     (37.4122, 126.3612)   # 남서쪽 꼭짓점
 ]
@@ -147,9 +151,9 @@ if filtered_data:
     # 영종도 범위 표시
     folium.Polygon(
         locations=YEONGJONG_BOUNDARY,
-        color="blue",
+        color="red",
         fill=True,
-        fillColor="blue",
+        fillColor="red",
         fillOpacity=0.1
     ).add_to(m)
 
