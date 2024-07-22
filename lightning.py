@@ -74,14 +74,6 @@ def get_all_lightning_data(date):
     
     return all_data
 
-# 페이지 주기적 새로고침
-if 'last_refreshed' not in st.session_state:
-    st.session_state.last_refreshed = time.time()
-
-if time.time() - st.session_state.last_refreshed > 600:
-    st.session_state.last_refreshed = time.time()
-    st.experimental_rerun()
-
 # 날짜 입력 받기 (한국 시간 기준)
 selected_date = st.date_input("날짜를 선택하세요", datetime.now(korea_tz).date())
 
