@@ -21,6 +21,7 @@ API_URL = "http://apis.data.go.kr/1360000/LgtInfoService/getLgt"
 KOREA_CENTER = (36.5, 127.5)
 YEONGJONG_CENTER = (37.4917, 126.4833)  # 영종도 중심 좌표
 
+# 영종도의 경계 좌표 (예시)
 YEONGJONG_BOUNDARY = [
     (40.0000, 125.0000),  # 북서쪽 꼭짓점
     (40.0000, 130.0000),  # 북동쪽 꼭짓점
