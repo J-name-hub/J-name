@@ -24,10 +24,10 @@ YEONGJONG_CENTER = (37.4917, 126.4833)  # 영종도 중심 좌표
 
 # 영종도의 경계 좌표 (예시)
 YEONGJONG_BOUNDARY = [
-    (40.0000, 125.0000),  # 북서쪽 꼭짓점
-    (40.0000, 130.0000),  # 북동쪽 꼭짓점
-    (32.0000, 130.0000),  # 남동쪽 꼭짓점
-    (32.0000, 125.0000)   # 남서쪽 꼭짓점
+    (37.511, 126.424),  # 북서쪽 꼭짓점
+    (37.511, 126.542),  # 북동쪽 꼭짓점
+    (37.472, 126.542),  # 남동쪽 꼭짓점
+    (37.472, 126.424)   # 남서쪽 꼭짓점
 ]
 
 # 한국 시간대 설정
@@ -60,6 +60,30 @@ map_range = st.radio(
     ('대한민국 전체', '영종도 내', '영종도 테두리에서 반경 2km 이내')
 )
 
+# 데이터 가져오기 함수
+@st.cache_data
+def get_lightning_data(datetime_str):
+    try:
+        params = {
+            'serviceKey': API_KEY,
+            'numOfRows': '1000',
+            'pageNo': '1',
+            'lgtType': '1',
+            'dateTime': datetime_str
+        }
+        response = requests.get(API_URL, params=params)
+        if response.ok:
+            root = ET.fromstring(response.content)
+            items = root.findall('.//item')
+            return items
+        else:
+            st.error(f"API 요청 실패: 상태 코드 {response.status_code}")
+            return None
+    except requests.exceptions.RequestException as e:
+        st.error(f"API 요청 중 오류 발생: {str(e)}")
+        return None
+
+# 특정 날짜의 모든 낙뢰 데이터를 가져오는 함수
 @st.cache_data
 def get_all_lightning_data_parallel(date):
     all_data = []
@@ -75,22 +99,6 @@ def get_all_lightning_data_parallel(date):
                 futures.append(executor.submit(get_lightning_data, datetime_str))
         for future in concurrent.futures.as_completed(futures):
             data = future.result()
-            if data:
-                all_data.extend(data)
-    return all_data
-
-# 특정 날짜의 모든 낙뢰 데이터를 가져오는 함수
-@st.cache_data
-def get_all_lightning_data(date):
-    all_data = []
-    now = datetime.now(korea_tz)
-    for hour in range(24):
-        for minute in range(0, 60, 10):  # 10분 단위로 반복
-            if date == now.date() and (hour > now.hour or (hour == now.hour and minute > now.minute)):
-                break
-            time_str = f"{hour:02d}{minute:02d}"
-            datetime_str = date.strftime("%Y%m%d") + time_str
-            data = get_lightning_data(datetime_str)
             if data:
                 all_data.extend(data)
     return all_data
