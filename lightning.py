@@ -60,7 +60,7 @@ map_range = st.radio(
 )
 
 # 데이터 가져오기 함수
-@st.experimental_singleton
+@st.cache_data
 def get_lightning_data(datetime_str):
     try:
         params = {
@@ -83,7 +83,7 @@ def get_lightning_data(datetime_str):
         return None
 
 # 특정 날짜의 모든 낙뢰 데이터를 가져오는 함수
-@st.experimental_singleton
+@st.cache_data
 def get_all_lightning_data(date):
     all_data = []
     now = datetime.now(korea_tz)
