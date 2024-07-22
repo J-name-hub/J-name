@@ -67,7 +67,6 @@ def get_lightning_data(datetime_str):
             'serviceKey': API_KEY,
             'numOfRows': '1000',
             'pageNo': '1',
-            'lgtType': '2',  # 모든 낙뢰 타입을 가져오기 위해 이 줄을 삭제하거나 주석 처리하세요.
             'dateTime': datetime_str
         }
         response = requests.get(API_URL, params=params)
@@ -86,12 +85,16 @@ def get_lightning_data(datetime_str):
 @st.cache_data
 def get_all_lightning_data(date):
     all_data = []
+    now = datetime.now(korea_tz)
     for hour in range(24):
-        hour_str = f"{hour:02d}"
-        datetime_str = date.strftime("%Y%m%d") + hour_str + "00"
-        data = get_lightning_data(datetime_str)
-        if data:
-            all_data.extend(data)
+        for minute in range(0, 60, 10):  # 10분 단위로 반복
+            if date == now.date() and (hour > now.hour or (hour == now.hour and minute > now.minute)):
+                break
+            time_str = f"{hour:02d}{minute:02d}"
+            datetime_str = date.strftime("%Y%m%d") + time_str
+            data = get_lightning_data(datetime_str)
+            if data:
+                all_data.extend(data)
     return all_data
 
 # 날짜 입력 받기 (한국 시간 기준)
@@ -111,18 +114,22 @@ else:
     # 낙뢰가 있는 시간만 추출
     lightning_times = sorted(set([datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) for item in all_data]))
 
-    # 30분 단위로 묶기
-    def round_to_nearest_half_hour(dt):
-        return dt.replace(minute=0, second=0, microsecond=0) + timedelta(minutes=30 * ((dt.minute // 30) + (1 if dt.minute % 30 > 0 else 0)))
+    # 10분 단위로 묶기
+    def round_to_nearest_ten_minutes(dt):
+        discard = timedelta(minutes=dt.minute % 10, seconds=dt.second, microseconds=dt.microsecond)
+        dt -= discard
+        if discard >= timedelta(minutes=5):
+            dt += timedelta(minutes=10)
+        return dt
 
-    rounded_times = [round_to_nearest_half_hour(t) for t in lightning_times]
+    rounded_times = [round_to_nearest_ten_minutes(t) for t in lightning_times]
     rounded_times = sorted(set(rounded_times))
 
     # 시간 선택
     selected_time = st.selectbox("시간을 선택하세요", rounded_times, format_func=lambda x: x.strftime("%H:%M"))
 
     # 선택된 시간에 따라 데이터 필터링
-    filtered_data = [item for item in all_data if abs((datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) - selected_time).total_seconds()) < 1800]  # 30분 이내
+    filtered_data = [item for item in all_data if abs((datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) - selected_time).total_seconds()) < 600]  # 10분 이내
 
 # 영종도 관련 옵션에 대한 시간별 낙뢰 횟수 계산
 if map_range in ['영종도 내', '영종도 테두리에서 반경 2km 이내']:
