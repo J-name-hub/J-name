@@ -10,7 +10,6 @@ import pandas as pd
 import altair as alt
 import pytz
 from shapely.geometry import Polygon, Point
-import concurrent.futures
 
 # Streamlit secrets에서 API 키 가져오기
 API_KEY = st.secrets["api"]["API_KEY"]
@@ -61,7 +60,7 @@ map_range = st.radio(
 )
 
 # 데이터 가져오기 함수
-@st.cache_data
+@st.experimental_singleton
 def get_lightning_data(datetime_str):
     try:
         params = {
@@ -84,21 +83,17 @@ def get_lightning_data(datetime_str):
         return None
 
 # 특정 날짜의 모든 낙뢰 데이터를 가져오는 함수
-@st.cache_data
-def get_all_lightning_data_parallel(date):
+@st.experimental_singleton
+def get_all_lightning_data(date):
     all_data = []
     now = datetime.now(korea_tz)
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = []
-        for hour in range(24):
-            for minute in range(0, 60, 10):  # 10분 단위로 반복
-                if date == now.date() and (hour > now.hour or (hour == now.hour and minute > now.minute)):
-                    break
-                time_str = f"{hour:02d}{minute:02d}"
-                datetime_str = date.strftime("%Y%m%d") + time_str
-                futures.append(executor.submit(get_lightning_data, datetime_str))
-        for future in concurrent.futures.as_completed(futures):
-            data = future.result()
+    for hour in range(24):
+        for minute in range(0, 60, 10):  # 10분 단위로 반복
+            if date == now.date() and (hour > now.hour or (hour == now.hour and minute > now.minute)):
+                break
+            time_str = f"{hour:02d}{minute:02d}"
+            datetime_str = date.strftime("%Y%m%d") + time_str
+            data = get_lightning_data(datetime_str)
             if data:
                 all_data.extend(data)
     return all_data
@@ -108,7 +103,7 @@ selected_date = st.date_input("날짜를 선택하세요", datetime.now(korea_tz
 
 # 데이터 로딩
 data_load_state = st.text('데이터를 불러오는 중...')
-all_data = get_all_lightning_data_parallel(selected_date)
+all_data = get_all_lightning_data(selected_date)
 data_load_state.text('데이터 로딩 완료!')
 
 # 'All' 또는 시간별 선택
