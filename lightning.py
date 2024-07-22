@@ -1,41 +1,231 @@
 import streamlit as st
+import folium
+from folium.plugins import MarkerCluster
 import requests
-from bs4 import BeautifulSoup
-from PIL import Image
-from io import BytesIO
+from streamlit_folium import st_folium
+from datetime import datetime, timedelta
+import xml.etree.ElementTree as ET
+from math import radians, sin, cos, sqrt, atan2
+import pandas as pd
+import altair as alt
+import pytz
+from shapely.geometry import Polygon, Point
+import concurrent.futures
 
-# 웹 페이지 URL
-page_url = "https://www.weather.go.kr/w/image/lgt.do"
+# Streamlit secrets에서 API 키 가져오기
+API_KEY = st.secrets["api"]["API_KEY"]
 
-# 웹 페이지를 가져오기 위한 요청
-response = requests.get(page_url)
-soup = BeautifulSoup(response.content, 'html.parser')
+# 기상청 낙뢰 API URL
+API_URL = "http://apis.data.go.kr/1360000/LgtInfoService/getLgt"
 
-# "낙뢰" 링크를 포함한 <a> 태그를 찾기
-lightning_link = soup.find('a', text='낙뢰')
+# 좌표 설정
+KOREA_CENTER = (36.5, 127.5)
+YEONGJONG_CENTER = (37.4917, 126.4833)  # 영종도 중심 좌표
 
-if lightning_link and 'href' in lightning_link.attrs:
-    lightning_page_url = 'https://www.weather.go.kr' + lightning_link['href']
+# 영종도의 경계 좌표 (예시)
+YEONGJONG_BOUNDARY = [
+    (40.0000, 125.0000),  # 북서쪽 꼭짓점
+    (40.0000, 130.0000),  # 북동쪽 꼭짓점
+    (32.0000, 130.0000),  # 남동쪽 꼭짓점
+    (32.0000, 125.0000)   # 남서쪽 꼭짓점
+]
 
-    # 낙뢰 페이지에서 이미지 URL 추출
-    lightning_page_response = requests.get(lightning_page_url)
-    lightning_soup = BeautifulSoup(lightning_page_response.content, 'html.parser')
+# 한국 시간대 설정
+korea_tz = pytz.timezone('Asia/Seoul')
 
-    # 이 부분은 실제 웹 페이지 구조에 따라 조정이 필요할 수 있습니다.
-    img_tag = lightning_soup.find('img')  # 적절한 img 태그 선택
-    if img_tag and 'src' in img_tag.attrs:
-        image_url = img_tag['src']
-        # 절대 URL로 변환 (필요 시)
-        if not image_url.startswith('http'):
-            image_url = 'https://www.weather.go.kr' + image_url
+# 거리 계산 함수
+def haversine_distance(lat1, lon1, lat2, lon2):
+    R = 6371  # 지구의 반경 (km)
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    distance = R * c
+    return distance
 
-        # 이미지 가져오기
-        img_response = requests.get(image_url)
-        image = Image.open(BytesIO(img_response.content))
+# 영종도 내 위치인지 확인하는 함수
+def is_within_yeongjong(lat, lon, boundary):
+    point = Point(lon, lat)
+    polygon = Polygon(boundary)
+    return polygon.contains(point)
 
-        # Streamlit 앱에서 이미지 표시
-        st.image(image, caption='Korea Weather Lightning Map')
-    else:
-        st.write("낙뢰 페이지에서 이미지를 찾을 수 없습니다.")
+# Streamlit 설정
+st.title("대한민국 낙뢰 발생 지도")
+st.write("기상청 낙뢰 API를 활용하여 낙뢰 발생 지점을 지도에 표시합니다.")
+
+# 지도 범위 선택
+map_range = st.radio(
+    "지도 범위 선택:",
+    ('대한민국 전체', '영종도 내', '영종도 테두리에서 반경 2km 이내')
+)
+
+@st.cache_data
+def get_all_lightning_data_parallel(date):
+    all_data = []
+    now = datetime.now(korea_tz)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = []
+        for hour in range(24):
+            for minute in range(0, 60, 10):  # 10분 단위로 반복
+                if date == now.date() and (hour > now.hour or (hour == now.hour and minute > now.minute)):
+                    break
+                time_str = f"{hour:02d}{minute:02d}"
+                datetime_str = date.strftime("%Y%m%d") + time_str
+                futures.append(executor.submit(get_lightning_data, datetime_str))
+        for future in concurrent.futures.as_completed(futures):
+            data = future.result()
+            if data:
+                all_data.extend(data)
+    return all_data
+
+# 특정 날짜의 모든 낙뢰 데이터를 가져오는 함수
+@st.cache_data
+def get_all_lightning_data(date):
+    all_data = []
+    now = datetime.now(korea_tz)
+    for hour in range(24):
+        for minute in range(0, 60, 10):  # 10분 단위로 반복
+            if date == now.date() and (hour > now.hour or (hour == now.hour and minute > now.minute)):
+                break
+            time_str = f"{hour:02d}{minute:02d}"
+            datetime_str = date.strftime("%Y%m%d") + time_str
+            data = get_lightning_data(datetime_str)
+            if data:
+                all_data.extend(data)
+    return all_data
+
+# 날짜 입력 받기 (한국 시간 기준)
+selected_date = st.date_input("날짜를 선택하세요", datetime.now(korea_tz).date())
+
+# 데이터 로딩
+data_load_state = st.text('데이터를 불러오는 중...')
+all_data = get_all_lightning_data_parallel(selected_date)
+data_load_state.text('데이터 로딩 완료!')
+
+# 'All' 또는 시간별 선택
+time_selection = st.radio("데이터 표시 방식:", ('All', '시간별'))
+
+if time_selection == 'All':
+    filtered_data = all_data
 else:
-    st.write("낙뢰 링크를 찾을 수 없습니다.")
+    # 낙뢰가 있는 시간만 추출
+    lightning_times = sorted(set([datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) for item in all_data]))
+
+    # 10분 단위로 묶기
+    def round_to_nearest_ten_minutes(dt):
+        discard = timedelta(minutes=dt.minute % 10, seconds=dt.second, microseconds=dt.microsecond)
+        dt -= discard
+        if discard >= timedelta(minutes=5):
+            dt += timedelta(minutes=10)
+        return dt
+
+    rounded_times = [round_to_nearest_ten_minutes(t) for t in lightning_times]
+    rounded_times = sorted(set(rounded_times))
+
+    # 시간 선택
+    selected_time = st.selectbox("시간을 선택하세요", rounded_times, format_func=lambda x: x.strftime("%H:%M"))
+
+    # 선택된 시간에 따라 데이터 필터링
+    filtered_data = [item for item in all_data if abs((datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) - selected_time).total_seconds()) < 600]  # 10분 이내
+
+# 영종도 관련 옵션에 대한 시간별 낙뢰 횟수 계산
+if map_range in ['영종도 내', '영종도 테두리에서 반경 2km 이내']:
+    hourly_data = {}
+    for hour in range(24):
+        count = 0
+        for item in all_data:
+            item_time = datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S")
+            if item_time.hour == hour:
+                lat = float(item.find('wgs84Lat').text)
+                lon = float(item.find('wgs84Lon').text)
+                if map_range == '영종도 내':
+                    if is_within_yeongjong(lat, lon, YEONGJONG_BOUNDARY):
+                        count += 1
+                elif map_range == '영종도 테두리에서 반경 2km 이내':
+                    point = Point(lon, lat)
+                    buffer_polygon = Polygon(YEONGJONG_BOUNDARY).buffer(2 / 111)  # 2km buffer
+                    if buffer_polygon.contains(point):
+                        count += 1
+        hourly_data[hour] = count
+
+    if sum(hourly_data.values()) > 0:
+        # 시간별 낙뢰 횟수 차트 생성
+        df = pd.DataFrame(list(hourly_data.items()), columns=['Hour', 'Count'])
+        chart = alt.Chart(df).mark_bar().encode(
+            x='Hour:O',
+            y='Count:Q'
+        ).properties(
+            title=f"{selected_date.strftime('%Y-%m-%d')} {map_range} 시간별 낙뢰 횟수"
+        )
+        st.altair_chart(chart, use_container_width=True)
+
+# 총 낙뢰 횟수 표시
+if map_range in ['영종도 내', '영종도 테두리에서 반경 2km 이내'] and sum(hourly_data.values()) > 0:
+    total_lightning = sum(hourly_data.values())
+    st.write(f"총 낙뢰 횟수: {total_lightning}")
+
+if filtered_data:
+    # 지도 생성
+    if map_range == '대한민국 전체':
+        m = folium.Map(location=KOREA_CENTER, zoom_start=7)
+    else:
+        m = folium.Map(location=YEONGJONG_CENTER, zoom_start=12)
+
+    marker_cluster = MarkerCluster().add_to(m)
+
+    # 영종도 범위 표시
+    if map_range == '영종도 내':
+        folium.Polygon(
+            locations=YEONGJONG_BOUNDARY,
+            color="red",
+            fill=True,
+            fillColor="red",
+            fillOpacity=0.1
+        ).add_to(m)
+    elif map_range == '영종도 테두리에서 반경 2km 이내':
+        buffer_polygon = Polygon(YEONGJONG_BOUNDARY).buffer(2 / 111)
+        folium.Polygon(
+            locations=[(point.y, point.x) for point in buffer_polygon.exterior.coords],
+            color="blue",
+            fill=True,
+            fillColor="blue",
+            fillOpacity=0.1
+        ).add_to(m)
+
+    for item in filtered_data:
+        lat = float(item.find('wgs84Lat').text)
+        lon = float(item.find('wgs84Lon').text)
+        location = (lat, lon)
+
+        # 영종도 필터링
+        if map_range == '영종도 내':
+            if not is_within_yeongjong(lat, lon, YEONGJONG_BOUNDARY):
+                continue
+        elif map_range == '영종도 테두리에서 반경 2km 이내':
+            point = Point(lon, lat)
+            if not buffer_polygon.contains(point):
+                continue
+
+        # 발생 시간 정보 추출
+        datetime_str = item.find('dateTime').text
+        datetime_obj = datetime.strptime(datetime_str, "%Y%m%d%H%M%S")
+        formatted_time = datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
+
+        folium.Marker(
+            location=location,
+            popup=f"낙뢰 발생 위치: 위도 {lat}, 경도 {lon}<br>발생 시간: {formatted_time}",
+            icon=folium.Icon(color='red', icon='bolt')
+        ).add_to(marker_cluster)
+
+    # 지도 출력
+    st_folium(m, width=725)
+else:
+    st.write("선택한 시간에 낙뢰 데이터가 없습니다.")
+
+# 시간 범위 설명
+if time_selection == "All":
+    st.write(f"{selected_date.strftime('%Y-%m-%d')}의 모든 낙뢰 데이터를 표시합니다.")
+else:
+    st.write(f"선택한 시간 {selected_time.strftime('%H:%M')}의 낙뢰 데이터를 표시합니다.")
+st.write("기상청 API는 일반적으로 선택한 시간을 포함한 10분 간격의 데이터를 제공합니다.")
