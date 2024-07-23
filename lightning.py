@@ -159,16 +159,18 @@ if filtered_data:
         lon = float(item.find('wgs84Lon').text)
         location = (lat, lon)
 
-        # 발생 시간 정보 추출
-        datetime_str = item.find('dateTime').text
-        datetime_obj = datetime.strptime(datetime_str, "%Y%m%d%H%M%S")
-        formatted_time = datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
+        # 낙뢰 위치가 영종도 경계 내에 있는지 확인
+        if yeongjong_polygon.contains(Point(lon, lat)):
+            # 발생 시간 정보 추출
+            datetime_str = item.find('dateTime').text
+            datetime_obj = datetime.strptime(datetime_str, "%Y%m%d%H%M%S")
+            formatted_time = datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
 
-        folium.Marker(
-            location=location,
-            popup=f"낙뢰 발생 위치: 위도 {lat}, 경도 {lon}<br>발생 시간: {formatted_time}",
-            icon=folium.Icon(color='red', icon='bolt')
-        ).add_to(marker_cluster)
+            folium.Marker(
+                location=location,
+                popup=f"낙뢰 발생 위치: 위도 {lat}, 경도 {lon}<br>발생 시간: {formatted_time}",
+                icon=folium.Icon(color='red', icon='bolt')
+            ).add_to(marker_cluster)
 
     # 지도 출력
     st_folium(m, width=725)
