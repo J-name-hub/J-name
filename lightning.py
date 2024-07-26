@@ -68,6 +68,7 @@ def get_all_lightning_data(date):
     now = datetime.now(korea_tz)
     
     def fetch_data(hour, minute):
+        # Skip future times if today
         if date == now.date() and (hour > now.hour or (hour == now.hour and minute > now.minute)):
             return []
         time_str = f"{hour:02d}{minute:02d}"
@@ -81,14 +82,19 @@ def get_all_lightning_data(date):
     
     return all_data
 
-# 날짜 입력 받기 (한국 시간 기준), 2일 전까지만 선택 가능
-max_date = datetime.now(korea_tz).date() - timedelta(days=2)
-selected_date = st.date_input("날짜를 선택하세요", max_date, max_value=max_date)
+# 날짜 입력 받기 (한국 시간 기준), 오늘, 어제, 그저께만 선택 가능
+today = datetime.now(korea_tz).date()
+yesterday = today - timedelta(days=1)
+day_before_yesterday = today - timedelta(days=2)
+
+# Allow selection only for the last three days
+available_dates = [today, yesterday, day_before_yesterday]
+selected_date = st.selectbox("날짜를 선택하세요", available_dates, format_func=lambda x: x.strftime("%Y-%m-%d"))
 
 # 데이터 로딩
-data_load_state = st.text('데이터를 불러오는 중...')
-all_data = get_all_lightning_data(selected_date)
-data_load_state.text('데이터 로딩 완료!')
+with st.spinner('데이터를 불러오는 중...'):
+    all_data = get_all_lightning_data(selected_date)
+st.success('데이터 로딩 완료!')
 
 # 'All' 또는 시간별 선택
 time_selection = st.radio("데이터 표시 방식:", ('All', '시간별'))
