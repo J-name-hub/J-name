@@ -148,9 +148,9 @@ if filtered_data:
     # 영종도 범위 표시
     folium.Polygon(
         locations=YEONGJONG_BOUNDARY,
-        color="red",
+        color="blue",
         fill=True,
-        fillColor="red",
+        fillColor="blue",
         fillOpacity=0.1
     ).add_to(m)
 
@@ -171,7 +171,7 @@ if filtered_data:
         ).add_to(marker_cluster)
 
     # 지도 출력
-    st_folium(m, width=725)
+    st_folium(m, width=800)
 else:
     st.write("선택한 시간에 낙뢰 데이터가 없습니다.")
 
