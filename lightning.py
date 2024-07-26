@@ -99,12 +99,16 @@ st.success('데이터 로딩 완료!')
 # 'All' 또는 시간별 선택
 time_selection = st.radio("데이터 표시 방식:", ('All', '시간별'))
 
+# Process data based on selection
 if time_selection == 'All':
     # 전체 데이터를 선택
     filtered_data = all_data
 else:
     # 낙뢰가 있는 시간만 추출
-    lightning_times = sorted(set([datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) for item in all_data]))
+    lightning_times = sorted(set([
+        datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz)
+        for item in all_data
+    ]))
 
     # 10분 단위로 묶기
     def round_to_nearest_ten_minutes(dt):
@@ -118,10 +122,16 @@ else:
     rounded_times = sorted(set(rounded_times))
 
     # 시간 선택
-    selected_time = st.selectbox("시간을 선택하세요", rounded_times, format_func=lambda x: x.strftime("%H:%M"))
+    if rounded_times:
+        selected_time = st.selectbox("시간을 선택하세요", rounded_times, format_func=lambda x: x.strftime("%H:%M"))
 
-    # 선택된 시간에 따라 데이터 필터링
-    filtered_data = [item for item in all_data if abs((datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) - selected_time).total_seconds()) < 600]  # 10분 이내
+        # 선택된 시간에 따라 데이터 필터링
+        filtered_data = [
+            item for item in all_data
+            if abs((datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) - selected_time).total_seconds()) < 600
+        ]  # 10분 이내
+    else:
+        filtered_data = []
 
 # 영종도 관련 시간별 낙뢰 횟수 계산
 hourly_data = {}
@@ -139,7 +149,8 @@ for hour in range(24):
     hourly_data[hour] = count
     total_lightning += count
 
-if sum(hourly_data.values()) > 0:
+# If there is lightning data for Yeongjongdo, display the chart
+if total_lightning > 0:
     # 시간별 낙뢰 횟수 차트 생성
     df = pd.DataFrame(list(hourly_data.items()), columns=['Hour', 'Count'])
     chart = alt.Chart(df).mark_bar().encode(
@@ -154,6 +165,7 @@ if sum(hourly_data.values()) > 0:
 if total_lightning > 0:
     st.write(f"영종도 총 낙뢰 횟수: {total_lightning}")
 
+# Display filtered data on the map if available
 if filtered_data:
     # 지도 생성
     m = folium.Map(location=YEONGJONG_CENTER, zoom_start=12)
@@ -179,6 +191,7 @@ if filtered_data:
         tooltip="icnacc"
     ).add_to(m)
 
+    # Add markers for each lightning data point
     for item in filtered_data:
         lat = float(item.find('wgs84Lat').text)
         lon = float(item.find('wgs84Lon').text)
@@ -198,7 +211,11 @@ if filtered_data:
     # 지도 출력
     st_folium(m, width=725)
 else:
-    st.write("선택한 시간에 낙뢰 데이터가 없습니다.")
+    # Display no data message only when filtered data is empty and not for "All"
+    if time_selection == '시간별':
+        st.write("선택한 시간에 낙뢰 데이터가 없습니다.")
+    else:
+        st.write("선택한 날에 낙뢰 데이터가 없습니다.")
 
 # 시간 범위 설명
 if time_selection == "All":
