@@ -10,6 +10,7 @@ import altair as alt
 import pytz
 from concurrent.futures import ThreadPoolExecutor
 from shapely.geometry import Polygon, Point
+import time
 
 # Streamlit secrets에서 API 키 가져오기
 API_KEY = st.secrets["api"]["API_KEY"]
@@ -26,14 +27,6 @@ YEONGJONG_BOUNDARY = [
     (37.5252, 126.5802),  # 북동쪽 꼭짓점
     (37.4122, 126.5802),  # 남동쪽 꼭짓점
     (37.4122, 126.3612)   # 남서쪽 꼭짓점
-]
-
-# 추가 구역 - icnacc
-ICNACC_BOUNDARY = [
-    (37.4802, 126.4525),
-    (37.4808, 126.4535),
-    (37.4796, 126.4546),
-    (37.4790, 126.4536)
 ]
 
 # 영종도 경계를 Polygon 객체로 변환
@@ -82,33 +75,22 @@ def get_all_lightning_data(date):
     
     return all_data
 
-# 날짜 입력 받기 (한국 시간 기준), 오늘, 어제, 그저께만 선택 가능
-today = datetime.now(korea_tz).date()
-yesterday = today - timedelta(days=1)
-day_before_yesterday = today - timedelta(days=2)
-
-# Allow selection only for the last three days
-available_dates = [today, yesterday, day_before_yesterday]
-selected_date = st.selectbox("날짜를 선택하세요", available_dates, format_func=lambda x: x.strftime("%Y-%m-%d"))
+# 날짜 입력 받기 (한국 시간 기준)
+selected_date = st.date_input("날짜를 선택하세요", datetime.now(korea_tz).date())
 
 # 데이터 로딩
-with st.spinner('데이터를 불러오는 중...'):
-    all_data = get_all_lightning_data(selected_date)
-st.success('데이터 로딩 완료!')
+data_load_state = st.text('데이터를 불러오는 중...')
+all_data = get_all_lightning_data(selected_date)
+data_load_state.text('데이터 로딩 완료!')
 
 # 'All' 또는 시간별 선택
 time_selection = st.radio("데이터 표시 방식:", ('All', '시간별'))
 
-# Process data based on selection
 if time_selection == 'All':
-    # 전체 데이터를 선택
     filtered_data = all_data
 else:
     # 낙뢰가 있는 시간만 추출
-    lightning_times = sorted(set([
-        datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz)
-        for item in all_data
-    ]))
+    lightning_times = sorted(set([datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) for item in all_data]))
 
     # 10분 단위로 묶기
     def round_to_nearest_ten_minutes(dt):
@@ -122,16 +104,10 @@ else:
     rounded_times = sorted(set(rounded_times))
 
     # 시간 선택
-    if rounded_times:
-        selected_time = st.selectbox("시간을 선택하세요", rounded_times, format_func=lambda x: x.strftime("%H:%M"))
+    selected_time = st.selectbox("시간을 선택하세요", rounded_times, format_func=lambda x: x.strftime("%H:%M"))
 
-        # 선택된 시간에 따라 데이터 필터링
-        filtered_data = [
-            item for item in all_data
-            if abs((datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) - selected_time).total_seconds()) < 600
-        ]  # 10분 이내
-    else:
-        filtered_data = []
+    # 선택된 시간에 따라 데이터 필터링
+    filtered_data = [item for item in all_data if abs((datetime.strptime(item.find('dateTime').text, "%Y%m%d%H%M%S").replace(tzinfo=korea_tz) - selected_time).total_seconds()) < 600]  # 10분 이내
 
 # 영종도 관련 시간별 낙뢰 횟수 계산
 hourly_data = {}
@@ -149,8 +125,7 @@ for hour in range(24):
     hourly_data[hour] = count
     total_lightning += count
 
-# If there is lightning data for Yeongjongdo, display the chart
-if total_lightning > 0:
+if sum(hourly_data.values()) > 0:
     # 시간별 낙뢰 횟수 차트 생성
     df = pd.DataFrame(list(hourly_data.items()), columns=['Hour', 'Count'])
     chart = alt.Chart(df).mark_bar().encode(
@@ -165,7 +140,6 @@ if total_lightning > 0:
 if total_lightning > 0:
     st.write(f"영종도 총 낙뢰 횟수: {total_lightning}")
 
-# Display filtered data on the map if available
 if filtered_data:
     # 지도 생성
     m = folium.Map(location=YEONGJONG_CENTER, zoom_start=12)
@@ -181,17 +155,18 @@ if filtered_data:
         fillOpacity=0.1
     ).add_to(m)
 
-    # icnacc 구역 표시
+    # icnacc 테두리 추가
     folium.Polygon(
-        locations=ICNACC_BOUNDARY,
+        locations=[
+            (37.4802, 126.4525), (37.4808, 126.4535),
+            (37.4796, 126.4546), (37.4790, 126.4536)
+        ],
         color="green",
-        fill=True,
-        fillColor="green",
-        fillOpacity=0.3,
+        fill=False,
+        weight=2,
         tooltip="icnacc"
     ).add_to(m)
 
-    # Add markers for each lightning data point
     for item in filtered_data:
         lat = float(item.find('wgs84Lat').text)
         lon = float(item.find('wgs84Lon').text)
