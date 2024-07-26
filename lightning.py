@@ -10,7 +10,6 @@ import altair as alt
 import pytz
 from concurrent.futures import ThreadPoolExecutor
 from shapely.geometry import Polygon, Point
-import time
 
 # Streamlit secrets에서 API 키 가져오기
 API_KEY = st.secrets["api"]["API_KEY"]
@@ -27,6 +26,14 @@ YEONGJONG_BOUNDARY = [
     (37.5252, 126.5802),  # 북동쪽 꼭짓점
     (37.4122, 126.5802),  # 남동쪽 꼭짓점
     (37.4122, 126.3612)   # 남서쪽 꼭짓점
+]
+
+# 추가 구역 - icnacc
+ICNACC_BOUNDARY = [
+    (37.4802, 126.4525),
+    (37.4808, 126.4535),
+    (37.4796, 126.4546),
+    (37.4790, 126.4536)
 ]
 
 # 영종도 경계를 Polygon 객체로 변환
@@ -74,8 +81,9 @@ def get_all_lightning_data(date):
     
     return all_data
 
-# 날짜 입력 받기 (한국 시간 기준)
-selected_date = st.date_input("날짜를 선택하세요", datetime.now(korea_tz).date())
+# 날짜 입력 받기 (한국 시간 기준), 2일 전까지만 선택 가능
+max_date = datetime.now(korea_tz).date() - timedelta(days=2)
+selected_date = st.date_input("날짜를 선택하세요", max_date, max_value=max_date)
 
 # 데이터 로딩
 data_load_state = st.text('데이터를 불러오는 중...')
@@ -86,6 +94,7 @@ data_load_state.text('데이터 로딩 완료!')
 time_selection = st.radio("데이터 표시 방식:", ('All', '시간별'))
 
 if time_selection == 'All':
+    # 전체 데이터를 선택
     filtered_data = all_data
 else:
     # 낙뢰가 있는 시간만 추출
@@ -152,6 +161,16 @@ if filtered_data:
         fill=True,
         fillColor="red",
         fillOpacity=0.1
+    ).add_to(m)
+
+    # icnacc 구역 표시
+    folium.Polygon(
+        locations=ICNACC_BOUNDARY,
+        color="green",
+        fill=True,
+        fillColor="green",
+        fillOpacity=0.3,
+        tooltip="icnacc"
     ).add_to(m)
 
     for item in filtered_data:
