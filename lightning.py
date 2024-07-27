@@ -10,7 +10,6 @@ import altair as alt
 import pytz
 from concurrent.futures import ThreadPoolExecutor
 from shapely.geometry import Polygon, Point
-import time
 
 # Streamlit secrets에서 API 키 가져오기
 API_KEY = st.secrets["api"]["API_KEY"]
@@ -178,6 +177,7 @@ if sum(hourly_data.values()) > 0:
 if total_lightning > 0:
     st.write(f"영종도 총 낙뢰 횟수: {total_lightning}")
 
+# Display data on the map or a no-data message
 if filtered_data:
     # 지도 생성
     m = folium.Map(location=YEONGJONG_CENTER, zoom_start=12)
@@ -228,4 +228,7 @@ if filtered_data:
     # folium 맵을 Streamlit 앱에 추가
     st_folium(m, width=700, height=500)
 else:
-    st.warning('선택한 시간에 대한 낙뢰 데이터가 없습니다.')
+    if time_selection == "All":
+        st.warning(f"선택한 날짜 ({selected_date.strftime('%Y-%m-%d')}) 에 낙뢰 데이터가 없습니다.")
+    else:
+        st.warning('선택한 시간에 대한 낙뢰 데이터가 없습니다.')
