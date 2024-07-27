@@ -95,10 +95,7 @@ data_load_state = st.text('데이터를 불러오는 중...')
 all_data = get_all_lightning_data(selected_date)
 data_load_state.text('데이터 로딩 완료!')
 
-# 'All' 또는 시간별 선택
-time_selection = st.radio("데이터 표시 방식:", ('All', '시간별'))
-
-# Datetime 파싱
+# XML 데이터 파싱 및 오류 처리
 def parse_datetime(item):
     try:
         datetime_str = item.find('dateTime').text
@@ -106,6 +103,9 @@ def parse_datetime(item):
     except (ValueError, AttributeError) as e:
         st.error(f"시간 파싱 오류: {e}")
         return None
+
+# 'All' 또는 시간별 선택
+time_selection = st.radio("데이터 표시 방식:", ('All', '시간별'))
 
 # 데이터 필터링
 if time_selection == 'All':
@@ -200,6 +200,6 @@ else:
 if time_selection == "All":
     st.write(f"{selected_date.strftime('%Y-%m-%d')}의 모든 낙뢰 데이터를 표시합니다.")
 else:
-    st.write(f"선택한 시간 {selected_time.strftime('%H:%M')}의 낙뢰 데이터를 표시합니다.")
+    st.write(f"선택한 시간 {selected_time.strftime('%H:%M')}
 
 st.write("기상청 API는 일반적으로 선택한 시간을 포함한 10분 간격의 데이터를 제공합니다.")
