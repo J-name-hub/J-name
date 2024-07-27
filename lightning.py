@@ -20,7 +20,7 @@ API_URL = "http://apis.data.go.kr/1360000/LgtInfoService/getLgt"
 # 좌표 설정
 YEONGJONG_CENTER = (37.4917, 126.4833)  # 영종도 중심 좌표
 
-# 영종도의 경계 좌표 (예시)
+# 영종도의 경계 좌표
 YEONGJONG_BOUNDARY = [
     (37.5252, 126.3612),  # 북서쪽 꼭짓점
     (37.5252, 126.5802),  # 북동쪽 꼭짓점
@@ -34,6 +34,20 @@ yeongjong_polygon = Polygon(YEONGJONG_BOUNDARY)
 # 한국 시간대 설정
 korea_tz = pytz.timezone('Asia/Seoul')
 
+# 날짜 리스트 생성
+def get_valid_dates():
+    now = datetime.now(korea_tz)
+    return [now.date(), now.date() - timedelta(days=1), now.date() - timedelta(days=2)]
+
+valid_dates = get_valid_dates()
+
+# 날짜 선택
+selected_date = st.selectbox(
+    "날짜를 선택하세요",
+    options=valid_dates,
+    format_func=lambda x: x.strftime('%Y-%m-%d')
+)
+
 # 데이터 가져오기 함수
 def get_lightning_data(datetime_str):
     try:
@@ -44,64 +58,37 @@ def get_lightning_data(datetime_str):
             'lgtType': '1',
             'dateTime': datetime_str
         }
-        response = requests.get(API_URL, params=params, timeout=10)  # Added timeout
-        response.raise_for_status()  # Raises HTTPError for bad responses
-
-        # Check if the response contains valid XML
-        try:
+        response = requests.get(API_URL, params=params)
+        if response.ok:
             root = ET.fromstring(response.content)
             items = root.findall('.//item')
             return items
-        except ET.ParseError:
-            st.error("API 응답을 파싱할 수 없습니다. 잠시 후 다시 시도해 주세요.")
+        else:
+            st.error("API 요청 실패: 상태 코드 " + str(response.status_code))
             return []
+    except requests.exceptions.RequestException as e:
+        st.error("데이터 요청 중 오류 발생: " + str(e))
+        return []
 
-    except requests.exceptions.HTTPError as http_err:
-        st.error(f"HTTP 에러 발생: {http_err}")
-    except requests.exceptions.ConnectionError:
-        st.error("네트워크 연결 오류가 발생했습니다. 인터넷 연결을 확인하세요.")
-    except requests.exceptions.Timeout:
-        st.error("요청 시간이 초과되었습니다. 다시 시도해 주세요.")
-    except requests.exceptions.RequestException as err:
-        st.error(f"API 요청 중 오류가 발생했습니다: {err}")
-    
-    return []
-
-# 특정 날짜의 모든 낙뢰 데이터를 가져오는 함수 (병렬 처리)
+# 모든 시간의 낙뢰 데이터 가져오기 함수
 def get_all_lightning_data(date):
     all_data = []
     now = datetime.now(korea_tz)
 
+    # 10분 간격 데이터 가져오기
     def fetch_data(hour, minute):
-        # Skip future times if today
         if date == now.date() and (hour > now.hour or (hour == now.hour and minute > now.minute)):
             return []
         time_str = f"{hour:02d}{minute:02d}"
         datetime_str = date.strftime("%Y%m%d") + time_str
         return get_lightning_data(datetime_str)
-    
-    with ThreadPoolExecutor(max_workers=10) as executor:  # Limit the number of threads
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
         futures = [executor.submit(fetch_data, hour, minute) for hour in range(24) for minute in range(0, 60, 10)]
         for future in futures:
-            try:
-                all_data.extend(future.result())
-            except Exception as e:
-                st.error(f"데이터 수집 중 오류 발생: {e}")
+            all_data.extend(future.result())
 
     return all_data
-
-# 날짜 입력 받기 (한국 시간 기준)
-# Today, Yesterday, and Day before yesterday
-today = datetime.now(korea_tz).date()
-yesterday = today - timedelta(days=1)
-day_before_yesterday = today - timedelta(days=2)
-
-# Allow only these three dates to be selected
-selected_date = st.selectbox(
-    "날짜를 선택하세요",
-    options=[today, yesterday, day_before_yesterday],
-    format_func=lambda x: x.strftime('%Y-%m-%d')
-)
 
 # 데이터 로딩
 data_load_state = st.text('데이터를 불러오는 중...')
@@ -111,7 +98,7 @@ data_load_state.text('데이터 로딩 완료!')
 # 'All' 또는 시간별 선택
 time_selection = st.radio("데이터 표시 방식:", ('All', '시간별'))
 
-# Parsing and handling datetime objects
+# Datetime 파싱
 def parse_datetime(item):
     try:
         datetime_str = item.find('dateTime').text
@@ -120,13 +107,12 @@ def parse_datetime(item):
         st.error(f"시간 파싱 오류: {e}")
         return None
 
+# 데이터 필터링
 if time_selection == 'All':
     filtered_data = all_data
 else:
-    # 낙뢰가 있는 시간만 추출
     lightning_times = sorted(set([parse_datetime(item) for item in all_data if parse_datetime(item)]))
 
-    # 10분 단위로 묶기
     def round_to_nearest_ten_minutes(dt):
         discard = timedelta(minutes=dt.minute % 10, seconds=dt.second, microseconds=dt.microsecond)
         dt -= discard
@@ -137,13 +123,11 @@ else:
     rounded_times = [round_to_nearest_ten_minutes(t) for t in lightning_times]
     rounded_times = sorted(set(rounded_times))
 
-    # 시간 선택
     selected_time = st.selectbox("시간을 선택하세요", rounded_times, format_func=lambda x: x.strftime("%H:%M"))
 
-    # 선택된 시간에 따라 데이터 필터링
     filtered_data = [
         item for item in all_data
-        if parse_datetime(item) and abs((parse_datetime(item) - selected_time).total_seconds()) < 600  # 10분 이내
+        if parse_datetime(item) and abs((parse_datetime(item) - selected_time).total_seconds()) < 600
     ]
 
 # 영종도 관련 시간별 낙뢰 횟수 계산
@@ -162,8 +146,8 @@ for hour in range(24):
     hourly_data[hour] = count
     total_lightning += count
 
+# 시간별 낙뢰 횟수 차트 생성
 if sum(hourly_data.values()) > 0:
-    # 시간별 낙뢰 횟수 차트 생성
     df = pd.DataFrame(list(hourly_data.items()), columns=['Hour', 'Count'])
     chart = alt.Chart(df).mark_bar().encode(
         x='Hour:O',
@@ -177,14 +161,11 @@ if sum(hourly_data.values()) > 0:
 if total_lightning > 0:
     st.write(f"영종도 총 낙뢰 횟수: {total_lightning}")
 
-# Display data on the map or a no-data message
+# 필터링된 데이터에 따른 지도 생성
 if filtered_data:
-    # 지도 생성
     m = folium.Map(location=YEONGJONG_CENTER, zoom_start=12)
-
     marker_cluster = MarkerCluster().add_to(m)
 
-    # 영종도 범위 표시
     folium.Polygon(
         locations=YEONGJONG_BOUNDARY,
         color="red",
@@ -193,42 +174,32 @@ if filtered_data:
         fillOpacity=0.1
     ).add_to(m)
 
-    # icnacc 테두리 추가
-    folium.Polygon(
-        locations=[
-            (37.4802, 126.4525), (37.4808, 126.4535),
-            (37.4796, 126.4546), (37.4790, 126.4536)
-        ],
-        color="green",
-        fill=False,
-        weight=2,
-        tooltip="icnacc"
-    ).add_to(m)
-
     for item in filtered_data:
         lat = float(item.find('wgs84Lat').text)
         lon = float(item.find('wgs84Lon').text)
         location = (lat, lon)
 
-        # 발생 시간 정보 추출
         datetime_str = item.find('dateTime').text
         datetime_obj = datetime.strptime(datetime_str, "%Y%m%d%H%M%S")
         formatted_time = datetime_obj.strftime('%Y-%m-%d %H:%M:%S')
 
-        # 팝업 내용 생성
-        popup_content = f"발생 시간: {formatted_time}"
-
-        # 마커 추가
         folium.Marker(
-            location,
-            popup=popup_content,
-            icon=folium.Icon(color='blue', icon='bolt', prefix='fa')
+            location=location,
+            popup=f"낙뢰 발생 위치: 위도 {lat}, 경도 {lon}<br>발생 시간: {formatted_time}",
+            icon=folium.Icon(color='blue', icon='bolt')
         ).add_to(marker_cluster)
 
-    # folium 맵을 Streamlit 앱에 추가
     st_folium(m, width=700, height=500)
 else:
     if time_selection == "All":
-        st.warning(f"선택한 날짜 ({selected_date.strftime('%Y-%m-%d')}) 에 낙뢰 데이터가 없습니다.")
+        st.warning(f"선택한 날짜 ({selected_date.strftime('%Y-%m-%d')})에 낙뢰 데이터가 없습니다.")
     else:
-        st.warning('선택한 시간에 대한 낙뢰 데이터가 없습니다.')
+        st.warning("선택한 시간에 대한 낙뢰 데이터가 없습니다.")
+
+# 시간 범위 설명
+if time_selection == "All":
+    st.write(f"{selected_date.strftime('%Y-%m-%d')}의 모든 낙뢰 데이터를 표시합니다.")
+else:
+    st.write(f"선택한 시간 {selected_time.strftime('%H:%M')}의 낙뢰 데이터를 표시합니다.")
+
+st.write("기상청 API는 일반적으로 선택한 시간을 포함한 10분 간격의 데이터를 제공합니다.")
