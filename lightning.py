@@ -200,6 +200,6 @@ else:
 if time_selection == "All":
     st.write(f"{selected_date.strftime('%Y-%m-%d')}의 모든 낙뢰 데이터를 표시합니다.")
 else:
-    st.write(f"선택한 시간 {selected_time.strftime('%H:%M')}
+    st.write(f"선택한 시간 {selected_time.strftime('%H:%M')}의 낙뢰 데이터를 표시합니다.")
 
 st.write("기상청 API는 일반적으로 선택한 시간을 포함한 10분 간격의 데이터를 제공합니다.")
