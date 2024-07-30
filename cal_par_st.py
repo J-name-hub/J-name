@@ -1,25 +1,21 @@
 import streamlit as st
+import requests
+import json
 from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
 import calendar
 import pandas as pd
 import pytz
-import requests
-import json
+from dateutil.relativedelta import relativedelta
 import base64
-import os
-from functools import partial
 
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
 GITHUB_FILE_PATH = st.secrets["github"]["file_path"]
+GITHUB_TEAM_SETTINGS_PATH = "team_settings.json"
 
 # 대한민국 공휴일 API 키
 HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
-
-# 설정 파일 경로
-TEAM_SETTINGS_FILE = "team_settings.json"
 
 # GitHub에서 스케줄 파일 로드
 @st.cache_data(ttl=3600)
@@ -58,26 +54,50 @@ def save_schedule(schedule, sha):
         st.error(f"GitHub에 스케줄 저장 실패: {e}")
         return False
 
-# 팀 설정 파일 로드
-@st.cache_data
-def load_team_settings():
-    if os.path.exists(TEAM_SETTINGS_FILE):
-        try:
-            with open(TEAM_SETTINGS_FILE, "r") as f:
-                return json.load(f).get("team", "A")
-        except json.JSONDecodeError:
-            st.error("팀 설정 파일 로드 실패")
-    return "A"
+# GitHub에 팀 설정 저장
+def save_team_settings_to_github(team):
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_TEAM_SETTINGS_PATH}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    
+    # 현재 파일 내용 확인
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        current_content = response.json()
+        sha = current_content['sha']
+    else:
+        sha = None
 
-# 팀 설정 파일 저장
-def save_team_settings(team):
+    # 새 내용 생성 및 인코딩
+    new_content = json.dumps({"team": team})
+    encoded_content = base64.b64encode(new_content.encode()).decode()
+
+    data = {
+        "message": "Update team settings",
+        "content": encoded_content,
+        "sha": sha
+    }
+
+    response = requests.put(url, headers=headers, json=data)
+    return response.status_code in (200, 201)
+
+# GitHub에서 팀 설정 로드
+def load_team_settings_from_github():
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_TEAM_SETTINGS_PATH}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    
     try:
-        with open(TEAM_SETTINGS_FILE, "w") as f:
-            json.dump({"team": team}, f)
-        return True
-    except IOError as e:
-        st.error(f"팀 설정 저장 실패: {e}")
-        return False
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        content = response.json()
+        file_content = base64.b64decode(content['content']).decode('utf-8')
+        settings = json.loads(file_content)
+        return settings.get("team", "A")
+    except requests.RequestException as e:
+        st.error(f"GitHub에서 팀 설정 로드 실패: {e}")
+        return "A"
 
 # 공휴일 정보 로드
 @st.cache_data(ttl=86400)
@@ -178,10 +198,30 @@ def get_shift(target_date, team):
     pattern = shift_patterns[team]
     return pattern[delta_days % len(pattern)]
 
-# Streamlit 앱 시작
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
+    # CSS 스타일 추가
+    st.markdown("""
+        <style>
+        .stButton > button {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            padding: 14px 20px;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # 세션 상태 초기화
     if "year" not in st.session_state or "month" not in st.session_state:
         today = datetime.now(pytz.timezone('Asia/Seoul'))
         st.session_state.year, st.session_state.month = today.year, today.month
@@ -189,8 +229,9 @@ def main():
     if "expander_open" not in st.session_state:
         st.session_state.expander_open = False
 
+    # GitHub에서 팀 설정 로드 및 세션 상태 업데이트
     if "team" not in st.session_state:
-        st.session_state.team = load_team_settings()
+        st.session_state.team = load_team_settings_from_github()
 
     year = st.session_state.year
     month = st.session_state.month
@@ -210,7 +251,7 @@ def main():
 
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     yesterday = today - timedelta(days=1)
-    
+
     if st.button("이전 월"):
         update_month(-1)
 
@@ -218,14 +259,15 @@ def main():
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data)
 
-    holiday_descriptions = create_holiday_descriptions(holidays, month)
-    st.markdown(" / ".join(holiday_descriptions))
-
+    # '다음 월' 버튼을 달력 아래로 이동
     if st.button("다음 월"):
         update_month(1)
 
+    holiday_descriptions = create_holiday_descriptions(holidays, month)
+    st.markdown(" / ".join(holiday_descriptions))
+
     sidebar_controls()
-    
+
 def update_month(delta):
     new_date = datetime(st.session_state.year, st.session_state.month, 1) + relativedelta(months=delta)
     st.session_state.year = new_date.year
@@ -288,9 +330,9 @@ def sidebar_controls():
 
         if submit_button:
             if password_for_settings == "0301":
-                if save_team_settings(team):
-                    st.session_state["team"] = team
-                    st.sidebar.success("조가 저장되었습니다.")
+                if save_team_settings_to_github(team):
+                    st.session_state.team = team
+                    st.sidebar.success(f"{team}조로 저장되었습니다.")
                     st.rerun()
                 else:
                     st.sidebar.error("조 설정 저장에 실패했습니다.")
@@ -316,11 +358,11 @@ def sidebar_controls():
                         schedule_data[change_date_str] = new_shift
                         if save_schedule(schedule_data, sha):
                             st.success("스케줄이 저장되었습니다.")
+                        else:
+                            st.error("스케줄 저장에 실패했습니다.")
+                        st.rerun()
                     else:
-                        st.error("스케줄 저장에 실패했습니다.")
-                    st.rerun()
-                else:
-                    st.error("암호가 일치하지 않습니다.")
+                        st.error("암호가 일치하지 않습니다.")
 
     st.sidebar.title("달력 이동")
     months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
@@ -332,7 +374,7 @@ def sidebar_controls():
         desired_months.append((new_date.year, new_date.month))
 
     selected_year_month = st.sidebar.selectbox(
-        "", 
+        "월 선택", 
         options=desired_months,
         format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
         index=5
