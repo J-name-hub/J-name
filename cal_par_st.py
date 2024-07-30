@@ -65,27 +65,33 @@ def save_team_settings(team):
 def load_holidays(year):
     url = f"http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey={HOLIDAY_API_KEY}&solYear={year}&numOfRows=100&_type=json"
     response = requests.get(url)
-    holidays = []
-    holiday_info = {}
+    holidays = {}
     if response.status_code == 200:
         try:
             data = response.json()
-            if 'response' in data and 'body' in data['response'] and 'items' in data['response']['body']:
-                items = data['response']['body']['items']['item']
-                if isinstance(items, list):
-                    for item in items:
-                        locdate = str(item['locdate'])
-                        date_str = datetime.strptime(locdate, "%Y%m%d").strftime("%Y-%m-%d")
-                        holidays.append(date_str)
-                        holiday_info[date_str] = item['dateName']
-                elif isinstance(items, dict):  # 공휴일이 한 개일 경우
-                    locdate = str(items['locdate'])
-                    date_str = datetime.strptime(locdate, "%Y%m%d").strftime("%Y-%m-%d")
-                    holidays.append(date_str)
-                    holiday_info[date_str] = items['dateName']
-        except (json.JSONDecodeError, KeyError):
-            pass  # 공휴일이 없는 경우 오류를 무시
-    return holidays, holiday_info
+            items = data['response']['body']['items'].get('item', [])
+            if isinstance(items, dict):
+                items = [items]  # 단일 항목인 경우 리스트로 변환
+            for item in items:
+                date_str = datetime.strptime(str(item['locdate']), "%Y%m%d").strftime("%Y-%m-%d")
+                if date_str not in holidays:
+                    holidays[date_str] = []
+                holidays[date_str].append(item['dateName'])
+        except (json.JSONDecodeError, KeyError) as e:
+            st.error(f"공휴일 데이터 파싱 오류: {e}")
+    return holidays
+
+# 공휴일 설명 생성
+def create_holiday_descriptions(holidays, month):
+    holiday_descriptions = []
+    for date, names in sorted(holidays.items()):
+        if datetime.strptime(date, "%Y-%m-%d").month == month:
+            day = datetime.strptime(date, "%Y-%m-%d").day
+            if len(names) > 1:
+                holiday_descriptions.append(f"{day}일: {', '.join(names)}")
+            else:
+                holiday_descriptions.append(f"{day}일: {names[0]}")
+    return holiday_descriptions
 
 # 스케줄 데이터 초기 로드
 schedule_data, sha = load_schedule()
@@ -118,7 +124,7 @@ year = st.session_state.year
 month = st.session_state.month
 
 # 공휴일 로드
-holidays, holiday_info = load_holidays(year)
+holidays = load_holidays(year)
 
 # 달력 생성 함수
 def generate_calendar(year, month):
@@ -241,30 +247,7 @@ if st.button("다음 월"):
         st.rerun()
 
 # 공휴일 설명
-# 이어지는 공휴일 그룹화 함수
-def group_holidays(holiday_info, month):
-    holidays = [date for date in sorted(holiday_info.keys()) if datetime.strptime(date, "%Y-%m-%d").month == month]
-    grouped_holidays = {}
-
-    for holiday in holidays:
-        day = datetime.strptime(holiday, "%Y-%m-%d").day
-        if day not in grouped_holidays:
-            grouped_holidays[day] = []
-        grouped_holidays[day].append(holiday_info[holiday])
-
-    return grouped_holidays
-
-# 현재 달의 공휴일 그룹화
-grouped_holidays = group_holidays(holiday_info, month)
-
-# 그룹화된 공휴일 설명 출력
-holiday_descriptions = []
-for day, holiday_names in sorted(grouped_holidays.items()):
-    if len(holiday_names) > 1:
-        holiday_descriptions.append(f"{day}일: {', '.join(holiday_names)}")
-    else:
-        holiday_descriptions.append(f"{day}일: {holiday_names[0]}")
-
+holiday_descriptions = create_holiday_descriptions(holidays, month)
 st.markdown(" / ".join(holiday_descriptions))
 
 # 사이드바: 근무 조 설정
