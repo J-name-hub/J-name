@@ -265,12 +265,12 @@ def main():
         .calendar-cell {
             flex: 1;
             text-align: center;
-            padding: 2px;
-            height: 60px;  /* 높이를 약간 늘렸습니다 */
+            padding: 3px 2px;  /* 상하 패딩을 3px로, 좌우 패딩을 2px로 설정 */
+            height: 62px;  /* 전체 높이를 약간 늘림 */
             font-size: 19px;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;  /* 내용을 위아래로 분산 */
             align-items: center;
             border-right: 1px solid #ddd;
         }
@@ -282,8 +282,9 @@ def main():
             height: 100%;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;  /* 내용을 위아래로 분산 */
             align-items: center;
+            padding: 2px 0;  /* 상하 여백 추가 */
         }
         .calendar-cell-content.today {
             border: 2px solid #007bff;
@@ -291,7 +292,7 @@ def main():
         }
         .calendar-day {
             font-weight: bold;
-            margin-bottom: 0px;
+            margin-bottom: 2px;
         }
         .calendar-shift {
             padding: 2px 5px;
