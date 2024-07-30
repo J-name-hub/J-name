@@ -343,6 +343,9 @@ def main():
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data)
 
+    # 공백 추가
+    st.markdown("<div class='space-before-button'></div>", unsafe_allow_html=True)
+
     holiday_descriptions = create_holiday_descriptions(holidays, month)
     st.markdown(" / ".join(holiday_descriptions))
 
