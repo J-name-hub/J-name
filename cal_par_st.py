@@ -226,10 +226,8 @@ def main():
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background-color: #4CAF50;
-            color: white;
             font-size: 16px;
-            padding: 14px 20px;
+            padding: 2px 4px;  /* 패딩을 최소화 */
             border: none;
             cursor: pointer;
             text-align: center;
