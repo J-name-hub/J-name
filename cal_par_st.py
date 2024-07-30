@@ -265,46 +265,39 @@ def main():
         .calendar-cell {
             flex: 1;
             text-align: center;
-            padding: 2px 2px 4px 2px;  /* 아래 패딩을 4px로 증가 */
-            height: 62px;  /* 전체 높이를 약간 늘림 */
+            padding: 2px;
+            height: 60px;  /* 높이를 약간 늘렸습니다 */
             font-size: 19px;
-              display: flex;
+            display: flex;
             flex-direction: column;
-            justify-content: space-between;  /* 내용을 위아래로 분산 */
+            justify-content: center;
             align-items: center;
             border-right: 1px solid #ddd;
-            border-bottom: 2px solid #ddd;  /* 아래 테두리를 2px로 증가 */
         }
         .calendar-cell:last-child {
             border-right: none;
-        }
-        .calendar-row:last-child .calendar-cell {
-            border-bottom: none;  /* 마지막 행의 셀은 아래 테두리 제거 */
         }
         .calendar-cell-content {
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;  /* 내용을 위아래로 분산 */
+            justify-content: center;
             align-items: center;
-            padding: 2px 0;  /* 상하 여백 추가 */
         }
         .calendar-cell-content.today {
             border: 2px solid #007bff;
             border-radius: 5px;
-            height: calc(100% - 4px);  /* 테두리를 고려하여 높이 조정 */
-            width: calc(100% - 4px);  /* 테두리를 고려하여 너비 조정 */
         }
         .calendar-day {
             font-weight: bold;
-            margin-bottom: 2px;
+            margin-bottom: 0px;
         }
         .calendar-shift {
-            padding: 1px 4px;  /* 상하 패딩을 줄이고 좌우 패딩은 유지 */
+            padding: 2px 5px;
             border-radius: 3px;
-            font-size: 17px;
-            font-weight: bold;
+            font-size: 17px;  /* 글자 크기를 키웠습니다 */
+            font-weight: bold;  /* 글자를 굵게 만들었습니다 */
         }
         .space-before-button {
             margin-top: 20px;
