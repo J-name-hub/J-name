@@ -227,7 +227,8 @@ def main():
             align-items: center;
             justify-content: center;
             font-size: 16px;
-            padding: 2px 4px;  /* 패딩을 최소화 */
+            padding: 0px 4px;  /* 상하 패딩을 0으로 설정 */
+            height: 30px;  /* 버튼의 높이를 30px로 설정 */
             border: none;
             cursor: pointer;
             text-align: center;
