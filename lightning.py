@@ -10,9 +10,14 @@ import altair as alt
 import pytz
 from concurrent.futures import ThreadPoolExecutor
 from shapely.geometry import Polygon, Point
+import os
+from github import Github
+from io import StringIO
 
 # Streamlit secrets에서 API 키 가져오기
 API_KEY = st.secrets["api"]["API_KEY"]
+GITHUB_TOKEN = st.secrets["github"]["GITHUB_TOKEN"]
+REPO_NAME = st.secrets["github"]["REPO_NAME"]
 
 # 기상청 낙뢰 API URL
 API_URL = "http://apis.data.go.kr/1360000/LgtInfoService/getLgt"
@@ -90,10 +95,46 @@ def get_all_lightning_data(date):
 
     return all_data
 
-# 데이터 로딩
-data_load_state = st.text('데이터를 불러오는 중...')
-all_data = get_all_lightning_data(selected_date)
-data_load_state.text('데이터 로딩 완료!')
+# GitHub에 데이터 저장하기
+def save_data_to_github(data, date):
+    try:
+        # GitHub 연결 설정
+        g = Github(GITHUB_TOKEN)
+        repo = g.get_repo(REPO_NAME)
+        
+        # 날짜별 디렉토리 생성
+        folder_name = date.strftime('%Y/%m/%d')
+        file_path = f"lightning/{folder_name}/lightning_data.xml"
+        
+        # XML 데이터로 변환
+        data_xml = "<data>\n" + "\n".join(ET.tostring(item, encoding='unicode') for item in data) + "\n</data>"
+        
+        # GitHub에 파일 업로드
+        repo.create_file(file_path, f"Add lightning data for {date.strftime('%Y-%m-%d')}", data_xml)
+        st.success(f"데이터가 GitHub에 저장되었습니다: {file_path}")
+    except Exception as e:
+        st.error(f"GitHub에 데이터 저장 중 오류 발생: {e}")
+
+# GitHub에서 데이터 불러오기
+def load_data_from_github(date):
+    try:
+        # GitHub 연결 설정
+        g = Github(GITHUB_TOKEN)
+        repo = g.get_repo(REPO_NAME)
+        
+        # 날짜별 디렉토리 설정
+        folder_name = date.strftime('%Y/%m/%d')
+        file_path = f"lightning/{folder_name}/lightning_data.xml"
+        
+        # GitHub에서 파일 가져오기
+        file_content = repo.get_contents(file_path).decoded_content.decode('utf-8')
+        
+        # XML 파싱
+        root = ET.fromstring(file_content)
+        return root.findall('.//item')
+    except Exception as e:
+        st.error(f"GitHub에서 데이터 불러오기 중 오류 발생: {e}")
+        return []
 
 # XML 데이터 파싱 및 오류 처리
 def parse_datetime(item):
@@ -107,99 +148,219 @@ def parse_datetime(item):
 # 'All' 또는 시간별 선택
 time_selection = st.radio("데이터 표시 방식:", ('All', '시간별'))
 
-# 데이터 필터링
-if time_selection == 'All':
-    filtered_data = all_data
-else:
-    lightning_times = sorted(set([parse_datetime(item) for item in all_data if parse_datetime(item)]))
+# 실시간 데이터 불러오기 버튼
+if st.button('실시간 데이터 불러오기'):
+    # 데이터 로딩
+    data_load_state = st.text('데이터를 불러오는 중...')
+    all_data = get_all_lightning_data(selected_date)
+    data_load_state.text('데이터 로딩 완료!')
+    
+    # 데이터 필터링
+    if time_selection == 'All':
+        filtered_data = all_data
+    else:
+        lightning_times = sorted(set([parse_datetime(item) for item in all_data if parse_datetime(item)]))
 
-    def round_to_nearest_ten_minutes(dt):
-        discard = timedelta(minutes=dt.minute % 10, seconds=dt.second, microseconds=dt.microsecond)
-        dt -= discard
-        if discard >= timedelta(minutes=5):
-            dt += timedelta(minutes=10)
-        return dt
+        def round_to_nearest_ten_minutes(dt):
+            discard = timedelta(minutes=dt.minute % 10, seconds=dt.second, microseconds=dt.microsecond)
+            dt -= discard
+            if discard >= timedelta(minutes=5):
+                dt += timedelta(minutes=10)
+            return dt
 
-    rounded_times = [round_to_nearest_ten_minutes(t) for t in lightning_times]
-    rounded_times = sorted(set(rounded_times))
+        rounded_times = [round_to_nearest_ten_minutes(t) for t in lightning_times]
+        rounded_times = sorted(set(rounded_times))
 
-    selected_time = st.selectbox("시간을 선택하세요", rounded_times, format_func=lambda x: x.strftime("%H:%M"))
+        selected_time = st.selectbox("시간을 선택하세요", rounded_times, format_func=lambda x: x.strftime("%H:%M"))
 
-    filtered_data = [
-        item for item in all_data
-        if parse_datetime(item) and abs((parse_datetime(item) - selected_time).total_seconds()) < 600
-    ]
+        filtered_data = [
+            item for item in all_data
+            if parse_datetime(item) and abs((parse_datetime(item) - selected_time).total_seconds()) < 600
+        ]
 
-# 영종도 관련 시간별 낙뢰 횟수 계산
-hourly_data = {}
-total_lightning = 0
+    # 영종도 관련 시간별 낙뢰 횟수 계산
+    hourly_data = {}
+    total_lightning = 0
 
-for hour in range(24):
-    count = 0
-    for item in all_data:
-        item_time = parse_datetime(item)
-        if item_time and item_time.hour == hour:
+    for hour in range(24):
+        count = 0
+        for item in all_data:
+            item_time = parse_datetime(item)
+            if item_time and item_time.hour == hour:
+                lat = float(item.find('wgs84Lat').text)
+                lon = float(item.find('wgs84Lon').text)
+                if yeongjong_polygon.contains(Point(lon, lat)):
+                    count += 1
+        hourly_data[hour] = count
+        total_lightning += count
+
+    # 시간별 낙뢰 횟수 차트 생성
+    if sum(hourly_data.values()) > 0:
+        df = pd.DataFrame(list(hourly_data.items()), columns=['Hour', 'Count'])
+        chart = alt.Chart(df).mark_bar().encode(
+            x='Hour:O',
+            y='Count:Q'
+        ).properties(
+            title=f"{selected_date.strftime('%Y-%m-%d')} 영종도 시간별 낙뢰 횟수"
+        )
+        st.altair_chart(chart, use_container_width=True)
+
+    # 총 낙뢰 횟수 표시
+    if total_lightning > 0:
+        st.write(f"영종도 총 낙뢰 횟수: {total_lightning}")
+
+    # 필터링된 데이터에 따른 지도 생성
+    if filtered_data:
+        m = folium.Map(location=YEONGJONG_CENTER, zoom_start=12)
+        marker_cluster = MarkerCluster().add_to(m)
+
+        folium.Polygon(
+            locations=YEONGJONG_BOUNDARY,
+            color="red",
+            fill=True,
+            fillColor="red",
+            fillOpacity=0.1
+        ).add_to(m)
+
+        for item in filtered_data:
             lat = float(item.find('wgs84Lat').text)
             lon = float(item.find('wgs84Lon').text)
-            if yeongjong_polygon.contains(Point(lon, lat)):
-                count += 1
-    hourly_data[hour] = count
-    total_lightning += count
+            location = (lat, lon)
 
-# 시간별 낙뢰 횟수 차트 생성
-if sum(hourly_data.values()) > 0:
-    df = pd.DataFrame(list(hourly_data.items()), columns=['Hour', 'Count'])
-    chart = alt.Chart(df).mark_bar().encode(
-        x='Hour:O',
-        y='Count:Q'
-    ).properties(
-        title=f"{selected_date.strftime('%Y-%m-%d')} 영종도 시간별 낙뢰 횟수"
-    )
-    st.altair_chart(chart, use_container_width=True)
+            datetime_str = item.find('dateTime').text
+            datetime_obj = datetime.strptime(datetime_str, "%Y%m%d%H%M%S")
+            formatted_time = datetime_obj.strftime('%Y-%m-%d %H:%M:%S')
 
-# 총 낙뢰 횟수 표시
-if total_lightning > 0:
-    st.write(f"영종도 총 낙뢰 횟수: {total_lightning}")
+            folium.Marker(
+                location=location,
+                popup=f"낙뢰 발생 위치: 위도 {lat}, 경도 {lon}<br>발생 시간: {formatted_time}",
+                icon=folium.Icon(color='blue', icon='bolt')
+            ).add_to(marker_cluster)
 
-# 필터링된 데이터에 따른 지도 생성
-if filtered_data:
-    m = folium.Map(location=YEONGJONG_CENTER, zoom_start=12)
-    marker_cluster = MarkerCluster().add_to(m)
-
-    folium.Polygon(
-        locations=YEONGJONG_BOUNDARY,
-        color="red",
-        fill=True,
-        fillColor="red",
-        fillOpacity=0.1
-    ).add_to(m)
-
-    for item in filtered_data:
-        lat = float(item.find('wgs84Lat').text)
-        lon = float(item.find('wgs84Lon').text)
-        location = (lat, lon)
-
-        datetime_str = item.find('dateTime').text
-        datetime_obj = datetime.strptime(datetime_str, "%Y%m%d%H%M%S")
-        formatted_time = datetime_obj.strftime('%Y-%m-%d %H:%M:%S')
-
-        folium.Marker(
-            location=location,
-            popup=f"낙뢰 발생 위치: 위도 {lat}, 경도 {lon}<br>발생 시간: {formatted_time}",
-            icon=folium.Icon(color='blue', icon='bolt')
-        ).add_to(marker_cluster)
-
-    st_folium(m, width=700, height=500)
-else:
-    if time_selection == "All":
-        st.warning(f"선택한 날짜 ({selected_date.strftime('%Y-%m-%d')})에 낙뢰 데이터가 없습니다.")
+        st_folium(m, width=700, height=500)
     else:
-        st.warning("선택한 시간에 대한 낙뢰 데이터가 없습니다.")
+        if time_selection == "All":
+            st.warning(f"선택한 날짜 ({selected_date.strftime('%Y-%m-%d')})에 낙뢰 데이터가 없습니다.")
+        else:
+            st.warning("선택한 시간에 대한 낙뢰 데이터가 없습니다.")
 
-# 시간 범위 설명
-if time_selection == "All":
-    st.write(f"{selected_date.strftime('%Y-%m-%d')}의 모든 낙뢰 데이터를 표시합니다.")
-else:
-    st.write(f"선택한 시간 {selected_time.strftime('%H:%M')}의 낙뢰 데이터를 표시합니다.")
+    # 시간 범위 설명
+    if time_selection == "All":
+        st.write(f"{selected_date.strftime('%Y-%m-%d')}의 모든 낙뢰 데이터를 표시합니다.")
+    else:
+        st.write(f"선택한 시간 {selected_time.strftime('%H:%M')}의 낙뢰 데이터를 표시합니다.")
 
-st.write("기상청 API는 일반적으로 선택한 시간을 포함한 10분 간격의 데이터를 제공합니다.")
+    st.write("기상청 API는 일반적으로 선택한 시간을 포함한 10분 간격의 데이터를 제공합니다.")
+
+# 일일 데이터 저장 버튼
+if st.button('일일 데이터(현재까지) 저장'):
+    all_data = get_all_lightning_data(selected_date)
+    save_data_to_github(all_data, selected_date)
+
+# 데이터 불러오기 버튼
+if st.button('데이터 불러오기'):
+    loaded_data = load_data_from_github(selected_date)
+    
+    if loaded_data:
+        filtered_data = loaded_data
+        st.success(f"{selected_date.strftime('%Y-%m-%d')}의 데이터가 성공적으로 로드되었습니다.")
+        
+        # 데이터 필터링
+        if time_selection == 'All':
+            filtered_data = loaded_data
+        else:
+            lightning_times = sorted(set([parse_datetime(item) for item in loaded_data if parse_datetime(item)]))
+
+            def round_to_nearest_ten_minutes(dt):
+                discard = timedelta(minutes=dt.minute % 10, seconds=dt.second, microseconds=dt.microsecond)
+                dt -= discard
+                if discard >= timedelta(minutes=5):
+                    dt += timedelta(minutes=10)
+                return dt
+
+            rounded_times = [round_to_nearest_ten_minutes(t) for t in lightning_times]
+            rounded_times = sorted(set(rounded_times))
+
+            selected_time = st.selectbox("시간을 선택하세요", rounded_times, format_func=lambda x: x.strftime("%H:%M"))
+
+            filtered_data = [
+                item for item in loaded_data
+                if parse_datetime(item) and abs((parse_datetime(item) - selected_time).total_seconds()) < 600
+            ]
+
+        # 영종도 관련 시간별 낙뢰 횟수 계산
+        hourly_data = {}
+        total_lightning = 0
+
+        for hour in range(24):
+            count = 0
+            for item in loaded_data:
+                item_time = parse_datetime(item)
+                if item_time and item_time.hour == hour:
+                    lat = float(item.find('wgs84Lat').text)
+                    lon = float(item.find('wgs84Lon').text)
+                    if yeongjong_polygon.contains(Point(lon, lat)):
+                        count += 1
+            hourly_data[hour] = count
+            total_lightning += count
+
+        # 시간별 낙뢰 횟수 차트 생성
+        if sum(hourly_data.values()) > 0:
+            df = pd.DataFrame(list(hourly_data.items()), columns=['Hour', 'Count'])
+            chart = alt.Chart(df).mark_bar().encode(
+                x='Hour:O',
+                y='Count:Q'
+            ).properties(
+                title=f"{selected_date.strftime('%Y-%m-%d')} 영종도 시간별 낙뢰 횟수"
+            )
+            st.altair_chart(chart, use_container_width=True)
+
+        # 총 낙뢰 횟수 표시
+        if total_lightning > 0:
+            st.write(f"영종도 총 낙뢰 횟수: {total_lightning}")
+
+        # 필터링된 데이터에 따른 지도 생성
+        if filtered_data:
+            m = folium.Map(location=YEONGJONG_CENTER, zoom_start=12)
+            marker_cluster = MarkerCluster().add_to(m)
+
+            folium.Polygon(
+                locations=YEONGJONG_BOUNDARY,
+                color="red",
+                fill=True,
+                fillColor="red",
+                fillOpacity=0.1
+            ).add_to(m)
+
+            for item in filtered_data:
+                lat = float(item.find('wgs84Lat').text)
+                lon = float(item.find('wgs84Lon').text)
+                location = (lat, lon)
+
+                datetime_str = item.find('dateTime').text
+                datetime_obj = datetime.strptime(datetime_str, "%Y%m%d%H%M%S")
+                formatted_time = datetime_obj.strftime('%Y-%m-%d %H:%M:%S')
+
+                folium.Marker(
+                    location=location,
+                    popup=f"낙뢰 발생 위치: 위도 {lat}, 경도 {lon}<br>발생 시간: {formatted_time}",
+                    icon=folium.Icon(color='blue', icon='bolt')
+                ).add_to(marker_cluster)
+
+            st_folium(m, width=700, height=500)
+        else:
+            if time_selection == "All":
+                st.warning(f"선택한 날짜 ({selected_date.strftime('%Y-%m-%d')})에 낙뢰 데이터가 없습니다.")
+            else:
+                st.warning("선택한 시간에 대한 낙뢰 데이터가 없습니다.")
+
+        # 시간 범위 설명
+        if time_selection == "All":
+            st.write(f"{selected_date.strftime('%Y-%m-%d')}의 모든 낙뢰 데이터를 표시합니다.")
+        else:
+            st.write(f"선택한 시간 {selected_time.strftime('%H:%M')}의 낙뢰 데이터를 표시합니다.")
+
+        st.write("기상청 API는 일반적으로 선택한 시간을 포함한 10분 간격의 데이터를 제공합니다.")
+
+    else:
+        st.error(f"{selected_date.strftime('%Y-%m-%d')}의 데이터를 불러오는 중 오류가 발생했습니다.")
