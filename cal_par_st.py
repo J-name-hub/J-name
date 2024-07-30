@@ -298,9 +298,6 @@ def main():
     month_days = generate_calendar(year, month)
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data)
-
-    # 공백 추가
-    st.empty()
     
     # '다음 월' 버튼을 달력 아래로 이동
     if st.button("다음 월"):
