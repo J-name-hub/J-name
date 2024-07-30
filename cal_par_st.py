@@ -229,7 +229,6 @@ def main():
             font-size: 16px;
             padding: 0px 4px;
             height: 30px;
-            border: none;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
