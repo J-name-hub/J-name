@@ -232,6 +232,32 @@ def main():
             text-align: center;
             text-decoration: none;
         }
+        .calendar-header {
+            display: flex;
+            width: 100%;
+        }
+        .calendar-header-cell {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .calendar-row {
+            display: flex;
+            width: 100%;
+        }
+        .calendar-cell {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            height: 55px;
+            font-size: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -299,41 +325,49 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 if date_str not in schedule_data:
                     schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
                 background = shift_colors[schedule_data[date_str]]
-                day_style = "font-weight: bold; text-align: center; padding: 1px; height: 55px; font-size: 18px;"
-
+                
+                style = f"background-color: {background};"
                 if current_date == today:
-                    background = "background-color: lightblue"
+                    style = "background-color: lightblue;"
                 elif current_date == yesterday:
-                    background = shift_colors[schedule_data[date_str]]
+                    style = background
 
-                if current_date.weekday() == 5:
-                    day_style += " color: red;"
-                elif current_date.weekday() == 6 or date_str in holidays:
-                    day_style += " color: red;"
+                if current_date.weekday() == 5 or current_date.weekday() == 6 or date_str in holidays:
+                    color = "red"
                 else:
-                    day_style += " color: black;"
+                    color = "black"
 
-                shift_text = f"<div>{day}<br><span>{schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'}</span></div>"
-                week_data.append(f"<div style='{background}; {day_style}'>{shift_text}</div>")
+                shift_text = schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'
+                cell_content = f'<div style="{style}"><span style="color: {color};">{day}</span><br><span>{shift_text}</span></div>'
+                week_data.append(cell_content)
             else:
-                week_data.append("<div style='height: 55px;'>&nbsp;</div>")
+                week_data.append('&nbsp;')
         calendar_data.append(week_data)
     return calendar_data
 
 def display_calendar(calendar_data):
-    calendar_df = pd.DataFrame(calendar_data, columns=["일", "월", "화", "수", "목", "금", "토"])
     days_header = ["일", "월", "화", "수", "목", "금", "토"]
-    days_header_style = [
-        "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;",
-        "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
-        "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
-        "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
-        "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
-        "background-color: white; text-align: center; font-weight: bold; color: black; font-size: 18px;",
-        "background-color: white; text-align: center; font-weight: bold; color: red; font-size: 18px;"
-    ]
-    calendar_df.columns = [f"<div style='{style}'>{day}</div>" for day, style in zip(days_header, days_header_style)]
-    st.markdown(calendar_df.to_html(escape=False, index=False), unsafe_allow_html=True)
+    
+    # 요일 헤더 생성
+    header_html = '<div class="calendar-header">'
+    for day in days_header:
+        color = "red" if day in ["일", "토"] else "black"
+        header_html += f'<div class="calendar-header-cell" style="color: {color};">{day}</div>'
+    header_html += '</div>'
+    
+    # 달력 데이터 생성
+    calendar_html = ''
+    for week in calendar_data:
+        calendar_html += '<div class="calendar-row">'
+        for cell in week:
+            calendar_html += f'<div class="calendar-cell">{cell}</div>'
+        calendar_html += '</div>'
+    
+    # 전체 달력 HTML 조합
+    full_calendar_html = header_html + calendar_html
+    
+    # HTML을 Streamlit에 표시
+    st.markdown(full_calendar_html, unsafe_allow_html=True)
 
 def sidebar_controls():
     st.sidebar.title("근무 조 설정")
