@@ -124,25 +124,16 @@ def load_holidays(year):
         response = requests.get(url)
         response.raise_for_status()
         data = response.json()
-
-        # Check for valid response structure
-        if "response" in data and "body" in data["response"] and "items" in data["response"]["body"]:
-            items = data['response']['body']['items'].get('item', [])
-        else:
-            items = []
-
-        if isinstance(items, dict):  # In case of a single item
+        items = data['response']['body']['items'].get('item', [])
+        if isinstance(items, dict):
             items = [items]
-
         holidays = {}
         for item in items:
             date_str = datetime.strptime(str(item['locdate']), "%Y%m%d").strftime("%Y-%m-%d")
             if date_str not in holidays:
                 holidays[date_str] = []
             holidays[date_str].append(item['dateName'])
-
         return holidays
-
     except requests.RequestException as e:
         st.error(f"공휴일 데이터 로드 실패: {e}")
         return {}
@@ -213,91 +204,287 @@ shift_patterns = {
     "A": shifts,
     "B": shifts[-1:] + shifts[:-1],
     "C": shifts[-2:] + shifts[:-2],
-    "D": shifts[-3:] + shifts[:-3]
+    "D": shifts[-3:] + shifts[:-3],
 }
 
-# Streamlit 앱
+# 날짜에 해당하는 근무 조를 얻는 함수
+@st.cache_data
+def get_shift(target_date, team):
+    base_date = datetime(2000, 1, 3).date()
+    delta_days = (target_date - base_date).days
+    pattern = shift_patterns[team]
+    return pattern[delta_days % len(pattern)]
+
 def main():
-    st.title("스케줄 관리자")
+    st.set_page_config(page_title="교대근무 달력", layout="wide")
 
-    schedule, sha = load_schedule()
-    if schedule is None:
-        st.error("스케줄 데이터를 로드할 수 없습니다.")
-        return
+    # CSS 스타일 추가
+    st.markdown("""
+        <style>
+        .stButton > button {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            padding: 0px 4px;
+            height: 30px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+        }
+        .calendar-container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .calendar-header {
+            display: flex;
+            width: 100%;
+            border-bottom: 1px solid #ddd;
+        }
+        .calendar-header-cell {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            font-weight: bold;
+            font-size: 18px;
+            border-right: 1px solid #ddd;
+        }
+        .calendar-header-cell:last-child {
+            border-right: none;
+        }
+        .calendar-row {
+            display: flex;
+            width: 100%;
+            border-bottom: 1px solid #ddd;
+        }
+        .calendar-row:last-child {
+            border-bottom: none;
+        }
+        .calendar-cell {
+            flex: 1;
+            text-align: center;
+            height: 62px;  /* 높이를 약간 늘렸습니다 */
+            font-size: 19px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-right: 1px solid #ddd;
+        }
+        .calendar-cell:last-child {
+            border-right: none;
+        }
+        .calendar-cell-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .calendar-cell-content.today {
+            border: 2px solid #007bff;
+            border-radius: 5px;
+        }
+        .calendar-day {
+            font-weight: bold;
+            margin-bottom: 0px;
+        }
+        .calendar-shift {
+            padding: 0 5px;
+            border-radius: 3px;
+            font-size: 17px;  /* 글자 크기를 키웠습니다 */
+            font-weight: bold;  /* 글자를 굵게 만들었습니다 */
+        }
+        .space-before-button {
+            margin-top: 0;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-    today = datetime.today()
-    current_year = today.year
-    current_month = today.month
+    # 세션 상태 초기화
+    if "year" not in st.session_state or "month" not in st.session_state:
+        today = datetime.now(pytz.timezone('Asia/Seoul'))
+        st.session_state.year, st.session_state.month = today.year, today.month
 
-    default_team = load_team_settings_from_github()
+    if "expander_open" not in st.session_state:
+        st.session_state.expander_open = False
 
-    # 사이드바에서 팀 선택
-    team = st.sidebar.selectbox("팀 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(default_team))
-    
-    # 달력 연도와 월 선택
-    selected_year = st.sidebar.number_input("연도", min_value=2000, max_value=2100, value=current_year, step=1)
-    selected_month = st.sidebar.number_input("월", min_value=1, max_value=12, value=current_month, step=1)
+    # GitHub에서 팀 설정 로드 및 세션 상태 업데이트
+    if "team" not in st.session_state:
+        st.session_state.team = load_team_settings_from_github()
 
-    # 공휴일 데이터 로드
-    holidays = load_holidays(selected_year)
-    if not holidays:
-        st.warning("공휴일 데이터가 없습니다. 공휴일 데이터를 다시 로드해주세요.")
+    year = st.session_state.year
+    month = st.session_state.month
 
-    # 달력 생성
-    month_days = generate_calendar(selected_year, selected_month)
+    holidays = load_holidays(year)
+    schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
 
-    # 팀 스케줄 가져오기
-    team_schedule = schedule.get(f"{selected_year}-{selected_month:02d}", {}).get(team, {})
+    if not schedule_data:
+        schedule_data = {}
+        sha = None
+
+    titleup_style = "font-size: 18px; font-weight: bold; text-align: center;"
+    st.markdown(f"<div style='{titleup_style}'>{year}년</div>", unsafe_allow_html=True)
+
+    title_style = "font-size: 30px; font-weight: bold; text-align: center;"
+    st.markdown(f"<div style='{title_style}'>{month}월 교대근무 달력</div>", unsafe_allow_html=True)
+
+    today = datetime.now(pytz.timezone('Asia/Seoul')).date()
+    yesterday = today - timedelta(days=1)
+
+    if st.button("이전 월"):
+        update_month(-1)
+
+    month_days = generate_calendar(year, month)
+    calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
+    display_calendar(calendar_data)
+
+    # 공백 추가
+    st.markdown("<div class='space-before-button'></div>", unsafe_allow_html=True)
+
+    holiday_descriptions = create_holiday_descriptions(holidays, month)
+    st.markdown(" / ".join(holiday_descriptions))
+
+    # '다음 월' 버튼을 달력 아래로 이동
+    if st.button("다음 월"):
+        update_month(1)
+
+    sidebar_controls()
+
+def update_month(delta):
+    new_date = datetime(st.session_state.year, st.session_state.month, 1) + relativedelta(months=delta)
+    st.session_state.year = new_date.year
+    st.session_state.month = new_date.month
+    st.rerun()
+
+def create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday):
+    calendar_data = []
     for week in month_days:
-        for i, day in enumerate(week):
+        week_data = []
+        for day in week:
             if day != 0:
-                team_schedule.setdefault(day, shift_patterns[team][(day - 1) % len(shift_patterns[team])])
-    
-    # 공휴일 설명 생성
-    holiday_descriptions = create_holiday_descriptions(holidays, selected_month)
-    
-    # 달력 표시
-    st.header(f"{selected_year}년 {selected_month}월 {team}팀 달력")
-    col_labels = ["일", "월", "화", "수", "목", "금", "토"]
-    cols = st.columns(7)
-    for i, label in enumerate(col_labels):
-        cols[i].markdown(f"<b>{label}</b>", unsafe_allow_html=True)
+                date_str = f"{year}-{month:02d}-{day:02d}"
+                current_date = datetime(year, month, day).date()
+                if date_str not in schedule_data:
+                    schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
+                
+                shift = schedule_data[date_str]
+                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))  # 교대 근무 배경색
+                
+                if current_date.weekday() == 5 or current_date.weekday() == 6 or date_str in holidays:
+                    day_color = "red"
+                else:
+                    day_color = "black"
 
-    for week in month_days:
-        cols = st.columns(7)
-        for i, day in enumerate(week):
-            if day == 0:
-                cols[i].markdown(" ")
+                # 오늘 날짜 테두리 처리
+                today_class = "today" if current_date == today else ""
+
+                shift_text = shift if shift != '비' else '&nbsp;'
+                cell_content = f'''
+                    <div class="calendar-cell-content {today_class}">
+                        <span class="calendar-day" style="color: {day_color};">{day}</span>
+                        <span class="calendar-shift" style="background-color: {shift_background}; color: {shift_color};">{shift_text}</span>
+                    </div>
+                '''
+                week_data.append(cell_content)
             else:
-                shift = team_schedule.get(day, "비")
-                bg_color, text_color = shift_colors[shift]
-                if datetime(selected_year, selected_month, day).strftime("%Y-%m-%d") in holidays:
-                    bg_color = "red"
-                    shift = ", ".join(holidays[datetime(selected_year, selected_month, day).strftime("%Y-%m-%d")])
-                cols[i].markdown(
-                    f'<div style="background-color: {bg_color}; color: {text_color}; text-align: center; padding: 5px;">{day}<br>{shift}</div>',
-                    unsafe_allow_html=True
-                )
-    
-    # 휴일 설명
-    if holiday_descriptions:
-        st.markdown("#### 공휴일 설명")
-        for description in holiday_descriptions:
-            st.write(description)
-    
-    # 팀 설정 저장
-    if st.sidebar.button("팀 설정 저장"):
-        if save_team_settings_to_github(team):
-            st.success("팀 설정이 저장되었습니다.")
-        else:
-            st.error("팀 설정 저장에 실패했습니다.")
+                week_data.append('&nbsp;')
+        calendar_data.append(week_data)
+    return calendar_data
 
-    # 스케줄 저장
-    if st.sidebar.button("스케줄 저장"):
-        if save_schedule(schedule, sha):
-            st.success("스케줄이 저장되었습니다.")
-        else:
-            st.error("스케줄 저장에 실패했습니다.")
+def display_calendar(calendar_data):
+    days_header = ["일", "월", "화", "수", "목", "금", "토"]
+    
+    # 요일 헤더 생성
+    header_html = '<div class="calendar-container"><div class="calendar-header">'
+    for day in days_header:
+        color = "red" if day in ["일", "토"] else "black"
+        header_html += f'<div class="calendar-header-cell" style="color: {color};">{day}</div>'
+    header_html += '</div>'
+    
+    # 달력 데이터 생성
+    calendar_html = ''
+    for week in calendar_data:
+        calendar_html += '<div class="calendar-row">'
+        for cell in week:
+            calendar_html += f'<div class="calendar-cell">{cell}</div>'
+        calendar_html += '</div>'
+    
+    # 전체 달력 HTML 조합
+    full_calendar_html = header_html + calendar_html + '</div>'
+    
+    # HTML을 Streamlit에 표시
+    st.markdown(full_calendar_html, unsafe_allow_html=True)
+
+def sidebar_controls():
+    st.sidebar.title("근무 조 설정")
+    with st.sidebar.form(key='team_settings_form'):
+        team = st.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
+        password_for_settings = st.text_input("암호 입력", type="password", key="settings_password")
+        submit_button = st.form_submit_button("설정 저장")
+
+        if submit_button:
+            if password_for_settings == "0301":
+                if save_team_settings_to_github(team):
+                    st.session_state.team = team
+                    st.sidebar.success(f"{team}조로 저장되었습니다.")
+                    st.rerun()
+                else:
+                    st.sidebar.error("조 설정 저장에 실패했습니다.")
+            else:
+                st.sidebar.error("암호가 일치하지 않습니다.")
+
+    st.sidebar.title("스케줄 변경")
+    if st.sidebar.button("스케줄 변경 활성화"):
+        st.session_state.expander_open = not st.session_state.expander_open
+
+    if st.session_state.expander_open:
+        with st.expander("스케줄 변경", expanded=True):
+            with st.form(key='schedule_change_form'):
+                change_date = st.date_input("변경할 날짜", datetime(st.session_state.year, st.session_state.month, 1), key="change_date")
+                new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
+                password = st.text_input("암호 입력", type="password", key="password")
+                change_submit_button = st.form_submit_button("스케줄 변경 저장")
+
+                if change_submit_button:
+                    if password == "0301":
+                        schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
+                        change_date_str = change_date.strftime("%Y-%m-%d")
+                        schedule_data[change_date_str] = new_shift
+                        if save_schedule(schedule_data, sha):
+                            st.success("스케줄이 저장되었습니다.")
+                            # 캐시 키를 변경하여 새로운 데이터를 로드하도록 함
+                            st.session_state.cache_key = datetime.now().strftime("%Y%m%d%H%M%S")
+                        else:
+                            st.error("스케줄 저장에 실패했습니다.")
+                        st.rerun()
+                    else:
+                        st.error("암호가 일치하지 않습니다.")
+    
+    st.sidebar.title("달력 이동")
+    months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
+
+    desired_months = []
+    current_date = datetime(st.session_state.year, st.session_state.month, 1)
+    for i in range(-5, 6):
+        new_date = current_date + relativedelta(months=i)
+        desired_months.append((new_date.year, new_date.month))
+
+    selected_year_month = st.sidebar.selectbox(
+        "월 선택", 
+        options=desired_months,
+        format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
+        index=5
+    )
+
+    selected_year, selected_month = selected_year_month
+    if selected_year != st.session_state.year or selected_month != st.session_state.month:
+        st.session_state.year = selected_year
+        st.session_state.month = selected_month
+        st.rerun()
 
 if __name__ == "__main__":
     main()
