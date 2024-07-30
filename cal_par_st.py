@@ -337,8 +337,11 @@ def main():
     year = st.session_state.year
     month = st.session_state.month
 
-
-    holidays = load_holidays(year)
+    try:
+        holidays = load_holidays(year)
+    except Exception as e:
+        st.error(f"공휴일 데이터 로드 중 오류 발생: {e}")
+        holidays = {}
     schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
 
     if not schedule_data:
