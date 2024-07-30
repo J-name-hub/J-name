@@ -299,6 +299,9 @@ def main():
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data)
 
+    # 공백 추가
+    st.empty()
+    
     # '다음 월' 버튼을 달력 아래로 이동
     if st.button("다음 월"):
         update_month(1)
@@ -339,7 +342,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 shift_text = shift if shift != '비' else '&nbsp;'
                 cell_content = f'''
                     <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                        <span style="color: {day_color}; background-color: {day_background}; padding: 2px 5px; border-radius: 3px;">{day}</span>
+                        <span style="color: {day_color}; background-color: {day_background}; padding: 1px 5px; border-radius: 3px;">{day}</span>
                         <span style="background-color: {shift_background}; padding: 2px 5px; margin-top: 2px; border-radius: 3px;">{shift_text}</span>
                     </div>
                 '''
