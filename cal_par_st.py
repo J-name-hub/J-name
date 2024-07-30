@@ -7,6 +7,7 @@ import pandas as pd
 import pytz
 from dateutil.relativedelta import relativedelta
 import base64
+import streamlit.components.v1 as components
 
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
@@ -352,6 +353,10 @@ def main():
     if st.button("다음 월"):
         update_month(1)
 
+        # 이미지 저장 버튼 추가
+    if st.button("달력 이미지 저장"):
+        capture_calendar(st.session_state.year, st.session_state.month)
+
     sidebar_controls()
 
 def update_month(delta):
@@ -394,6 +399,26 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 week_data.append('&nbsp;')
         calendar_data.append(week_data)
     return calendar_data
+
+def capture_calendar(year, month):
+    # HTML2Canvas 라이브러리와 캡처 스크립트 추가
+    components.html(
+        f"""
+        <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+        <script>
+        function captureCalendar() {{
+            html2canvas(document.querySelector(".calendar-container")).then(canvas => {{
+                var link = document.createElement('a');
+                link.download = '{year:04d}{month:02d}.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            }});
+        }}
+        </script>
+        <button onclick="captureCalendar()">달력 이미지 저장</button>
+        """,
+        height=50,
+    )
 
 def display_calendar(calendar_data):
     days_header = ["일", "월", "화", "수", "목", "금", "토"]
