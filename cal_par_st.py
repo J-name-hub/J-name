@@ -193,10 +193,10 @@ def generate_calendar(year, month):
 
 # 근무 조 설정
 shift_colors = {
-    "주": "background-color: yellow",
-    "야": "background-color: lightgray",
-    "비": "background-color: white",
-    "올": "background-color: lightgreen"
+    "주": "yellow",
+    "야": "lightgray",
+    "비": "white",
+    "올": "lightgreen"
 }
 
 shifts = ["주", "야", "비", "비"]
@@ -324,21 +324,23 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 current_date = datetime(year, month, day).date()
                 if date_str not in schedule_data:
                     schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
-                background = shift_colors[schedule_data[date_str]]
+                
+                shift = schedule_data[date_str]
+                background = shift_colors.get(shift, "white")  # 기본값을 white로 설정
                 
                 style = f"background-color: {background};"
                 if current_date == today:
                     style = "background-color: lightblue;"
                 elif current_date == yesterday:
-                    style = background
+                    style = f"background-color: {background};"
 
                 if current_date.weekday() == 5 or current_date.weekday() == 6 or date_str in holidays:
                     color = "red"
                 else:
                     color = "black"
 
-                shift_text = schedule_data[date_str] if schedule_data[date_str] != '비' else '&nbsp;'
-                cell_content = f'<div style="{style}"><span style="color: {color};">{day}</span><br><span>{shift_text}</span></div>'
+                shift_text = shift if shift != '비' else '&nbsp;'
+                cell_content = f'<div style="{style} width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;"><span style="color: {color};">{day}</span><span>{shift_text}</span></div>'
                 week_data.append(cell_content)
             else:
                 week_data.append('&nbsp;')
