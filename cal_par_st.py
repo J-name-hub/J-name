@@ -124,19 +124,28 @@ def load_holidays(year):
         response = requests.get(url)
         response.raise_for_status()
         data = response.json()
-        items = data['response']['body']['items'].get('item', [])
-        if isinstance(items, dict):
+
+        # Check for valid response structure
+        if "response" in data and "body" in data["response"] and "items" in data["response"]["body"]:
+            items = data['response']['body']['items'].get('item', [])
+        else:
+            items = []
+
+        if isinstance(items, dict):  # In case of a single item
             items = [items]
+
         holidays = {}
         for item in items:
             date_str = datetime.strptime(str(item['locdate']), "%Y%m%d").strftime("%Y-%m-%d")
             if date_str not in holidays:
                 holidays[date_str] = []
             holidays[date_str].append(item['dateName'])
+
         return holidays
+
     except requests.RequestException as e:
         st.error(f"공휴일 데이터 로드 실패: {e}")
-        return None
+        return {}
 
 # 공휴일 설명 생성
 def create_holiday_descriptions(holidays, month):
@@ -204,124 +213,89 @@ shift_patterns = {
     "A": shifts,
     "B": shifts[-1:] + shifts[:-1],
     "C": shifts[-2:] + shifts[:-2],
-    "D": shifts[-3:] + shifts[:-3],
+    "D": shifts[-3:] + shifts[:-3]
 }
 
-# 날짜에 해당하는 근무 조를 얻는 함수
-@st.cache_data
-def get_shift(target_date, team):
-    base_date = datetime(2000, 1, 3).date()
-    delta_days = (target_date - base_date).days
-    pattern = shift_patterns[team]
-    return pattern[delta_days % len(pattern)]
-
+# Streamlit 앱
 def main():
-    st.set_page_config(page_title="교대근무 달력", layout="wide")
+    st.title("스케줄 관리자")
 
-    # CSS 스타일 추가
-    st.markdown("""
-        <style>
-        .stButton > button {
-            font-size: 16px;
-            padding: 8px 16px;
-        }
-        </style>
-        """, unsafe_allow_html=True)
+    schedule, sha = load_schedule()
+    if schedule is None:
+        st.error("스케줄 데이터를 로드할 수 없습니다.")
+        return
 
-    # 사용자 입력 받기
-    st.sidebar.title("교대근무 달력 설정")
-    selected_year = st.sidebar.selectbox("연도 선택", [2023, 2024, 2025, 2026], index=0)
-    selected_month = st.sidebar.selectbox("월 선택", list(range(1, 13)), index=datetime.now().month - 1)
-    selected_team = st.sidebar.selectbox("팀 선택", ["A", "B", "C", "D"], index=0)
+    today = datetime.today()
+    current_year = today.year
+    current_month = today.month
+
+    default_team = load_team_settings_from_github()
+
+    # 사이드바에서 팀 선택
+    team = st.sidebar.selectbox("팀 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(default_team))
     
-    # 데이터 로드
-    schedule, sha = load_schedule(f"{selected_year}_{selected_month}")
-    team_settings = load_team_settings_from_github()
+    # 달력 연도와 월 선택
+    selected_year = st.sidebar.number_input("연도", min_value=2000, max_value=2100, value=current_year, step=1)
+    selected_month = st.sidebar.number_input("월", min_value=1, max_value=12, value=current_month, step=1)
+
+    # 공휴일 데이터 로드
+    holidays = load_holidays(selected_year)
+    if not holidays:
+        st.warning("공휴일 데이터가 없습니다. 공휴일 데이터를 다시 로드해주세요.")
 
     # 달력 생성
-    cal_data = generate_calendar(selected_year, selected_month)
-    st.title(f"{selected_year}년 {selected_month}월 달력")
+    month_days = generate_calendar(selected_year, selected_month)
 
-    # 공휴일 로드 및 오류 처리
-    holidays = load_holidays(selected_year)
-    if holidays is None:
-        st.warning("공휴일 데이터를 로드할 수 없습니다. 인터넷 연결을 확인하거나 나중에 다시 시도하세요.")
-    elif not holidays:
-        st.warning("해당 연도의 공휴일 데이터가 존재하지 않습니다.")
-    else:
-        holiday_descriptions = create_holiday_descriptions(holidays, selected_month)
-        if holiday_descriptions:
-            st.markdown(f"### 공휴일 목록 ({selected_year}년 {selected_month}월)")
-            for description in holiday_descriptions:
-                st.markdown(f"- {description}")
-
-    # 스케줄 데이터에 팀 이름 설정
-    if not schedule:
-        schedule[selected_team] = {}
-
+    # 팀 스케줄 가져오기
+    team_schedule = schedule.get(f"{selected_year}-{selected_month:02d}", {}).get(team, {})
+    for week in month_days:
+        for i, day in enumerate(week):
+            if day != 0:
+                team_schedule.setdefault(day, shift_patterns[team][(day - 1) % len(shift_patterns[team])])
+    
+    # 공휴일 설명 생성
+    holiday_descriptions = create_holiday_descriptions(holidays, selected_month)
+    
     # 달력 표시
-    st.write("## 달력")
-    cal_html = "<table style='border-collapse: collapse; width: 100%;'>"
-    cal_html += "<thead><tr>"
-    for day in ["일", "월", "화", "수", "목", "금", "토"]:
-        cal_html += f"<th style='border: 1px solid black; padding: 5px;'>{day}</th>"
-    cal_html += "</tr></thead>"
-    cal_html += "<tbody>"
-    for week in cal_data:
-        cal_html += "<tr>"
-        for day in week:
-            if day == 0:
-                cal_html += "<td style='border: 1px solid black; padding: 10px;'></td>"
-            else:
-                date_str = f"{selected_year}-{selected_month:02d}-{day:02d}"
-                current_shift = get_shift(datetime(selected_year, selected_month, day).date(), selected_team)
-                background_color, text_color = shift_colors[current_shift]
-                
-                # 공휴일 표시
-                holiday_info = ""
-                if holidays and date_str in holidays:
-                    holiday_names = holidays[date_str]
-                    holiday_info = "<br>".join(holiday_names)
-                    if holiday_names:
-                        background_color = "lightcoral"
-                        text_color = "white"
-                
-                # 기존 스케줄 데이터 로드
-                if date_str in schedule[selected_team]:
-                    selected_shift = schedule[selected_team][date_str]
-                    if selected_shift:
-                        current_shift = selected_shift
-                        background_color, text_color = shift_colors[current_shift]
-                
-                cal_html += f"<td style='border: 1px solid black; padding: 10px; background-color: {background_color}; color: {text_color}; text-align: center;'>"
-                cal_html += f"<div>{day}</div>"
-                cal_html += f"<div>{current_shift}</div>"
-                if holiday_info:
-                    cal_html += f"<div style='font-size: 10px; margin-top: 5px;'>{holiday_info}</div>"
-                
-                # 셀렉트 박스 추가
-                new_shift = st.selectbox(
-                    label=f"shift_{day}",
-                    options=list(shift_colors.keys()),
-                    index=list(shift_colors.keys()).index(current_shift),
-                    key=f"shift_{selected_year}_{selected_month}_{day}",
-                    label_visibility="collapsed"
-                )
-                if new_shift != current_shift:
-                    schedule[selected_team][date_str] = new_shift
-                
-                cal_html += "</td>"
-        cal_html += "</tr>"
-    cal_html += "</tbody>"
-    cal_html += "</table>"
+    st.header(f"{selected_year}년 {selected_month}월 {team}팀 달력")
+    col_labels = ["일", "월", "화", "수", "목", "금", "토"]
+    cols = st.columns(7)
+    for i, label in enumerate(col_labels):
+        cols[i].markdown(f"<b>{label}</b>", unsafe_allow_html=True)
 
-    # HTML로 달력 표시
-    st.markdown(cal_html, unsafe_allow_html=True)
+    for week in month_days:
+        cols = st.columns(7)
+        for i, day in enumerate(week):
+            if day == 0:
+                cols[i].markdown(" ")
+            else:
+                shift = team_schedule.get(day, "비")
+                bg_color, text_color = shift_colors[shift]
+                if datetime(selected_year, selected_month, day).strftime("%Y-%m-%d") in holidays:
+                    bg_color = "red"
+                    shift = ", ".join(holidays[datetime(selected_year, selected_month, day).strftime("%Y-%m-%d")])
+                cols[i].markdown(
+                    f'<div style="background-color: {bg_color}; color: {text_color}; text-align: center; padding: 5px;">{day}<br>{shift}</div>',
+                    unsafe_allow_html=True
+                )
+    
+    # 휴일 설명
+    if holiday_descriptions:
+        st.markdown("#### 공휴일 설명")
+        for description in holiday_descriptions:
+            st.write(description)
+    
+    # 팀 설정 저장
+    if st.sidebar.button("팀 설정 저장"):
+        if save_team_settings_to_github(team):
+            st.success("팀 설정이 저장되었습니다.")
+        else:
+            st.error("팀 설정 저장에 실패했습니다.")
 
     # 스케줄 저장
-    if st.button("스케줄 저장"):
+    if st.sidebar.button("스케줄 저장"):
         if save_schedule(schedule, sha):
-            st.success("스케줄이 성공적으로 저장되었습니다.")
+            st.success("스케줄이 저장되었습니다.")
         else:
             st.error("스케줄 저장에 실패했습니다.")
 
