@@ -208,26 +208,6 @@ def main():
 
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     yesterday = today - timedelta(days=1)
-
-        # CSS 스타일 추가
-    st.markdown("""
-        <style>
-        .stButton > button {
-            width: 100%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #4CAF50;
-            color: white;
-            font-size: 16px;
-            padding: 14px 20px;
-            border: none;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
-        }
-        </style>
-    """, unsafe_allow_html=True)
     
     if st.button("이전 월"):
         update_month(-1)
