@@ -244,23 +244,13 @@ if st.button("다음 월"):
 # 이어지는 공휴일 그룹화 함수
 def group_holidays(holiday_info, month):
     holidays = [date for date in sorted(holiday_info.keys()) if datetime.strptime(date, "%Y-%m-%d").month == month]
-    grouped_holidays = []
-    current_group = []
+    grouped_holidays = {}
 
-    for i, holiday in enumerate(holidays):
-        if not current_group:
-            current_group.append(holiday)
-        else:
-            last_holiday = datetime.strptime(current_group[-1], "%Y-%m-%d")
-            current_holiday = datetime.strptime(holiday, "%Y-%m-%d")
-            if (current_holiday - last_holiday).days == 1 and holiday_info[current_group[-1]] == holiday_info[holiday]:
-                current_group.append(holiday)
-            else:
-                grouped_holidays.append(current_group)
-                current_group = [holiday]
-
-    if current_group:
-        grouped_holidays.append(current_group)
+    for holiday in holidays:
+        day = datetime.strptime(holiday, "%Y-%m-%d").day
+        if day not in grouped_holidays:
+            grouped_holidays[day] = []
+        grouped_holidays[day].append(holiday_info[holiday])
 
     return grouped_holidays
 
@@ -269,18 +259,11 @@ grouped_holidays = group_holidays(holiday_info, month)
 
 # 그룹화된 공휴일 설명 출력
 holiday_descriptions = []
-for group in grouped_holidays:
-    if len(group) > 1:
-        start_date = datetime.strptime(group[0], "%Y-%m-%d").day
-        end_date = datetime.strptime(group[-1], "%Y-%m-%d").day
-        holiday_descriptions.append(f"{start_date}일~{end_date}일: {holiday_info[group[0]]}")
+for day, holiday_names in sorted(grouped_holidays.items()):
+    if len(holiday_names) > 1:
+        holiday_descriptions.append(f"{day}일: {', '.join(holiday_names)}")
     else:
-        single_date = datetime.strptime(group[0], "%Y-%m-%d").day
-        holiday_names = holiday_info[group[0]].split(',')
-        if len(holiday_names) > 1:
-            holiday_descriptions.append(f"{single_date}일: {', '.join(holiday_names)}")
-        else:
-            holiday_descriptions.append(f"{single_date}일: {holiday_info[group[0]]}")
+        holiday_descriptions.append(f"{day}일: {holiday_names[0]}")
 
 st.markdown(" / ".join(holiday_descriptions))
 
