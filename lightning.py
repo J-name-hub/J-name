@@ -220,8 +220,12 @@ def create_lightning_map(data):
         formatted_time = datetime_obj.strftime('%Y-%m-%d %H:%M:%S')
 
         # Create a popup with information about the lightning strike
-        popup_info = f"낙뢰 발생 위치: 위도 {lat}, 경도 {lon}<br>발생 시간: {formatted_time}"
-        folium.Marker(location=(lat, lon), popup=popup_info).add_to(marker_cluster)
+        popup_text = f"Time: {formatted_time}"
+        folium.Marker(
+            location=(lat, lon),
+            popup=popup_text,
+            icon=folium.Icon(icon="flash", prefix="fa", color="orange")
+        ).add_to(marker_cluster)
 
     return m
 
@@ -276,9 +280,13 @@ def parse_datetime(item):
 # 'All' 또는 시간별 선택
 time_selection = st.radio("데이터 표시 방식:", ('All', '시간별'))
 
+# 전역 변수를 사용하여 all_data를 초기화
+all_data = []
+
 # 데이터 필터링
 filtered_data = None
 if time_selection == 'All':
+    all_data = get_all_lightning_data(selected_date)
     filtered_data = all_data
 else:
     all_data = get_all_lightning_data(selected_date)
@@ -344,3 +352,11 @@ with col3:
             lightning_chart = create_lightning_chart(data)
             if lightning_chart:
                 st.altair_chart(lightning_chart, use_container_width=True)
+
+# 지도가 초기 로드 후에 항상 표시되도록 합니다.
+if all_data:
+    lightning_map = create_lightning_map(all_data)
+    st_folium(lightning_map, width=700, height=500)
+    lightning_chart = create_lightning_chart(all_data)
+    if lightning_chart:
+        st.altair_chart(lightning_chart, use_container_width=True)
