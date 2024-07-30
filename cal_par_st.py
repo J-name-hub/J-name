@@ -54,36 +54,7 @@ def save_schedule(schedule, sha):
         st.error(f"GitHub에 스케줄 저장 실패: {e}")
         return False
 
-# GitHub에 팀 설정 저장
-def save_team_settings_to_github(team):
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_TEAM_SETTINGS_PATH}"
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
-    }
-    
-    # 현재 파일 내용 확인
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        current_content = response.json()
-        sha = current_content['sha']
-    else:
-        sha = None
-
-    # 새 내용 생성 및 인코딩
-    new_content = json.dumps({"team": team})
-    encoded_content = base64.b64encode(new_content.encode()).decode()
-
-    data = {
-        "message": "Update team settings",
-        "content": encoded_content,
-        "sha": sha
-    }
-
-    response = requests.put(url, headers=headers, json=data)
-    return response.status_code in (200, 201)
-
-# GitHub에서 팀 설정 로드
+# GitHub에서 팀설정 파일 로드
 def load_team_settings_from_github():
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_TEAM_SETTINGS_PATH}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
@@ -93,11 +64,57 @@ def load_team_settings_from_github():
         response.raise_for_status()
         content = response.json()
         file_content = base64.b64decode(content['content']).decode('utf-8')
-        settings = json.loads(file_content)
-        return settings.get("team", "A")
+        try:
+            settings = json.loads(file_content)
+            return settings.get("team", "A")
+        except json.JSONDecodeError:
+            st.error("팀 설정 파일의 내용이 유효한 JSON 형식이 아닙니다. 기본값 'A'를 사용합니다.")
+            return "A"
     except requests.RequestException as e:
-        st.error(f"GitHub에서 팀 설정 로드 실패: {e}")
-        return "A"
+        if e.response is not None and e.response.status_code == 404:
+            st.warning("팀 설정 파일을 찾을 수 없습니다. 새 파일을 생성합니다.")
+            if save_team_settings_to_github("A"):
+                return "A"
+            else:
+                st.error("팀 설정 파일 생성에 실패했습니다. 기본값 'A'를 사용합니다.")
+                return "A"
+        else:
+            st.error(f"GitHub에서 팀 설정 로드 실패: {e}")
+            return "A"
+
+# GitHub에 팀설정 파일 저장
+def save_team_settings_to_github(team):
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_TEAM_SETTINGS_PATH}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    
+    try:
+        # 현재 파일 내용 확인
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            current_content = response.json()
+            sha = current_content['sha']
+        else:
+            sha = None
+
+        # 새 내용 생성 및 인코딩
+        new_content = json.dumps({"team": team})
+        encoded_content = base64.b64encode(new_content.encode()).decode()
+
+        data = {
+            "message": "Update team settings",
+            "content": encoded_content,
+            "sha": sha
+        }
+
+        response = requests.put(url, headers=headers, json=data)
+        response.raise_for_status()
+        return True
+    except requests.RequestException as e:
+        st.error(f"GitHub에 팀 설정 저장 실패: {e}")
+        return False
 
 # 공휴일 정보 로드
 @st.cache_data(ttl=86400)
