@@ -193,10 +193,10 @@ def generate_calendar(year, month):
 
 # 근무 조 설정
 shift_colors = {
-    "주": "yellow",
-    "야": "lightgray",
-    "비": "white",
-    "올": "lightgreen"
+    "주": ("yellow", "black"),
+    "야": ("lightgray", "black"),
+    "비": ("white", "black"),
+    "올": ("lightgreen", "black")
 }
 
 shifts = ["주", "야", "비", "비"]
@@ -229,6 +229,7 @@ def main():
             font-size: 16px;
             padding: 0px 4px;
             height: 30px;
+            border: none;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
@@ -266,7 +267,7 @@ def main():
             flex: 1;
             text-align: center;
             padding: 2px;
-            height: 55px;
+            height: 60px;  /* 높이를 약간 늘렸습니다 */
             font-size: 16px;
             display: flex;
             flex-direction: column;
@@ -291,12 +292,13 @@ def main():
         }
         .calendar-day {
             font-weight: bold;
-            margin-bottom: 1px;
+            margin-bottom: 2px;
         }
         .calendar-shift {
-            padding: 1px 3px;
+            padding: 2px 5px;
             border-radius: 3px;
-            font-size: 13px;
+            font-size: 16px;  /* 글자 크기를 키웠습니다 */
+            font-weight: bold;  /* 글자를 굵게 만들었습니다 */
         }
         .space-before-button {
             margin-top: 20px;
@@ -372,7 +374,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                     schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
                 
                 shift = schedule_data[date_str]
-                shift_background = shift_colors.get(shift, "white")  # 교대 근무 배경색
+                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))  # 교대 근무 배경색
                 
                 if current_date.weekday() == 5 or current_date.weekday() == 6 or date_str in holidays:
                     day_color = "red"
@@ -386,7 +388,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 cell_content = f'''
                     <div class="calendar-cell-content {today_class}">
                         <span class="calendar-day" style="color: {day_color};">{day}</span>
-                        <span class="calendar-shift" style="background-color: {shift_background};">{shift_text}</span>
+                        <span class="calendar-shift" style="background-color: {shift_background}; color: {shift_color};">{shift_text}</span>
                     </div>
                 '''
                 week_data.append(cell_content)
