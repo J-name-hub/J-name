@@ -268,7 +268,7 @@ def main():
             text-align: center;
             padding: 2px;
             height: 60px;  /* 높이를 약간 늘렸습니다 */
-            font-size: 16px;
+            font-size: 17px;
             display: flex;
             flex-direction: column;
             justify-content: center;
