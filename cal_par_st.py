@@ -232,34 +232,34 @@ def main():
             text-align: center;
             text-decoration: none;
         }
-        .calendar-header {
-            display: flex;
-            width: 100%;
-        }
-        .calendar-header-cell {
-            flex: 1;
-            text-align: center;
-            padding: 5px;
-            font-weight: bold;
-            font-size: 18px;
-        }
-        .calendar-row {
-            display: flex;
-            width: 100%;
-        }
-        .calendar-cell {
-            flex: 1;
-            text-align: center;
-            padding: 5px;
-            height: 55px;
-            font-size: 18px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+    .calendar-header {
+        display: flex;
+        width: 100%;
+    }
+    .calendar-header-cell {
+        flex: 1;
+        text-align: center;
+        padding: 5px;
+        font-weight: bold;
+        font-size: 18px;
+    }
+    .calendar-row {
+        display: flex;
+        width: 100%;
+    }
+    .calendar-cell {
+        flex: 1;
+        text-align: center;
+        padding: 5px;
+        height: 60px;  # 높이를 조금 늘려 여유 공간 확보
+        font-size: 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
     # 세션 상태 초기화
     if "year" not in st.session_state or "month" not in st.session_state:
@@ -326,21 +326,23 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                     schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
                 
                 shift = schedule_data[date_str]
-                background = shift_colors.get(shift, "white")  # 기본값을 white로 설정
+                shift_background = shift_colors.get(shift, "white")  # 교대 근무 배경색
                 
-                style = f"background-color: {background};"
-                if current_date == today:
-                    style = "background-color: lightblue;"
-                elif current_date == yesterday:
-                    style = f"background-color: {background};"
-
                 if current_date.weekday() == 5 or current_date.weekday() == 6 or date_str in holidays:
-                    color = "red"
+                    day_color = "red"
                 else:
-                    color = "black"
+                    day_color = "black"
+
+                # 오늘 날짜 배경색 처리
+                day_background = "lightblue" if current_date == today else "transparent"
 
                 shift_text = shift if shift != '비' else '&nbsp;'
-                cell_content = f'<div style="{style} width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;"><span style="color: {color};">{day}</span><span>{shift_text}</span></div>'
+                cell_content = f'''
+                    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                        <span style="color: {day_color}; background-color: {day_background}; padding: 2px 5px; border-radius: 3px;">{day}</span>
+                        <span style="background-color: {shift_background}; padding: 2px 5px; margin-top: 2px; border-radius: 3px;">{shift_text}</span>
+                    </div>
+                '''
                 week_data.append(cell_content)
             else:
                 week_data.append('&nbsp;')
