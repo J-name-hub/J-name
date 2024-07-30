@@ -74,8 +74,10 @@ def save_team_settings(team):
     try:
         with open(TEAM_SETTINGS_FILE, "w") as f:
             json.dump({"team": team}, f)
-    except IOError:
-        st.error("팀 설정 저장 실패")
+        return True
+    except IOError as e:
+        st.error(f"팀 설정 저장 실패: {e}")
+        return False
 
 # 공휴일 정보 로드
 @st.cache_data(ttl=86400)
@@ -286,10 +288,12 @@ def sidebar_controls():
 
         if submit_button:
             if password_for_settings == "0301":
-                st.session_state["team"] = team
-                save_team_settings(team)
-                st.sidebar.success("조가 저장되었습니다.")
-                st.rerun()
+                if save_team_settings(team):
+                    st.session_state["team"] = team
+                    st.sidebar.success("조가 저장되었습니다.")
+                    st.rerun()
+                else:
+                    st.sidebar.error("조 설정 저장에 실패했습니다.")
             else:
                 st.sidebar.error("암호가 일치하지 않습니다.")
 
