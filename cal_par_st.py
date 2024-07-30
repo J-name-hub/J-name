@@ -294,7 +294,7 @@ def main():
             margin-bottom: 2px;
         }
         .calendar-shift {
-            padding: 2px;
+            padding: 1px 3px;
             border-radius: 3px;
             font-size: 17px;  /* 글자 크기를 키웠습니다 */
             font-weight: bold;  /* 글자를 굵게 만들었습니다 */
