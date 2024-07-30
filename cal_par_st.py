@@ -227,39 +227,61 @@ def main():
             align-items: center;
             justify-content: center;
             font-size: 16px;
-            padding: 0px 4px;  /* 상하 패딩을 0으로 설정 */
+            padding: 0px 4px;
+            height: 30px;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
         }
-    .calendar-header {
-        display: flex;
-        width: 100%;
-    }
-    .calendar-header-cell {
-        flex: 1;
-        text-align: center;
-        padding: 5px;
-        font-weight: bold;
-        font-size: 18px;
-    }
-    .calendar-row {
-        display: flex;
-        width: 100%;
-    }
-    .calendar-cell {
-        flex: 1;
-        text-align: center;
-        padding: 5px;
-        height: 60px;  # 높이를 60px로 유지
-        font-size: 16px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
-    </style>
-""", unsafe_allow_html=True)
+        .calendar-container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .calendar-header {
+            display: flex;
+            width: 100%;
+            border-bottom: 1px solid #ddd;
+        }
+        .calendar-header-cell {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            font-weight: bold;
+            font-size: 18px;
+            border-right: 1px solid #ddd;
+        }
+        .calendar-header-cell:last-child {
+            border-right: none;
+        }
+        .calendar-row {
+            display: flex;
+            width: 100%;
+            border-bottom: 1px solid #ddd;
+        }
+        .calendar-row:last-child {
+            border-bottom: none;
+        }
+        .calendar-cell {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            height: 60px;
+            font-size: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-right: 1px solid #ddd;
+        }
+        .calendar-cell:last-child {
+            border-right: none;
+        }
+        .space-before-button {
+            margin-top: 20px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
     # 세션 상태 초기화
     if "year" not in st.session_state or "month" not in st.session_state:
@@ -298,6 +320,9 @@ def main():
     month_days = generate_calendar(year, month)
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data)
+
+    # 공백 추가
+    st.markdown("<div class='space-before-button'></div>", unsafe_allow_html=True)
     
     # '다음 월' 버튼을 달력 아래로 이동
     if st.button("다음 월"):
@@ -353,7 +378,7 @@ def display_calendar(calendar_data):
     days_header = ["일", "월", "화", "수", "목", "금", "토"]
     
     # 요일 헤더 생성
-    header_html = '<div class="calendar-header">'
+    header_html = '<div class="calendar-container"><div class="calendar-header">'
     for day in days_header:
         color = "red" if day in ["일", "토"] else "black"
         header_html += f'<div class="calendar-header-cell" style="color: {color};">{day}</div>'
@@ -368,7 +393,7 @@ def display_calendar(calendar_data):
         calendar_html += '</div>'
     
     # 전체 달력 HTML 조합
-    full_calendar_html = header_html + calendar_html
+    full_calendar_html = header_html + calendar_html + '</div>'
     
     # HTML을 Streamlit에 표시
     st.markdown(full_calendar_html, unsafe_allow_html=True)
