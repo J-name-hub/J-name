@@ -226,6 +226,9 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+age = st.slider('', 1, 12, 6, 1) # 시작값, 끝값, 기본값, 스텝
+st.text('제가 선택한 나이는 {}입니다.'.format(age))
+
 # 다음 월 버튼
 if st.button("다음 월"):
     selected_year_month = (year, month + 1)
