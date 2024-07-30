@@ -299,7 +299,7 @@ def main():
             font-weight: bold;  /* 글자를 굵게 만들었습니다 */
         }
         .space-before-button {
-            margin-top: 20px;
+            margin-top: 10px;
         }
         </style>
     """, unsafe_allow_html=True)
