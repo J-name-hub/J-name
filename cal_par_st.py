@@ -265,8 +265,8 @@ def main():
         .calendar-cell {
             flex: 1;
             text-align: center;
-            padding: 5px;
-            height: 60px;
+            padding: 2px;
+            height: 55px;
             font-size: 16px;
             display: flex;
             flex-direction: column;
@@ -291,12 +291,12 @@ def main():
         }
         .calendar-day {
             font-weight: bold;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
         .calendar-shift {
-            padding: 2px 5px;
+            padding: 1px 3px;
             border-radius: 3px;
-            font-size: 14px;
+            font-size: 13px;
         }
         .space-before-button {
             margin-top: 20px;
