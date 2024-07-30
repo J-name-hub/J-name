@@ -84,13 +84,51 @@ def load_holidays(year):
 # 공휴일 설명 생성
 def create_holiday_descriptions(holidays, month):
     holiday_descriptions = []
-    for date, names in sorted(holidays.items()):
-        if datetime.strptime(date, "%Y-%m-%d").month == month:
-            day = datetime.strptime(date, "%Y-%m-%d").day
-            if len(names) > 1:
-                holiday_descriptions.append(f"{day}일: {', '.join(names)}")
+    sorted_dates = sorted(holidays.keys())
+    i = 0
+    while i < len(sorted_dates):
+        start_date = sorted_dates[i]
+        if datetime.strptime(start_date, "%Y-%m-%d").month == month:
+            start_day = datetime.strptime(start_date, "%Y-%m-%d").day
+            current_holiday = holidays[start_date]
+            
+            # 연속된 공휴일 체크
+            end_date = start_date
+            end_day = start_day
+            j = i + 1
+            while j < len(sorted_dates):
+                next_date = sorted_dates[j]
+                next_day = datetime.strptime(next_date, "%Y-%m-%d").day
+                if next_day - end_day == 1 and any(holiday in holidays[next_date] for holiday in current_holiday):
+                    end_date = next_date
+                    end_day = next_day
+                    j += 1
+                else:
+                    break
+            
+            # 설명 생성
+            if start_day == end_day:
+                holiday_descriptions.append(f"{start_day}일: {', '.join(current_holiday)}")
             else:
-                holiday_descriptions.append(f"{day}일: {names[0]}")
+                # 연속된 공휴일 중 중간에 다른 공휴일이 있는지 확인
+                temp_descriptions = []
+                for day in range(start_day, end_day + 1):
+                    date = (datetime.strptime(start_date, "%Y-%m-%d") + timedelta(days=day - start_day)).strftime("%Y-%m-%d")
+                    if date in holidays:
+                        day_holidays = holidays[date]
+                        if day_holidays != current_holiday:
+                            temp_descriptions.append(f"{day}일: {', '.join(day_holidays)}")
+                
+                if temp_descriptions:
+                    holiday_descriptions.append(f"{start_day}일~{end_day}일: {', '.join(current_holiday)}")
+                    holiday_descriptions.extend(temp_descriptions)
+                else:
+                    holiday_descriptions.append(f"{start_day}일~{end_day}일: {', '.join(current_holiday)}")
+            
+            i = j
+        else:
+            i += 1
+    
     return holiday_descriptions
 
 # 스케줄 데이터 초기 로드
