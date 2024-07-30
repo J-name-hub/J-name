@@ -226,19 +226,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-slider_month = st.slider('', 1, 12, month, 1) # 시작값, 끝값, 기본값, 스텝
-
-if slider_month != month:
-    selected_year_month = (year, slider_month)
-    selected_year, selected_month = selected_year_month
-    if selected_year != year or selected_month != month:
-        st.session_state.year = selected_year
-        st.session_state.month = selected_month
-        year = selected_year
-        month = selected_month
-        st.experimental_rerun()
-
-
 # 다음 월 버튼
 if st.button("다음 월"):
     selected_year_month = (year, month + 1)
