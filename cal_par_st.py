@@ -250,30 +250,13 @@ def main():
     .calendar-cell {
         flex: 1;
         text-align: center;
-        padding: 2px;
-        height: 50px;
+        padding: 5px;
+        height: 60px;  # 높이를 60px로 유지
         font-size: 16px;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-    }
-    .calendar-cell-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-    }
-    .calendar-day {
-        padding: 2px 5px;
-        border-radius: 3px;
-        margin-bottom: 1px;
-    }
-    .calendar-shift {
-        padding: 1px 3px;
-        border-radius: 3px;
-        font-size: 14px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -355,9 +338,9 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
 
                 shift_text = shift if shift != '비' else '&nbsp;'
                 cell_content = f'''
-                    <div class="calendar-cell-content">
-                        <span class="calendar-day" style="color: {day_color}; background-color: {day_background};">{day}</span>
-                        <span class="calendar-shift" style="background-color: {shift_background};">{shift_text}</span>
+                    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                        <span style="color: {day_color}; background-color: {day_background}; padding: 2px 5px; border-radius: 3px;">{day}</span>
+                        <span style="background-color: {shift_background}; padding: 2px 5px; margin-top: 2px; border-radius: 3px;">{shift_text}</span>
                     </div>
                 '''
                 week_data.append(cell_content)
