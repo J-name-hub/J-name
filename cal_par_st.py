@@ -19,7 +19,7 @@ HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
 
 # GitHub에서 스케줄 파일 로드
 @st.cache_data(ttl=3600)
-def load_schedule():
+def load_schedule(cache_key=None):
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     try:
@@ -320,7 +320,7 @@ def main():
     month = st.session_state.month
 
     holidays = load_holidays(year)
-    schedule_data, sha = load_schedule()
+    schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
 
     if not schedule_data:
         schedule_data = {}
@@ -451,17 +451,19 @@ def sidebar_controls():
 
                 if change_submit_button:
                     if password == "0301":
-                        schedule_data, sha = load_schedule()
+                        schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
                         change_date_str = change_date.strftime("%Y-%m-%d")
                         schedule_data[change_date_str] = new_shift
                         if save_schedule(schedule_data, sha):
                             st.success("스케줄이 저장되었습니다.")
+                            # 캐시 키를 변경하여 새로운 데이터를 로드하도록 함
+                            st.session_state.cache_key = datetime.now().strftime("%Y%m%d%H%M%S")
                         else:
                             st.error("스케줄 저장에 실패했습니다.")
                         st.rerun()
                     else:
                         st.error("암호가 일치하지 않습니다.")
-
+    
     st.sidebar.title("달력 이동")
     months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
 
