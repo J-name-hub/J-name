@@ -253,7 +253,7 @@ def group_holidays(holiday_info, month):
         else:
             last_holiday = datetime.strptime(current_group[-1], "%Y-%m-%d")
             current_holiday = datetime.strptime(holiday, "%Y-%m-%d")
-            if (current_holiday - last_holiday).days == 1:
+            if (current_holiday - last_holiday).days == 1 and holiday_info[current_group[-1]] == holiday_info[holiday]:
                 current_group.append(holiday)
             else:
                 grouped_holidays.append(current_group)
@@ -273,11 +273,14 @@ for group in grouped_holidays:
     if len(group) > 1:
         start_date = datetime.strptime(group[0], "%Y-%m-%d").day
         end_date = datetime.strptime(group[-1], "%Y-%m-%d").day
-        for date in group:
-            holiday_descriptions.append(f"{datetime.strptime(date, '%Y-%m-%d').day}일: {holiday_info[date]}")
+        holiday_descriptions.append(f"{start_date}일~{end_date}일: {holiday_info[group[0]]}")
     else:
         single_date = datetime.strptime(group[0], "%Y-%m-%d").day
-        holiday_descriptions.append(f"{single_date}일: {holiday_info[group[0]]}")
+        holiday_names = holiday_info[group[0]].split(',')
+        if len(holiday_names) > 1:
+            holiday_descriptions.append(f"{single_date}일: {', '.join(holiday_names)}")
+        else:
+            holiday_descriptions.append(f"{single_date}일: {holiday_info[group[0]]}")
 
 st.markdown(" / ".join(holiday_descriptions))
 
