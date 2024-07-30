@@ -291,7 +291,7 @@ def main():
         }
         .calendar-day {
             font-weight: bold;
-            margin-bottom: 1px;
+            margin-bottom: 0px;
         }
         .calendar-shift {
             padding: 2px 5px;
