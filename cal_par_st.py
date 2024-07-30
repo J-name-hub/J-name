@@ -265,7 +265,6 @@ def main():
         .calendar-cell {
             flex: 1;
             text-align: center;
-            padding: 2px 0 2px 0;
             height: 62px;  /* 높이를 약간 늘렸습니다 */
             font-size: 19px;
             display: flex;
