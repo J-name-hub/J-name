@@ -169,7 +169,7 @@ if st.button("이전 월"):
         st.session_state.month = selected_month
         year = selected_year
         month = selected_month
-        st.experimental_rerun()
+        st.rerun()
 
 month_days = generate_calendar(year, month)
 
@@ -238,7 +238,7 @@ if st.button("다음 월"):
         st.session_state.month = selected_month
         year = selected_year
         month = selected_month
-        st.experimental_rerun()
+        st.rerun()
 
 # 공휴일 설명
 # 이어지는 공휴일 그룹화 함수
@@ -296,7 +296,7 @@ with st.sidebar.form(key='team_settings_form'):
             st.session_state["team"] = team
             save_team_settings(team)  # 선택한 팀을 파일에 저장
             st.sidebar.success("조가 저장되었습니다.")
-            st.experimental_rerun()  # 페이지 갱신
+            st.rerun()  # 페이지 갱신
         else:
             st.sidebar.error("암호가 일치하지 않습니다.")
 
@@ -321,7 +321,7 @@ if st.session_state.expander_open:
                         st.success("스케줄이 저장되었습니다.")
                     else:
                         st.error("스케줄 저장에 실패했습니다.")
-                    st.experimental_rerun()  # 페이지 갱신
+                    st.rerun()  # 페이지 갱신
                 else:
                     st.error("암호가 일치하지 않습니다.")
 
@@ -352,4 +352,4 @@ if selected_year != year or selected_month != month:
     st.session_state.month = selected_month
     year = selected_year
     month = selected_month
-    st.experimental_rerun()
+    st.rerun()
