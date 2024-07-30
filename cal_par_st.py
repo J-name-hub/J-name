@@ -1,4 +1,6 @@
 import streamlit as st
+from PIL import Image, ImageDraw, ImageFont
+import io
 import requests
 import json
 from datetime import datetime, timedelta
@@ -7,7 +9,6 @@ import pandas as pd
 import pytz
 from dateutil.relativedelta import relativedelta
 import base64
-import streamlit.components.v1 as components
 
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
@@ -353,10 +354,12 @@ def main():
     if st.button("다음 월"):
         update_month(1)
 
-        # 이미지 저장 버튼 추가
+    # 이미지 생성 및 다운로드 링크 제공
     if st.button("달력 이미지 저장"):
-        capture_calendar(st.session_state.year, st.session_state.month)
-
+        calendar_image = create_calendar_image(calendar_data, st.session_state.year, st.session_state.month)
+        filename = f"{st.session_state.year:04d}{st.session_state.month:02d}.png"
+        st.markdown(get_image_download_link(calendar_image, filename, "여기를 클릭하여 달력 이미지 다운로드"), unsafe_allow_html=True)
+    
     sidebar_controls()
 
 def update_month(delta):
@@ -400,26 +403,6 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
         calendar_data.append(week_data)
     return calendar_data
 
-def capture_calendar(year, month):
-    # HTML2Canvas 라이브러리와 캡처 스크립트 추가
-    components.html(
-        f"""
-        <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-        <script>
-        function captureCalendar() {{
-            html2canvas(document.querySelector(".calendar-container")).then(canvas => {{
-                var link = document.createElement('a');
-                link.download = '{year:04d}{month:02d}.png';
-                link.href = canvas.toDataURL();
-                link.click();
-            }});
-        }}
-        </script>
-        <button onclick="captureCalendar()">달력 이미지 저장</button>
-        """,
-        height=50,
-    )
-
 def display_calendar(calendar_data):
     days_header = ["일", "월", "화", "수", "목", "금", "토"]
     
@@ -443,6 +426,46 @@ def display_calendar(calendar_data):
     
     # HTML을 Streamlit에 표시
     st.markdown(full_calendar_html, unsafe_allow_html=True)
+
+def create_calendar_image(calendar_data, year, month):
+    # 이미지 크기 및 셀 크기 설정
+    width, height = 700, 500
+    cell_width, cell_height = width // 7, height // 7
+    
+    # 이미지 생성
+    image = Image.new('RGB', (width, height), color='white')
+    draw = ImageDraw.Draw(image)
+    
+    # 폰트 설정 (폰트 파일은 별도로 준비해야 합니다)
+    try:
+        font = ImageFont.truetype("path/to/your/font.ttf", 20)
+    except IOError:
+        font = ImageFont.load_default()
+
+    # 달력 그리기
+    for i, week in enumerate(calendar_data):
+        for j, day in enumerate(week):
+            x = j * cell_width
+            y = i * cell_height
+            # 셀 테두리 그리기
+            draw.rectangle([x, y, x + cell_width, y + cell_height], outline='black')
+            # 날짜 텍스트 추출 (HTML 태그 제거)
+            day_text = day.split('>')[2].split('<')[0] if '>' in day else day
+            # 날짜 그리기
+            draw.text((x + 5, y + 5), day_text, fill='black', font=font)
+
+    # 제목 추가
+    title = f"{year}년 {month}월"
+    draw.text((width//2 - 50, 10), title, fill='black', font=font)
+
+    return image
+
+def get_image_download_link(img, filename, text):
+    buffered = io.BytesIO()
+    img.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    href = f'<a href="data:file/png;base64,{img_str}" download="{filename}">{text}</a>'
+    return href
 
 def sidebar_controls():
     st.sidebar.title("근무 조 설정")
