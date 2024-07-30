@@ -277,6 +277,27 @@ def main():
         .calendar-cell:last-child {
             border-right: none;
         }
+        .calendar-cell-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .calendar-cell-content.today {
+            border: 2px solid #007bff;
+            border-radius: 5px;
+        }
+        .calendar-day {
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        .calendar-shift {
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 14px;
+        }
         .space-before-button {
             margin-top: 20px;
         }
@@ -358,14 +379,14 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 else:
                     day_color = "black"
 
-                # 오늘 날짜 배경색 처리
-                day_background = "lightblue" if current_date == today else "transparent"
+                # 오늘 날짜 테두리 처리
+                today_class = "today" if current_date == today else ""
 
                 shift_text = shift if shift != '비' else '&nbsp;'
                 cell_content = f'''
-                    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                        <span style="color: {day_color}; background-color: {day_background}; padding: 1px 5px; border-radius: 3px;">{day}</span>
-                        <span style="background-color: {shift_background}; padding: 2px 5px; margin-top: 2px; border-radius: 3px;">{shift_text}</span>
+                    <div class="calendar-cell-content {today_class}">
+                        <span class="calendar-day" style="color: {day_color};">{day}</span>
+                        <span class="calendar-shift" style="background-color: {shift_background};">{shift_text}</span>
                     </div>
                 '''
                 week_data.append(cell_content)
