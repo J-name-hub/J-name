@@ -283,7 +283,7 @@ def main():
         .calendar-cell {
             flex: 1;
             text-align: center;
-            height: 65px;  /* 높이를 약간 늘렸습니다 */
+            height: 65px;
             font-size: 20px;
             display: flex;
             flex-direction: column;
@@ -299,8 +299,9 @@ def main():
             height: 100%;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
+            padding-top: 5px;
         }
         .calendar-cell-content.today {
             border: 2px solid #007bff;
@@ -313,8 +314,13 @@ def main():
         .calendar-shift {
             padding: 0 5px;
             border-radius: 3px;
-            font-size: 18px;  /* 글자 크기를 키웠습니다 */
-            font-weight: bold;  /* 글자를 굵게 만들었습니다 */
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .calendar-holiday {
+            font-size: 10px;
+            color: red;
+            margin-top: 2px;
         }
         .space-before-button {
             margin-top: 0;
@@ -395,21 +401,27 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                     schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
                 
                 shift = schedule_data[date_str]
-                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))  # 교대 근무 배경색
+                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
                 
                 if current_date.weekday() == 5 or current_date.weekday() == 6 or date_str in holidays:
                     day_color = "red"
                 else:
                     day_color = "black"
 
-                # 오늘 날짜 테두리 처리
                 today_class = "today" if current_date == today else ""
 
                 shift_text = shift if shift != '비' else '&nbsp;'
+                
+                # 공휴일 정보 추가
+                holiday_text = ""
+                if date_str in holidays:
+                    holiday_text = f'<div class="calendar-holiday">{holidays[date_str][0]}</div>'
+
                 cell_content = f'''
                     <div class="calendar-cell-content {today_class}">
                         <span class="calendar-day" style="color: {day_color};">{day}</span>
                         <span class="calendar-shift" style="background-color: {shift_background}; color: {shift_color};">{shift_text}</span>
+                        {holiday_text}
                     </div>
                 '''
                 week_data.append(cell_content)
