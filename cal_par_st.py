@@ -283,7 +283,7 @@ def main():
         .calendar-cell {
             flex: 1;
             text-align: center;
-            height: 68px;  /* 높이를 약간 늘렸습니다 */
+            height: 62px;  /* 높이를 약간 늘렸습니다 */
             font-size: 21px;
             display: flex;
             flex-direction: column;
@@ -312,6 +312,7 @@ def main():
         }
         .calendar-shift {
             padding: 0 5px;
+            padding-bottom: 5px;
             border-radius: 3px;
             font-size: 18px;  /* 글자 크기를 키웠습니다 */
             font-weight: bold;  /* 글자를 굵게 만들었습니다 */
