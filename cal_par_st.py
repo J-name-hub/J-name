@@ -251,80 +251,13 @@ def main():
             text-align: center;
             text-decoration: none;
         }
-        .calendar-container {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-        .calendar-header {
-            display: flex;
-            width: 100%;
-            border-bottom: 1px solid #ddd;
-        }
-        .calendar-header-cell {
-            flex: 1;
-            text-align: center;
-            padding: 5px;
-            font-weight: bold;
-            font-size: 20px;
-            border-right: 1px solid #ddd;
-        }
-        .calendar-header-cell:last-child {
-            border-right: none;
-        }
-        .calendar-row {
-            display: flex;
-            width: 100%;
-            border-bottom: 1px solid #ddd;
-        }
-        .calendar-row:last-child {
-            border-bottom: none;
-        }
-        .calendar-cell {
-            flex: 1;
-            text-align: center;
-            height: 80px;  /* 높이를 늘렸습니다 */
-            font-size: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            border-right: 1px solid #ddd;
-            padding: 5px;
-        }
-        .calendar-cell:last-child {
-            border-right: none;
-        }
-        .calendar-cell-content {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-        }
-        .calendar-cell-content.today {
-            border: 2px solid #007bff;
-            border-radius: 5px;
-        }
-        .calendar-day {
-            font-weight: bold;
-            margin-bottom: 2px;
-        }
-        .calendar-shift {
-            padding: 0 5px;
-            border-radius: 3px;
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 2px;
-        }
         .calendar-holiday {
             font-size: 10px;
             color: red;
             margin-top: 2px;
         }
         .space-before-button {
-            margin-top: 0;
+            margin-top: 20px;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -409,7 +342,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 else:
                     day_color = "black"
 
-                today_class = "today" if current_date == today else ""
+                today_class = "background-color: #e6f3ff;" if current_date == today else ""
 
                 shift_text = shift if shift != '비' else '&nbsp;'
                 
@@ -419,40 +352,33 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                     holiday_text = f'<div class="calendar-holiday">{holidays[date_str][0]}</div>'
 
                 cell_content = f'''
-                    <div class="calendar-cell-content {today_class}">
-                        <span class="calendar-day" style="color: {day_color};">{day}</span>
-                        <span class="calendar-shift" style="background-color: {shift_background}; color: {shift_color};">{shift_text}</span>
+                    <div style="height: 80px; font-size: 14px; border: 1px solid #ddd; padding: 2px; text-align: center; {today_class}">
+                        <div style="font-weight: bold; color: {day_color};">{day}</div>
+                        <div style="background-color: {shift_background}; color: {shift_color}; padding: 2px; margin: 2px 0;">{shift_text}</div>
                         {holiday_text}
                     </div>
                 '''
                 week_data.append(cell_content)
             else:
-                week_data.append('<div class="calendar-cell-content"></div>')
+                week_data.append('<div style="height: 80px;"></div>')
         calendar_data.append(week_data)
     return calendar_data
 
 def display_calendar(calendar_data):
     days_header = ["일", "월", "화", "수", "목", "금", "토"]
     
-    st.markdown('<div class="calendar-container">', unsafe_allow_html=True)
-    
     # 요일 헤더 생성
-    header_html = '<div class="calendar-header">'
-    for day in days_header:
-        color = "red" if day in ["일", "토"] else "black"
-        header_html += f'<div class="calendar-header-cell" style="color: {color};">{day}</div>'
-    header_html += '</div>'
-    st.markdown(header_html, unsafe_allow_html=True)
+    header_cols = st.columns(7)
+    for i, day in enumerate(days_header):
+        with header_cols[i]:
+            st.markdown(f"<div style='text-align: center; font-weight: bold; color: {'red' if day in ['일', '토'] else 'black'};'>{day}</div>", unsafe_allow_html=True)
     
     # 달력 데이터 생성
     for week in calendar_data:
-        week_html = '<div class="calendar-row">'
-        for cell in week:
-            week_html += f'<div class="calendar-cell">{cell}</div>'
-        week_html += '</div>'
-        st.markdown(week_html, unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+        cols = st.columns(7)
+        for i, cell in enumerate(week):
+            with cols[i]:
+                st.markdown(cell, unsafe_allow_html=True)
 
 def sidebar_controls():
     st.sidebar.title("근무 조 설정")
