@@ -311,8 +311,8 @@ def main():
             margin-bottom: 0px;
         }
         .calendar-shift {
-            padding: 0;
-            padding-top: 0;
+            padding: 0 5px;
+            padding-top: 1px;
             padding-bottom: 1px;
             border-radius: 3px;
             font-size: 18px;  /* 글자 크기를 키웠습니다 */
