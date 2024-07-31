@@ -255,20 +255,18 @@ def main():
             border: 1px solid #ddd;
             border-radius: 5px;
             overflow: hidden;
-            background-color: #f9f9f9;
         }
         .calendar-header {
             display: flex;
             width: 100%;
             border-bottom: 1px solid #ddd;
-            background-color: #e9ecef;
         }
         .calendar-header-cell {
             flex: 1;
             text-align: center;
-            padding: 10px 5px;
+            padding: 5px;
             font-weight: bold;
-            font-size: 18px;
+            font-size: 20px;
             border-right: 1px solid #ddd;
         }
         .calendar-header-cell:last-child {
@@ -285,15 +283,14 @@ def main():
         .calendar-cell {
             flex: 1;
             text-align: center;
-            height: 80px;
-            font-size: 16px;
+            height: 80px;  /* 높이를 늘렸습니다 */
+            font-size: 20px;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
             align-items: center;
             border-right: 1px solid #ddd;
             padding: 5px;
-            background-color: white;
         }
         .calendar-cell:last-child {
             border-right: none;
@@ -307,7 +304,7 @@ def main():
             align-items: center;
         }
         .calendar-cell-content.today {
-            background-color: #e6f3ff;
+            border: 2px solid #007bff;
             border-radius: 5px;
         }
         .calendar-day {
@@ -315,9 +312,9 @@ def main():
             margin-bottom: 2px;
         }
         .calendar-shift {
-            padding: 2px 5px;
+            padding: 0 5px;
             border-radius: 3px;
-            font-size: 14px;
+            font-size: 18px;
             font-weight: bold;
             margin-bottom: 2px;
         }
@@ -325,13 +322,9 @@ def main():
             font-size: 10px;
             color: red;
             margin-top: 2px;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
         .space-before-button {
-            margin-top: 20px;
+            margin-top: 0;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -423,7 +416,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 # 공휴일 정보 추가
                 holiday_text = ""
                 if date_str in holidays:
-                    holiday_text = f'<div class="calendar-holiday" title="{holidays[date_str][0]}">{holidays[date_str][0]}</div>'
+                    holiday_text = f'<div class="calendar-holiday">{holidays[date_str][0]}</div>'
 
                 cell_content = f'''
                     <div class="calendar-cell-content {today_class}">
