@@ -312,6 +312,7 @@ def main():
         }
         .calendar-shift {
             padding: 0 5px;
+            padding-top: 0;
             padding-bottom: 5px;
             border-radius: 3px;
             font-size: 18px;  /* 글자 크기를 키웠습니다 */
