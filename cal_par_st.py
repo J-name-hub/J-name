@@ -357,6 +357,10 @@ def main():
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     yesterday = today - timedelta(days=1)
 
+    # '이전 월' 버튼
+    if st.button("이전 월"):
+        update_month(-1)
+
     month_days = generate_calendar(year, month)
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data)
@@ -366,10 +370,6 @@ def main():
 
     holiday_descriptions = create_holiday_descriptions(holidays, month)
     st.markdown(" / ".join(holiday_descriptions))
-
-    # '이전 월' 버튼
-    if st.button("이전 월"):
-        update_month(-1)
 
     # '다음 월' 버튼
     if st.button("다음 월"):
