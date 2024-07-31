@@ -441,26 +441,25 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
 def display_calendar(calendar_data):
     days_header = ["일", "월", "화", "수", "목", "금", "토"]
     
+    st.markdown('<div class="calendar-container">', unsafe_allow_html=True)
+    
     # 요일 헤더 생성
-    header_html = '<div class="calendar-container"><div class="calendar-header">'
+    header_html = '<div class="calendar-header">'
     for day in days_header:
         color = "red" if day in ["일", "토"] else "black"
         header_html += f'<div class="calendar-header-cell" style="color: {color};">{day}</div>'
     header_html += '</div>'
+    st.markdown(header_html, unsafe_allow_html=True)
     
     # 달력 데이터 생성
-    calendar_html = ''
     for week in calendar_data:
-        calendar_html += '<div class="calendar-row">'
+        week_html = '<div class="calendar-row">'
         for cell in week:
-            calendar_html += f'<div class="calendar-cell">{cell}</div>'
-        calendar_html += '</div>'
+            week_html += f'<div class="calendar-cell">{cell}</div>'
+        week_html += '</div>'
+        st.markdown(week_html, unsafe_allow_html=True)
     
-    # 전체 달력 HTML 조합
-    full_calendar_html = header_html + calendar_html + '</div>'
-    
-    # HTML을 Streamlit에 표시
-    st.markdown(full_calendar_html, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 def sidebar_controls():
     st.sidebar.title("근무 조 설정")
