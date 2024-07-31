@@ -266,7 +266,7 @@ def main():
             text-align: center;
             padding: 5px;
             font-weight: bold;
-            font-size: 19px;
+            font-size: 20px;
             border-right: 1px solid #ddd;
         }
         .calendar-header-cell:last-child {
@@ -284,7 +284,7 @@ def main():
             flex: 1;
             text-align: center;
             height: 65px;  /* 높이를 약간 늘렸습니다 */
-            font-size: 21px;
+            font-size: 20px;
             display: flex;
             flex-direction: column;
             justify-content: center;
