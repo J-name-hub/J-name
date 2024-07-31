@@ -58,7 +58,7 @@ def save_schedule(schedule, sha):
 def load_team_settings_from_github():
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_TEAM_SETTINGS_PATH}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    
+
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()
@@ -89,7 +89,7 @@ def save_team_settings_to_github(team):
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json"
     }
-    
+
     try:
         # 현재 파일 내용 확인
         response = requests.get(url, headers=headers)
@@ -124,21 +124,21 @@ def load_holidays(year):
         response = requests.get(url)
         response.raise_for_status()
         data = response.json()
-        
+
         # API 응답 구조 확인
         if 'response' not in data or 'body' not in data['response']:
             st.warning(f"{year}년 공휴일 데이터를 찾을 수 없습니다.")
             return {}
-        
+
         body = data['response']['body']
         if 'items' not in body or not body['items']:
             st.warning(f"{year}년 공휴일 데이터가 없습니다.")
             return {}
-        
+
         items = body['items'].get('item', [])
         if isinstance(items, dict):
             items = [items]
-        
+
         holidays = {}
         for item in items:
             date_str = datetime.strptime(str(item['locdate']), "%Y%m%d").strftime("%Y-%m-%d")
@@ -166,7 +166,7 @@ def create_holiday_descriptions(holidays, month):
         if datetime.strptime(start_date, "%Y-%m-%d").month == month:
             start_day = datetime.strptime(start_date, "%Y-%m-%d").day
             current_holiday = holidays[start_date]
-            
+
             end_date = start_date
             end_day = start_day
             j = i + 1
@@ -179,7 +179,7 @@ def create_holiday_descriptions(holidays, month):
                     j += 1
                 else:
                     break
-            
+
             if start_day == end_day:
                 holiday_descriptions.append(f"{start_day}일: {', '.join(current_holiday)}")
             else:
@@ -190,17 +190,17 @@ def create_holiday_descriptions(holidays, month):
                         day_holidays = holidays[date]
                         if day_holidays != current_holiday:
                             temp_descriptions.append(f"{day}일: {', '.join(day_holidays)}")
-                
+
                 if temp_descriptions:
                     holiday_descriptions.append(f"{start_day}일~{end_day}일: {', '.join(current_holiday)}")
                     holiday_descriptions.extend(temp_descriptions)
                 else:
                     holiday_descriptions.append(f"{start_day}일~{end_day}일: {', '.join(current_holiday)}")
-            
+
             i = j
         else:
             i += 1
-    
+
     return holiday_descriptions
 
 # 달력 생성 함수
@@ -244,25 +244,80 @@ def main():
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 16px;
             padding: 0px 4px;
             height: 30px;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
         }
-        .calendar-holiday {
-            font-size: 8px;
-            color: red;
-            margin-top: 2px;
+        .calendar-container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .calendar-header {
+            display: flex;
+            width: 100%;
+            border-bottom: 1px solid #ddd;
+        }
+        .calendar-header-cell {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            font-weight: bold;
+            font-size: 20px;
+            border-right: 1px solid #ddd;
+        }
+        .calendar-header-cell:last-child {
+            border-right: none;
+        }
+        .calendar-row {
+            display: flex;
+            width: 100%;
+            border-bottom: 1px solid #ddd;
+        }
+        .calendar-row:last-child {
+            border-bottom: none;
+        }
+        .calendar-cell {
+            flex: 1;
+            text-align: center;
+            height: 65px;  /* 높이를 약간 늘렸습니다 */
+            font-size: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-right: 1px solid #ddd;
+        }
+        .calendar-cell:last-child {
+            border-right: none;
+        }
+        .calendar-cell-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .calendar-cell-content.today {
+            border: 2px solid #007bff;
+            border-radius: 5px;
+        }
+        .calendar-day {
+            font-weight: bold;
+            margin-bottom: 0px;
+        }
+        .calendar-shift {
+            padding: 0 5px;
+            border-radius: 3px;
+            font-size: 18px;  /* 글자 크기를 키웠습니다 */
+            font-weight: bold;  /* 글자를 굵게 만들었습니다 */
         }
         .space-before-button {
-            margin-top: 10px;
-        }
-        @media (max-width: 640px) {
-            table {
-                font-size: 10px;
-            }
+            margin-top: 0;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -338,59 +393,54 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 current_date = datetime(year, month, day).date()
                 if date_str not in schedule_data:
                     schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
-                
+
                 shift = schedule_data[date_str]
-                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
-                
+                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))  # 교대 근무 배경색
+
                 if current_date.weekday() == 5 or current_date.weekday() == 6 or date_str in holidays:
                     day_color = "red"
                 else:
                     day_color = "black"
 
-                today_class = "background-color: #e6f3ff;" if current_date == today else ""
+                # 오늘 날짜 테두리 처리
+                today_class = "today" if current_date == today else ""
 
                 shift_text = shift if shift != '비' else '&nbsp;'
-                
-                # 공휴일 정보 추가
-                holiday_text = ""
-                if date_str in holidays:
-                    holiday_text = f'<div class="calendar-holiday">{holidays[date_str][0]}</div>'
-
                 cell_content = f'''
-                    <div style="height: 60px; font-size: 12px; padding: 2px; text-align: center; {today_class}">
-                        <div style="font-weight: bold; color: {day_color};">{day}</div>
-                        <div style="background-color: {shift_background}; color: {shift_color}; padding: 2px; margin: 2px 0; font-size: 10px;">{shift_text}</div>
-                        {holiday_text}
+                    <div class="calendar-cell-content {today_class}">
+                        <span class="calendar-day" style="color: {day_color};">{day}</span>
+                        <span class="calendar-shift" style="background-color: {shift_background}; color: {shift_color};">{shift_text}</span>
                     </div>
                 '''
                 week_data.append(cell_content)
             else:
-                week_data.append('<div style="height: 80px;"></div>')
+                week_data.append('&nbsp;')
         calendar_data.append(week_data)
     return calendar_data
 
 def display_calendar(calendar_data):
     days_header = ["일", "월", "화", "수", "목", "금", "토"]
-    
-    table_html = '<table style="width:100%; border-collapse: collapse;">'
-    
+
     # 요일 헤더 생성
-    table_html += '<tr>'
+    header_html = '<div class="calendar-container"><div class="calendar-header">'
     for day in days_header:
-        color = 'red' if day in ['일', '토'] else 'black'
-        table_html += f'<th style="text-align: center; font-weight: bold; color: {color}; border: 1px solid #ddd; padding: 5px;">{day}</th>'
-    table_html += '</tr>'
-    
+        color = "red" if day in ["일", "토"] else "black"
+        header_html += f'<div class="calendar-header-cell" style="color: {color};">{day}</div>'
+    header_html += '</div>'
+
     # 달력 데이터 생성
+    calendar_html = ''
     for week in calendar_data:
-        table_html += '<tr>'
+        calendar_html += '<div class="calendar-row">'
         for cell in week:
-            table_html += f'<td style="border: 1px solid #ddd; padding: 0;">{cell}</td>'
-        table_html += '</tr>'
-    
-    table_html += '</table>'
-    
-    st.markdown(table_html, unsafe_allow_html=True)
+            calendar_html += f'<div class="calendar-cell">{cell}</div>'
+        calendar_html += '</div>'
+
+    # 전체 달력 HTML 조합
+    full_calendar_html = header_html + calendar_html + '</div>'
+
+    # HTML을 Streamlit에 표시
+    st.markdown(full_calendar_html, unsafe_allow_html=True)
 
 def sidebar_controls():
     st.sidebar.title("근무 조 설정")
@@ -436,7 +486,7 @@ def sidebar_controls():
                         st.rerun()
                     else:
                         st.error("암호가 일치하지 않습니다.")
-    
+
     st.sidebar.title("달력 이동")
     months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
 
