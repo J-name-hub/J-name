@@ -311,7 +311,7 @@ def main():
             margin-bottom: 0px;
         }
         .calendar-shift {
-            padding: 0 5px 0 0;
+            padding: 0 0 0 0;
             padding-top: 0;
             padding-bottom: 5px;
             border-radius: 3px;
