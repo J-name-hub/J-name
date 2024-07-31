@@ -244,7 +244,7 @@ def main():
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 14px;
             padding: 0px 4px;
             height: 30px;
             cursor: pointer;
@@ -252,12 +252,17 @@ def main():
             text-decoration: none;
         }
         .calendar-holiday {
-            font-size: 10px;
+            font-size: 8px;
             color: red;
             margin-top: 2px;
         }
         .space-before-button {
-            margin-top: 20px;
+            margin-top: 10px;
+        }
+        @media (max-width: 640px) {
+            table {
+                font-size: 10px;
+            }
         }
         </style>
     """, unsafe_allow_html=True)
@@ -352,9 +357,9 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                     holiday_text = f'<div class="calendar-holiday">{holidays[date_str][0]}</div>'
 
                 cell_content = f'''
-                    <div style="height: 80px; font-size: 14px; border: 1px solid #ddd; padding: 2px; text-align: center; {today_class}">
+                    <div style="height: 60px; font-size: 12px; padding: 2px; text-align: center; {today_class}">
                         <div style="font-weight: bold; color: {day_color};">{day}</div>
-                        <div style="background-color: {shift_background}; color: {shift_color}; padding: 2px; margin: 2px 0;">{shift_text}</div>
+                        <div style="background-color: {shift_background}; color: {shift_color}; padding: 2px; margin: 2px 0; font-size: 10px;">{shift_text}</div>
                         {holiday_text}
                     </div>
                 '''
@@ -367,18 +372,25 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
 def display_calendar(calendar_data):
     days_header = ["일", "월", "화", "수", "목", "금", "토"]
     
+    table_html = '<table style="width:100%; border-collapse: collapse;">'
+    
     # 요일 헤더 생성
-    header_cols = st.columns(7)
-    for i, day in enumerate(days_header):
-        with header_cols[i]:
-            st.markdown(f"<div style='text-align: center; font-weight: bold; color: {'red' if day in ['일', '토'] else 'black'};'>{day}</div>", unsafe_allow_html=True)
+    table_html += '<tr>'
+    for day in days_header:
+        color = 'red' if day in ['일', '토'] else 'black'
+        table_html += f'<th style="text-align: center; font-weight: bold; color: {color}; border: 1px solid #ddd; padding: 5px;">{day}</th>'
+    table_html += '</tr>'
     
     # 달력 데이터 생성
     for week in calendar_data:
-        cols = st.columns(7)
-        for i, cell in enumerate(week):
-            with cols[i]:
-                st.markdown(cell, unsafe_allow_html=True)
+        table_html += '<tr>'
+        for cell in week:
+            table_html += f'<td style="border: 1px solid #ddd; padding: 0;">{cell}</td>'
+        table_html += '</tr>'
+    
+    table_html += '</table>'
+    
+    st.markdown(table_html, unsafe_allow_html=True)
 
 def sidebar_controls():
     st.sidebar.title("근무 조 설정")
