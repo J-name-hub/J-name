@@ -284,7 +284,7 @@ def main():
             flex: 1;
             text-align: center;
             height: 62px;  /* 높이를 약간 늘렸습니다 */
-            font-size: 20px;
+            font-size: 21px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -313,7 +313,7 @@ def main():
         .calendar-shift {
             padding: 0 5px;
             border-radius: 3px;
-            font-size: 19px;  /* 글자 크기를 키웠습니다 */
+            font-size: 18px;  /* 글자 크기를 키웠습니다 */
             font-weight: bold;  /* 글자를 굵게 만들었습니다 */
         }
         .space-before-button {
