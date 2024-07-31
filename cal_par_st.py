@@ -266,7 +266,7 @@ def main():
             text-align: center;
             padding: 5px;
             font-weight: bold;
-            font-size: 20px;
+            font-size: 19px;
             border-right: 1px solid #ddd;
         }
         .calendar-header-cell:last-child {
