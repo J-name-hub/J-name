@@ -278,7 +278,7 @@ def main():
             border-bottom: 1px solid #ddd;
         }
         .calendar-row:last-child {
-            border-bottom: none;
+            border-bottom: 5px;
         }
         .calendar-cell {
             flex: 1;
