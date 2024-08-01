@@ -278,7 +278,7 @@ def main():
             border-bottom: 1px solid #ddd;
         }
         .calendar-row:last-child {
-            border-bottom: none;
+            border-bottom: 0;
         }
         .calendar-cell {
             flex: 1;
@@ -368,8 +368,12 @@ def main():
     # 공백 추가
     st.markdown("<div class='space-before-button'></div>", unsafe_allow_html=True)
 
+    # 공휴일 설명 표시 (수정된 부분)
     holiday_descriptions = create_holiday_descriptions(holidays, month)
-    st.markdown(" / ".join(holiday_descriptions))
+    if holiday_descriptions:
+        st.markdown(" / ".join(holiday_descriptions))
+    else:
+        st.markdown("&nbsp;", unsafe_allow_html=True)  # 공휴일 데이터가 없을 때 빈 줄 추가
 
     # '다음 월' 버튼
     if st.button("다음 월"):
