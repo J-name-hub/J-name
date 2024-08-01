@@ -278,7 +278,7 @@ def main():
             border-bottom: 1px solid #ddd;
         }
         .calendar-row:last-child {
-            border-bottom: 0;
+            border-bottom: 3px;
         }
         .calendar-cell {
             flex: 1;
@@ -364,6 +364,9 @@ def main():
     month_days = generate_calendar(year, month)
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data)
+
+    # 공백 추가
+    st.markdown("<div class='space-before-button'></div>", unsafe_allow_html=True)
 
     # 공휴일 설명 표시 (수정된 부분)
     holiday_descriptions = create_holiday_descriptions(holidays, month)
