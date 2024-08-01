@@ -58,7 +58,7 @@ def save_schedule(schedule, sha):
 def load_team_settings_from_github():
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_TEAM_SETTINGS_PATH}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    
+
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()
@@ -89,7 +89,7 @@ def save_team_settings_to_github(team):
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json"
     }
-    
+
     try:
         # 현재 파일 내용 확인
         response = requests.get(url, headers=headers)
@@ -124,21 +124,21 @@ def load_holidays(year):
         response = requests.get(url)
         response.raise_for_status()
         data = response.json()
-        
+
         # API 응답 구조 확인
         if 'response' not in data or 'body' not in data['response']:
             st.warning(f"{year}년 공휴일 데이터를 찾을 수 없습니다.")
             return {}
-        
+
         body = data['response']['body']
         if 'items' not in body or not body['items']:
             st.warning(f"{year}년 공휴일 데이터가 없습니다.")
             return {}
-        
+
         items = body['items'].get('item', [])
         if isinstance(items, dict):
             items = [items]
-        
+
         holidays = {}
         for item in items:
             date_str = datetime.strptime(str(item['locdate']), "%Y%m%d").strftime("%Y-%m-%d")
@@ -166,7 +166,7 @@ def create_holiday_descriptions(holidays, month):
         if datetime.strptime(start_date, "%Y-%m-%d").month == month:
             start_day = datetime.strptime(start_date, "%Y-%m-%d").day
             current_holiday = holidays[start_date]
-            
+
             end_date = start_date
             end_day = start_day
             j = i + 1
@@ -179,7 +179,7 @@ def create_holiday_descriptions(holidays, month):
                     j += 1
                 else:
                     break
-            
+
             if start_day == end_day:
                 holiday_descriptions.append(f"{start_day}일: {', '.join(current_holiday)}")
             else:
@@ -190,17 +190,17 @@ def create_holiday_descriptions(holidays, month):
                         day_holidays = holidays[date]
                         if day_holidays != current_holiday:
                             temp_descriptions.append(f"{day}일: {', '.join(day_holidays)}")
-                
+
                 if temp_descriptions:
                     holiday_descriptions.append(f"{start_day}일~{end_day}일: {', '.join(current_holiday)}")
                     holiday_descriptions.extend(temp_descriptions)
                 else:
                     holiday_descriptions.append(f"{start_day}일~{end_day}일: {', '.join(current_holiday)}")
-            
+
             i = j
         else:
             i += 1
-    
+
     return holiday_descriptions
 
 # 달력 생성 함수
@@ -393,10 +393,10 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 current_date = datetime(year, month, day).date()
                 if date_str not in schedule_data:
                     schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
-                
+
                 shift = schedule_data[date_str]
                 shift_background, shift_color = shift_colors.get(shift, ("white", "black"))  # 교대 근무 배경색
-                
+
                 if current_date.weekday() == 5 or current_date.weekday() == 6 or date_str in holidays:
                     day_color = "red"
                 else:
@@ -420,14 +420,14 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
 
 def display_calendar(calendar_data):
     days_header = ["일", "월", "화", "수", "목", "금", "토"]
-    
+
     # 요일 헤더 생성
     header_html = '<div class="calendar-container"><div class="calendar-header">'
     for day in days_header:
         color = "red" if day in ["일", "토"] else "black"
         header_html += f'<div class="calendar-header-cell" style="color: {color};">{day}</div>'
     header_html += '</div>'
-    
+
     # 달력 데이터 생성
     calendar_html = ''
     for week in calendar_data:
@@ -435,10 +435,10 @@ def display_calendar(calendar_data):
         for cell in week:
             calendar_html += f'<div class="calendar-cell">{cell}</div>'
         calendar_html += '</div>'
-    
+
     # 전체 달력 HTML 조합
     full_calendar_html = header_html + calendar_html + '</div>'
-    
+
     # HTML을 Streamlit에 표시
     st.markdown(full_calendar_html, unsafe_allow_html=True)
 
@@ -486,7 +486,7 @@ def sidebar_controls():
                         st.rerun()
                     else:
                         st.error("암호가 일치하지 않습니다.")
-    
+
     st.sidebar.title("달력 이동")
     months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
 
