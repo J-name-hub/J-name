@@ -256,7 +256,7 @@ def calculate_workdays(year, month, team, schedule_data):
 # 사이드바에 표시할 근무일수 정보
 def display_workdays_info(year, month, team, schedule_data):
     total_workdays = calculate_workdays(year, month, team, schedule_data)
-    st.sidebar.title(f"**월 근무일수 ({total_workdays}일)**")
+    st.sidebar.title(f"**월 근무일수 ( {total_workdays}일 )**")
 
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
