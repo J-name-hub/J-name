@@ -381,6 +381,9 @@ def main():
 
     sidebar_controls()
 
+    # 근무일수 정보 표시
+    display_workdays_info(selected_year, selected_month, selected_team)
+
 def update_month(delta):
     new_date = datetime(st.session_state.year, st.session_state.month, 1) + relativedelta(months=delta)
     st.session_state.year = new_date.year
@@ -530,9 +533,6 @@ def calculate_workdays(year, month, team):
 def display_workdays_info(year, month, team):
     total_workdays = calculate_workdays(year, month, team)
     st.sidebar.markdown(f"**총근무일수: {total_workdays}일**")
-
-# 근무일수 정보 표시
-    display_workdays_info(selected_year, selected_month, selected_team)
 
 if __name__ == "__main__":
     main()
