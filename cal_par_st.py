@@ -217,126 +217,173 @@ shift_colors = {
     "올": ("lightgreen", "black")
 }
 
-shifts = ["주", "야", "비", "올"]
+shifts = ["주", "야", "비", "비"]
+shift_patterns = {
+    "A": shifts,
+    "B": shifts[-1:] + shifts[:-1],
+    "C": shifts[-2:] + shifts[:-2],
+    "D": shifts[-3:] + shifts[:-3],
+}
 
-# 날짜의 조 계산
-def calculate_team_and_shift(date, team):
-    reference_date = datetime(2024, 8, 3)  # 주간 근무 시작 날짜 설정
-    days_diff = (date - reference_date).days
-    week_number = days_diff // 7
-    day_in_week = days_diff % 7
+# 날짜에 해당하는 근무 조를 얻는 함수
+@st.cache_data
+def get_shift(target_date, team):
+    base_date = datetime(2000, 1, 3)  # 주간 근무 시작일
+    delta_days = (target_date - base_date).days
+    shift_index = delta_days % len(shifts)
+    return shift_patterns[team][shift_index]
 
-    # 팀별 주기
-    team_shifts = {
-        "A": ["주", "야", "비", "비", "주", "야", "올"],
-        "B": ["야", "비", "비", "주", "야", "주", "올"],
-        "C": ["비", "비", "주", "야", "주", "야", "올"],
-        "D": ["비", "주", "야", "주", "야", "비", "올"]
-    }
-
-    current_shifts = team_shifts[team]
-
-    return current_shifts[day_in_week]
-
-# 월간 근무조 계산
-def calculate_monthly_shifts(year, month, team):
+# 근무일수 계산 함수
+def calculate_workdays(year, month, team):
+    total_workdays = 0
     cal = generate_calendar(year, month)
-    monthly_shifts = []
     for week in cal:
-        week_shifts = []
+        for day in week:
+            if day != 0:  # 빈 날 제외
+                current_date = datetime(year, month, day)
+                shift = get_shift(current_date, team)
+                if shift in ["주", "야", "올"]:  # 근무일 계산
+                    total_workdays += 1
+    return total_workdays
+
+# 스케줄 편집 기능
+def edit_schedule(year, month, schedule, team):
+    calendar_html = ""
+    today = datetime.now().date()
+
+    calendar.setfirstweekday(calendar.SUNDAY)
+    cal = calendar.monthcalendar(year, month)
+
+    st.sidebar.title("근무일 설정")
+    holiday = load_holidays(year)
+
+    for week in cal:
         for day in week:
             if day == 0:
-                week_shifts.append(None)
+                continue
+
+            current_date = datetime(year, month, day)
+            if current_date < today:
+                continue
+
+            date_str = current_date.strftime("%Y-%m-%d")
+            shift = get_shift(current_date, team)
+
+            if date_str not in schedule:
+                schedule[date_str] = shift
+
+            shift_color = shift_colors[schedule[date_str]]
+            shift_choice = st.sidebar.selectbox(
+                f"{date_str} 근무 조",
+                ["주", "야", "비", "올"],
+                index=["주", "야", "비", "올"].index(schedule[date_str]),
+                key=f"edit-{date_str}"
+            )
+
+            schedule[date_str] = shift_choice
+
+    return schedule
+
+# 달력 표시 함수
+def display_calendar(year, month, schedule, team):
+    calendar_html = ""
+    today = datetime.now().date()
+
+    calendar.setfirstweekday(calendar.SUNDAY)
+    cal = calendar.monthcalendar(year, month)
+
+    # 공휴일 로드
+    holidays = load_holidays(year)
+
+    for week in cal:
+        calendar_html += '<tr>'
+        for day in week:
+            if day == 0:
+                calendar_html += '<td></td>'
             else:
-                date = datetime(year, month, day)
-                shift = calculate_team_and_shift(date, team)
-                week_shifts.append(shift)
-        monthly_shifts.append(week_shifts)
-    return monthly_shifts
+                current_date = datetime(year, month, day)
+                date_str = current_date.strftime("%Y-%m-%d")
+                shift = get_shift(current_date, team)
+                shift_color = shift_colors[schedule.get(date_str, shift)]
 
-# 월간 근무조 카운트
-def count_workdays_in_month(monthly_shifts, shift_type):
-    count = 0
-    for week in monthly_shifts:
-        count += week.count(shift_type)
-    return count
+                # 공휴일 및 주말 설정
+                is_holiday = date_str in holidays
+                is_weekend = current_date.weekday() >= 5
+                background_color = 'red' if is_holiday else 'lightgray' if is_weekend else shift_color[0]
 
-# Streamlit 앱 설정
-st.set_page_config(
-    page_title="근무일정 관리",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+                # 셀 스타일
+                calendar_html += f'<td style="background-color:{background_color}; color:{shift_color[1]}; padding:5px; text-align:center;">'
+                calendar_html += f'<div>{day}</div>'
+                calendar_html += f'<div>{schedule.get(date_str, shift)}</div>'
+                if is_holiday:
+                    calendar_html += f'<div style="color:blue; font-size:small;">{", ".join(holidays[date_str])}</div>'
+                calendar_html += '</td>'
+        calendar_html += '</tr>'
 
-st.title("근무일정 관리 시스템")
+    calendar_html = f'<table style="width:100%; border-collapse:collapse;">{calendar_html}</table>'
+    return calendar_html
 
-# 팀 설정 로드
-selected_team = load_team_settings_from_github()
+# 사이드바에 표시할 근무일수 정보
+def display_workdays_info(year, month, team):
+    total_workdays = calculate_workdays(year, month, team)
+    st.sidebar.markdown(f"**총근무일수: {total_workdays}일**")
 
-st.sidebar.title("근무일정 설정")
+# 메인 앱
+def main():
+    # 타임존 설정
+    tz = pytz.timezone('Asia/Seoul')
+    current_time = datetime.now(tz)
 
-# 팀 선택
-team = st.sidebar.selectbox("팀 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(selected_team))
+    st.title("월간 근무표")
+    st.sidebar.title("설정")
 
-# 선택한 팀 저장
-if st.sidebar.button("팀 저장"):
-    if save_team_settings_to_github(team):
-        st.sidebar.success("팀 설정 저장 완료.")
+    # 팀 설정 로드 및 선택
+    selected_team = load_team_settings_from_github()
+
+    if st.sidebar.radio("팀 설정 변경", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(selected_team)) != selected_team:
+        selected_team = st.sidebar.radio("팀 설정 변경", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(selected_team))
+        if save_team_settings_to_github(selected_team):
+            st.success("팀 설정이 저장되었습니다.")
+        else:
+            st.error("팀 설정 저장 실패")
+
+    # 년과 월 선택
+    selected_year = st.sidebar.selectbox("연도", list(range(2020, 2031)), index=current_time.year - 2020)
+    selected_month = st.sidebar.selectbox("월", list(range(1, 13)), index=current_time.month - 1)
+
+    # 근무일수 정보 표시
+    display_workdays_info(selected_year, selected_month, selected_team)
+
+    # 스케줄 로드
+    schedule_data, sha = load_schedule()
+
+    # 해당 월의 스케줄 데이터 가져오기
+    if str(selected_year) not in schedule_data:
+        schedule_data[str(selected_year)] = {}
+    if str(selected_month) not in schedule_data[str(selected_year)]:
+        schedule_data[str(selected_year)][str(selected_month)] = {}
+
+    # 스케줄 편집
+    schedule = schedule_data[str(selected_year)][str(selected_month)]
+    schedule = edit_schedule(selected_year, selected_month, schedule, selected_team)
+    schedule_data[str(selected_year)][str(selected_month)] = schedule
+
+    # 스케줄 저장
+    if save_schedule(schedule_data, sha):
+        st.success("스케줄이 저장되었습니다.")
     else:
-        st.sidebar.error("팀 설정 저장 실패.")
+        st.error("스케줄 저장 실패")
 
-# 날짜 선택
-today = datetime.now()
-current_year = today.year
-current_month = today.month
+    # 달력 표시
+    calendar_html = display_calendar(selected_year, selected_month, schedule, selected_team)
+    st.markdown(calendar_html, unsafe_allow_html=True)
 
-year = st.sidebar.selectbox("연도", range(current_year - 1, current_year + 2), index=1)
-month = st.sidebar.selectbox("월", range(1, 13), index=current_month - 1)
+    # 공휴일 설명
+    holiday_descriptions = create_holiday_descriptions(load_holidays(selected_year), selected_month)
+    if holiday_descriptions:
+        st.sidebar.subheader("공휴일")
+        for description in holiday_descriptions:
+            st.sidebar.markdown(f"- {description}")
 
-# 근무일정 로드
-schedule, sha = load_schedule(f"{year}-{month}")
-
-# 근무일정 표시
-monthly_shifts = calculate_monthly_shifts(year, month, team)
-
-# 공휴일 정보 로드 및 설명 생성
-holidays = load_holidays(year)
-holiday_descriptions = create_holiday_descriptions(holidays, month)
-
-# 근무조 카운트
-work_days_count = count_workdays_in_month(monthly_shifts, "주")
-night_days_count = count_workdays_in_month(monthly_shifts, "야")
-all_days_count = count_workdays_in_month(monthly_shifts, "올")
-
-# 근무조 카운트 결과 표시
-st.sidebar.subheader("근무조 통계")
-st.sidebar.write(f"주간 근무: {work_days_count}일")
-st.sidebar.write(f"야간 근무: {night_days_count}일")
-st.sidebar.write(f"올데이 근무: {all_days_count}일")
-
-# 달력 표시
-st.subheader(f"{year}년 {month}월 근무일정 ({team}팀)")
-for week_index, week in enumerate(monthly_shifts):
-    columns = st.columns(len(week))
-    for day_index, day in enumerate(week):
-        with columns[day_index]:
-            if day is None:
-                st.write("")
-            else:
-                shift = day
-                if shift in shift_colors:
-                    bg_color, text_color = shift_colors[shift]
-                    st.markdown(
-                        f'<div style="background-color: {bg_color}; color: {text_color}; padding: 10px; text-align: center;">{week[day_index]}</div>',
-                        unsafe_allow_html=True
-                    )
-                else:
-                    st.write(day)
-
-# 공휴일 표시
-st.sidebar.subheader("공휴일")
-if holiday_descriptions:
-    for description in holiday_descriptions:
-        st.sidebar.write(description)
-else:
-    st.sidebar.write("이번 달 공휴일이 없습니다.")
+if __name__ == "__main__":
+    main()
