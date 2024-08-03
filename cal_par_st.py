@@ -233,6 +233,31 @@ def get_shift(target_date, team):
     pattern = shift_patterns[team]
     return pattern[delta_days % len(pattern)]
 
+# 근무일수 계산 함수
+def calculate_workdays(year, month, team, schedule_data):
+    total_workdays = 0
+    cal = generate_calendar(year, month)
+    for week in cal:
+        for day in week:
+            if day != 0:  # 빈 날 제외
+                date_str = f"{year}-{month:02d}-{day:02d}"
+                current_date = datetime(year, month, day).date()
+                
+                # GitHub에서 저장된 스케줄 데이터 확인
+                if date_str in schedule_data:
+                    shift = schedule_data[date_str]
+                else:
+                    shift = get_shift(current_date, team)
+                
+                if shift in ["주", "야", "올"]:  # 근무일 계산
+                    total_workdays += 1
+    return total_workdays
+
+# 사이드바에 표시할 근무일수 정보
+def display_workdays_info(year, month, team, schedule_data):
+    total_workdays = calculate_workdays(year, month, team, schedule_data)
+    st.sidebar.markdown(f"**총근무일수: {total_workdays}일**")
+
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
@@ -379,7 +404,10 @@ def main():
     if st.button("다음 월"):
         update_month(1)
 
-    sidebar_controls()
+    # GitHub에서 스케줄 데이터 로드
+    schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
+
+    sidebar_controls(year, month, schedule_data)
 
 def update_month(delta):
     new_date = datetime(st.session_state.year, st.session_state.month, 1) + relativedelta(months=delta)
@@ -446,7 +474,7 @@ def display_calendar(calendar_data):
     # HTML을 Streamlit에 표시
     st.markdown(full_calendar_html, unsafe_allow_html=True)
 
-def sidebar_controls():
+def sidebar_controls(year, month, schedule_data):
     st.sidebar.title("근무 조 설정")
     with st.sidebar.form(key='team_settings_form'):
         team = st.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
@@ -512,6 +540,9 @@ def sidebar_controls():
         st.session_state.year = selected_year
         st.session_state.month = selected_month
         st.rerun()
+
+    # 근무일수 정보 표시
+    display_workdays_info(selected_year, selected_month, st.session_state.team, schedule_data)
 
 if __name__ == "__main__":
     main()
