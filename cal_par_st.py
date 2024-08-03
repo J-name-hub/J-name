@@ -528,8 +528,9 @@ def sidebar_controls(year, month, schedule_data):
         new_date = current_date + relativedelta(months=i)
         desired_months.append((new_date.year, new_date.month))
 
+    # 여기야
     selected_year_month = st.sidebar.selectbox(
-        "월 선택", 
+        "", 
         options=desired_months,
         format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
         index=5
