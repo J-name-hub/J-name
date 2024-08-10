@@ -527,6 +527,28 @@ def sidebar_controls(year, month, schedule_data):
                 st.sidebar.error("암호가 일치하지 않습니다.")
 
     st.sidebar.title("스케줄 변경")
+
+    months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
+
+    desired_months = []
+    current_date = datetime(st.session_state.year, st.session_state.month, 1)
+    for i in range(-5, 6):
+        new_date = current_date + relativedelta(months=i)
+        desired_months.append((new_date.year, new_date.month))
+
+    selected_year_month = st.sidebar.selectbox(
+        "달력 이동", 
+        options=desired_months,
+        format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
+        index=5
+    )
+
+    selected_year, selected_month = selected_year_month
+    if selected_year != st.session_state.year or selected_month != st.session_state.month:
+        st.session_state.year = selected_year
+        st.session_state.month = selected_month
+        st.rerun()
+
     if st.sidebar.button("스케줄 변경 활성화"):
         st.session_state.expander_open = not st.session_state.expander_open
 
@@ -552,27 +574,6 @@ def sidebar_controls(year, month, schedule_data):
                         st.rerun()
                     else:
                         st.error("암호가 일치하지 않습니다.")
-
-    months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
-
-    desired_months = []
-    current_date = datetime(st.session_state.year, st.session_state.month, 1)
-    for i in range(-5, 6):
-        new_date = current_date + relativedelta(months=i)
-        desired_months.append((new_date.year, new_date.month))
-
-    selected_year_month = st.sidebar.selectbox(
-        "", 
-        options=desired_months,
-        format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
-        index=5
-    )
-
-    selected_year, selected_month = selected_year_month
-    if selected_year != st.session_state.year or selected_month != st.session_state.month:
-        st.session_state.year = selected_year
-        st.session_state.month = selected_month
-        st.rerun()
 
     # 근무일수 정보 표시
     display_workdays_info(selected_year, selected_month, st.session_state.team, schedule_data)
