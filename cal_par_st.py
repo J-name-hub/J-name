@@ -275,18 +275,19 @@ def display_workdays_info(year, month, team, schedule_data):
     total_workdays = calculate_workdays(year, month, team, schedule_data)
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     
-    # 현재 월의 마지막 날짜를 구합니다
+    # 현재 월의 첫날과 마지막 날을 구합니다
+    first_date = datetime(year, month, 1).date()
     _, last_day = calendar.monthrange(year, month)
     last_date = datetime(year, month, last_day).date()
     
-    # 오늘이 현재 월에 속하는 경우에만 계산합니다
-    if today.year == year and today.month == month:
+    # 이전 월, 현재 월, 미래 월을 구분하여 처리합니다
+    if last_date < today:  # 이전 월
+        remaining_workdays = 0
+    elif first_date > today:  # 미래 월
+        remaining_workdays = total_workdays
+    else:  # 현재 월
         workdays_until_today = calculate_workdays_until_date(year, month, team, schedule_data, today)
         remaining_workdays = total_workdays - workdays_until_today
-    else:
-        # 현재 월이 아닌 경우, 전체를 남은 근무일수로 표시합니다
-        workdays_until_today = 0
-        remaining_workdays = total_workdays
 
     st.sidebar.title(f"**월 근무일수 : {total_workdays}일**")
     st.sidebar.write(f"**(오늘을 제외한 일수  {remaining_workdays}일)**")
