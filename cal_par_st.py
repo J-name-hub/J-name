@@ -234,6 +234,23 @@ def get_shift(target_date, team):
     return pattern[delta_days % len(pattern)]
 
 # 근무일수 계산 함수
+def calculate_workdays(year, month, team, schedule_data):
+    total_workdays = 0
+    cal = generate_calendar(year, month)
+    for week in cal:
+        for day in week:
+            if day != 0:  # 빈 날 제외
+                date_str = f"{year}-{month:02d}-{day:02d}"
+                current_date = datetime(year, month, day).date()
+                # GitHub에서 저장된 스케줄 데이터 확인
+                if date_str in schedule_data:
+                    shift = schedule_data[date_str]
+                else:
+                    shift = get_shift(current_date, team)
+                if shift in ["주", "야", "올"]:  # 근무일 계산
+                    total_workdays += 1
+    return total_workdays
+
 def calculate_workdays_until_date(year, month, team, schedule_data, end_date):
     total_workdays = 0
     cal = generate_calendar(year, month)
