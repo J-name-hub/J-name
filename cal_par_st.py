@@ -289,7 +289,7 @@ def display_workdays_info(year, month, team, schedule_data):
         remaining_workdays = total_workdays
 
     st.sidebar.title(f"**월 근무일수 : {total_workdays}일**")
-    st.sidebar.write(f"**(오늘 제외한 남은 근무일수  {remaining_workdays}일)**")
+    st.sidebar.write(f"**(오늘을 제외한 일수  {remaining_workdays}일)**")
 
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
