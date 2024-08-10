@@ -289,7 +289,7 @@ def display_workdays_info(year, month, team, schedule_data):
         remaining_workdays = total_workdays
 
     st.sidebar.title(f"**월 근무일수 : {total_workdays}일**")
-    st.sidebar.write(f"**남은 근무일수 : {remaining_workdays}일**")
+    st.sidebar.write(f"**(오늘 제외한 남은 근무일수  {remaining_workdays}일)**")
 
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
@@ -562,7 +562,7 @@ def sidebar_controls(year, month, schedule_data):
         desired_months.append((new_date.year, new_date.month))
 
     selected_year_month = st.sidebar.selectbox(
-        "월 선택", 
+        "", 
         options=desired_months,
         format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
         index=5
