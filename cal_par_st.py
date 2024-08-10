@@ -234,7 +234,7 @@ def get_shift(target_date, team):
     return pattern[delta_days % len(pattern)]
 
 # 근무일수 계산 함수
-def calculate_workdays(year, month, team, schedule_data):
+def calculate_workdays_until_date(year, month, team, schedule_data, end_date):
     total_workdays = 0
     cal = generate_calendar(year, month)
     for week in cal:
@@ -242,21 +242,37 @@ def calculate_workdays(year, month, team, schedule_data):
             if day != 0:  # 빈 날 제외
                 date_str = f"{year}-{month:02d}-{day:02d}"
                 current_date = datetime(year, month, day).date()
-                
+                if current_date > end_date:
+                    return total_workdays
                 # GitHub에서 저장된 스케줄 데이터 확인
                 if date_str in schedule_data:
                     shift = schedule_data[date_str]
                 else:
                     shift = get_shift(current_date, team)
-                
                 if shift in ["주", "야", "올"]:  # 근무일 계산
                     total_workdays += 1
     return total_workdays
 
-# 사이드바에 표시할 근무일수 정보
+# 사이드바에 표시할 근무일수 정보를 업데이트합니다
 def display_workdays_info(year, month, team, schedule_data):
     total_workdays = calculate_workdays(year, month, team, schedule_data)
+    today = datetime.now(pytz.timezone('Asia/Seoul')).date()
+    
+    # 현재 월의 마지막 날짜를 구합니다
+    _, last_day = calendar.monthrange(year, month)
+    last_date = datetime(year, month, last_day).date()
+    
+    # 오늘이 현재 월에 속하는 경우에만 계산합니다
+    if today.year == year and today.month == month:
+        workdays_until_today = calculate_workdays_until_date(year, month, team, schedule_data, today)
+        remaining_workdays = total_workdays - workdays_until_today
+    else:
+        # 현재 월이 아닌 경우, 전체를 남은 근무일수로 표시합니다
+        workdays_until_today = 0
+        remaining_workdays = total_workdays
+
     st.sidebar.title(f"**월 근무일수 : {total_workdays}일**")
+    st.sidebar.write(f"**남은 근무일수 : {remaining_workdays}일**")
 
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
