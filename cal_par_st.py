@@ -314,12 +314,12 @@ def main():
             border: 1px solid #ddd;
             border-radius: 5px;
             overflow: hidden;
+            margin-top: 20px;
         }
         .calendar-header {
             display: flex;
             width: 100%;
             border-bottom: 1px solid #ddd;
-            margin-top: 20px;
         }
         .calendar-header-cell {
             flex: 1;
