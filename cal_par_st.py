@@ -412,6 +412,9 @@ def main():
 
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     yesterday = today - timedelta(days=1)
+
+    # 공백 추가
+    st.markdown("&nbsp;", unsafe_allow_html=True)
     
     month_days = generate_calendar(year, month)
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
