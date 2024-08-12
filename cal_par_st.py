@@ -314,7 +314,6 @@ def main():
             border: 1px solid #ddd;
             border-radius: 5px;
             overflow: hidden;
-            margin-top: 20px;
         }
         .calendar-header {
             display: flex;
@@ -414,6 +413,10 @@ def main():
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     yesterday = today - timedelta(days=1)
     
+    # '이전 월' 버튼
+    if st.button("이전 월"):
+        update_month(-1)
+
     month_days = generate_calendar(year, month)
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data)
@@ -424,10 +427,6 @@ def main():
         st.markdown(" / ".join(holiday_descriptions))
     else:
         st.markdown("&nbsp;", unsafe_allow_html=True)  # 공휴일 데이터가 없을 때 빈 줄 추가
-
-    # '이전 월' 버튼
-    if st.button("이전 월"):
-        update_month(-1)
     
     # '다음 월' 버튼
     if st.button("다음 월"):
