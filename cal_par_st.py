@@ -319,6 +319,7 @@ def main():
             display: flex;
             width: 100%;
             border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
         }
         .calendar-header-cell {
             flex: 1;
