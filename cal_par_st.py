@@ -536,7 +536,7 @@ def display_calendar(calendar_data):
     days_header = ["일", "월", "화", "수", "목", "금", "토"]
 
     # 요일 헤더 생성
-    header_html = '<div class="calendar-container"><div class="calendar-weekdays">'
+    header_html = '<div class="calendar-weekdays">'
     for day in days_header:
         color = "red" if day in ["일", "토"] else "black"
         header_html += f'<div class="calendar-header-cell" style="color: {color};">{day}</div>'
@@ -550,7 +550,7 @@ def display_calendar(calendar_data):
             calendar_html += f'<div class="calendar-cell">{cell}</div>'
         calendar_html += '</div>'
 
-    title_html = f'<div class="calendar-container"><div class="calendar-header">2024년 8월</div>'
+    title_html = f'<div class="calendar-container"><div class="calendar-header">{year}년 {month}월</div>'
     
     # 전체 달력 HTML 조합
     full_calendar_html = title_html + header_html + calendar_html + '</div>'
