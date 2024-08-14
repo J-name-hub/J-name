@@ -297,85 +297,108 @@ def main():
 
     # CSS 스타일 추가
     st.markdown("""
-        <style>
-        .stButton > button {
-            width: 100%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            padding: 0px 4px;
-            height: 30px;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
-        }
-        .calendar-container {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-        .calendar-header {
-            display: flex;
-            width: 100%;
-            border-bottom: 1px solid #ddd;
-        }
-        .calendar-header-cell {
-            flex: 1;
-            text-align: center;
-            padding: 5px;
-            font-weight: bold;
-            font-size: 20px;
-            border-right: 1px solid #ddd;
-        }
-        .calendar-header-cell:last-child {
-            border-right: none;
-        }
-        .calendar-row {
-            display: flex;
-            width: 100%;
-            border-bottom: 1px solid #ddd;
-        }
-        .calendar-row:last-child {
-            border-bottom: 0;
-        }
-        .calendar-cell {
-            flex: 1;
-            text-align: center;
-            height: 65px;  /* 높이를 약간 늘렸습니다 */
-            font-size: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            border-right: 1px solid #ddd;
-        }
-        .calendar-cell:last-child {
-            border-right: none;
-        }
-        .calendar-cell-content {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .calendar-cell-content.today {
-            border: 2px solid #007bff;
-            border-radius: 5px;
-        }
-        .calendar-day {
-            font-weight: bold;
-            margin-bottom: 0px;
-        }
-        .calendar-shift {
-            padding: 0 5px;
-            border-radius: 3px;
-            font-size: 18px;  /* 글자 크기를 키웠습니다 */
-            font-weight: bold;  /* 글자를 굵게 만들었습니다 */
-        }
-        </style>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+    body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #f8f9fa;
+    }
+    
+    .stButton > button {
+        background-color: #007bff;
+        color: white;
+        border-radius: 5px;
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        background-color: #0056b3;
+    }
+
+    .calendar-container {
+        border: 2px solid #dee2e6;
+        border-radius: 10px;
+        overflow: hidden;
+        background-color: white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .calendar-header {
+        background-color: #343a40;
+        color: white;
+    }
+    
+    .calendar-header-cell {
+        padding: 10px;
+        font-weight: 700;
+        font-size: 16px;
+        border-right: 1px solid #495057;
+    }
+    
+    .calendar-header-cell:last-child {
+        border-right: none;
+    }
+    
+    .calendar-row {
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .calendar-cell {
+        padding: 10px;
+        font-size: 16px;
+        border-right: 1px solid #dee2e6;
+    }
+    
+    .calendar-cell:last-child {
+        border-right: none;
+    }
+
+    .calendar-cell-content {
+        border-radius: 5px;
+        padding: 5px;
+        transition: background-color 0.3s ease;
+    }
+    
+    .calendar-cell-content.today {
+        border: 2px solid #007bff;
+        background-color: #e9ecef;
+    }
+    
+    .calendar-day {
+        font-weight: bold;
+        color: #343a40;
+    }
+    
+    .calendar-shift {
+        padding: 5px;
+        border-radius: 3px;
+        font-size: 14px;
+        font-weight: 500;
+        color: white;
+    }
+
+    .calendar-shift.ju {
+        background-color: #f8c291;
+    }
+    
+    .calendar-shift.ya {
+        background-color: #d1d8e0;
+    }
+    
+    .calendar-shift.bi {
+        background-color: #dff9fb;
+        color: #1e3799;
+    }
+
+    .calendar-shift.ol {
+        background-color: #badc58;
+    }
+    
+    </style>
     """, unsafe_allow_html=True)
 
     # 세션 상태 초기화
