@@ -392,35 +392,35 @@ def main():
         background-color: #badc58;
     }
     </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-st.markdown("""
-    <div class="calendar-container">
-        <div class="calendar-header">
-            August 2024
-        </div>
-        <div class="calendar-weekdays">
-            <div class="calendar-cell">Sun</div>
-            <div class="calendar-cell">Mon</div>
-            <div class="calendar-cell">Tue</div>
-            <div class="calendar-cell">Wed</div>
-            <div class="calendar-cell">Thu</div>
-            <div class="calendar-cell">Fri</div>
-            <div class="calendar-cell">Sat</div>
-        </div>
-        <!-- 여기서부터 각 주의 날짜와 스케줄 정보 추가 -->
-        <div class="calendar-row">
-            <div class="calendar-cell">
-                <div class="calendar-cell-content">
-                    <div class="calendar-day">1</div>
-                    <div class="calendar-shift ju">Day Shift</div>
-                </div>
+    st.markdown("""
+        <div class="calendar-container">
+            <div class="calendar-header">
+                August 2024
             </div>
-            <!-- 나머지 날짜와 셀도 같은 방식으로 추가 -->
+            <div class="calendar-weekdays">
+                <div class="calendar-cell">Sun</div>
+                <div class="calendar-cell">Mon</div>
+                <div class="calendar-cell">Tue</div>
+                <div class="calendar-cell">Wed</div>
+                <div class="calendar-cell">Thu</div>
+                <div class="calendar-cell">Fri</div>
+                <div class="calendar-cell">Sat</div>
+            </div>
+            <!-- 여기서부터 각 주의 날짜와 스케줄 정보 추가 -->
+            <div class="calendar-row">
+                <div class="calendar-cell">
+                    <div class="calendar-cell-content">
+                        <div class="calendar-day">1</div>
+                        <div class="calendar-shift ju">Day Shift</div>
+                    </div>
+                </div>
+                <!-- 나머지 날짜와 셀도 같은 방식으로 추가 -->
+            </div>
+            <!-- 다음 주도 같은 방식으로 추가 -->
         </div>
-        <!-- 다음 주도 같은 방식으로 추가 -->
-    </div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
     # 세션 상태 초기화
     if "year" not in st.session_state or "month" not in st.session_state:
