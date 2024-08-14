@@ -462,7 +462,7 @@ def main():
     st.markdown(f"<div style='{titleup_style}'>{year}년</div>", unsafe_allow_html=True)
 
 
-    title_html = 'f"<div class="calendar-container"><div class="calendar-header">{year}년 {month}월"'
+    title_html = f"<div class="calendar-container"><div class="calendar-header">{year}년 {month}월</div>"
     title_style = "font-size: 30px; font-weight: bold; text-align: center;"
     st.markdown(f"<div style='{title_style}'>{month}월 교대근무 달력</div>", unsafe_allow_html=True)
 
