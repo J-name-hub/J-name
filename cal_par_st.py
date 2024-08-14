@@ -536,7 +536,7 @@ def display_calendar(calendar_data):
     days_header = ["일", "월", "화", "수", "목", "금", "토"]
 
     # 요일 헤더 생성
-    header_html = '<div class="calendar-container"><div class="calendar-header">'
+    header_html = '<div class="calendar-container"><div class="calendar-weekdays">'
     for day in days_header:
         color = "red" if day in ["일", "토"] else "black"
         header_html += f'<div class="calendar-header-cell" style="color: {color};">{day}</div>'
