@@ -336,6 +336,16 @@ def main():
         color: #495057;
     }
 
+    .calendar-header-cell {
+        display: flex;
+        justify-content: space-between;
+        background-color: #f8f9fa;
+        padding: 10px 0;
+        border-bottom: 1px solid #dee2e6;
+        font-weight: bold;
+        color: #495057;
+    }
+
     .calendar-row {
         display: flex;
         justify-content: space-between;
