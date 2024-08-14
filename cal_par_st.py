@@ -297,139 +297,85 @@ def main():
 
     # CSS 스타일 추가
     st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-
-    body {
-        font-family: 'Roboto', sans-serif;
-        background-color: #f8f9fa;
-    }
-
-    .calendar-container {
-        border: 2px solid #dee2e6;
-        border-radius: 10px;
-        overflow: hidden;
-        background-color: white;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-
-    .calendar-header {
-        background-color: #343a40;
-        color: white;
-        text-align: center;
-        padding: 10px 0;
-        border-radius: 10px 10px 0 0;
-        font-size: 18px;
-        font-weight: bold;
-    }
-
-    .calendar-weekdays {
-        display: flex;
-        justify-content: space-between;
-        background-color: #f8f9fa;
-        padding: 10px 0;
-        border-bottom: 1px solid #dee2e6;
-        font-weight: bold;
-        color: #495057;
-    }
-
-    .calendar-header-cell {
-        display: flex;
-        justify-content: space-between;
-        background-color: #f8f9fa;
-        padding: 10px 0;
-        border-bottom: 1px solid #dee2e6;
-        font-weight: bold;
-        color: #495057;
-    }
-
-    .calendar-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 10px 0;
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    .calendar-cell {
-        width: 13%;
-        text-align: center;
-        font-size: 14px;
-        position: relative;
-    }
-
-    .calendar-cell-content {
-        border-radius: 5px;
-        padding: 5px;
-        transition: background-color 0.3s ease;
-    }
-
-    .calendar-cell-content.today {
-        border: 2px solid #007bff;
-        background-color: #e9ecef;
-    }
-
-    .calendar-day {
-        font-weight: bold;
-        color: #343a40;
-    }
-
-    .calendar-shift {
-        padding: 5px;
-        border-radius: 3px;
-        font-size: 12px;
-        font-weight: 500;
-        color: white;
-        margin-top: 5px;
-    }
-
-    .calendar-shift.ju {
-        background-color: #f8c291;
-    }
-
-    .calendar-shift.ya {
-        background-color: #d1d8e0;
-    }
-
-    .calendar-shift.bi {
-        background-color: #dff9fb;
-        color: #1e3799;
-    }
-
-    .calendar-shift.ol {
-        background-color: #badc58;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-        <div class="calendar-container">
-            <div class="calendar-header">
-                August 2024
-            </div>
-            <div class="calendar-weekdays">
-                <div class="calendar-cell">Sun</div>
-                <div class="calendar-cell">Mon</div>
-                <div class="calendar-cell">Tue</div>
-                <div class="calendar-cell">Wed</div>
-                <div class="calendar-cell">Thu</div>
-                <div class="calendar-cell">Fri</div>
-                <div class="calendar-cell">Sat</div>
-            </div>
-            <!-- 여기서부터 각 주의 날짜와 스케줄 정보 추가 -->
-            <div class="calendar-row">
-                <div class="calendar-cell">
-                    <div class="calendar-cell-content">
-                        <div class="calendar-day">1</div>
-                        <div class="calendar-shift ju">Day Shift</div>
-                    </div>
-                </div>
-                <!-- 나머지 날짜와 셀도 같은 방식으로 추가 -->
-            </div>
-            <!-- 다음 주도 같은 방식으로 추가 -->
-        </div>
+        <style>
+        .stButton > button {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            padding: 0px 4px;
+            height: 30px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+        }
+        .calendar-container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .calendar-header {
+            display: flex;
+            width: 100%;
+            border-bottom: 1px solid #ddd;
+        }
+        .calendar-header-cell {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            font-weight: bold;
+            font-size: 20px;
+            border-right: 1px solid #ddd;
+        }
+        .calendar-header-cell:last-child {
+            border-right: none;
+        }
+        .calendar-row {
+            display: flex;
+            width: 100%;
+            border-bottom: 1px solid #ddd;
+        }
+        .calendar-row:last-child {
+            border-bottom: 0;
+        }
+        .calendar-cell {
+            flex: 1;
+            text-align: center;
+            height: 65px;  /* 높이를 약간 늘렸습니다 */
+            font-size: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-right: 1px solid #ddd;
+        }
+        .calendar-cell:last-child {
+            border-right: none;
+        }
+        .calendar-cell-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .calendar-cell-content.today {
+            border: 2px solid #007bff;
+            border-radius: 5px;
+        }
+        .calendar-day {
+            font-weight: bold;
+            margin-bottom: 0px;
+        }
+        .calendar-shift {
+            padding: 0 5px;
+            border-radius: 3px;
+            font-size: 18px;  /* 글자 크기를 키웠습니다 */
+            font-weight: bold;  /* 글자를 굵게 만들었습니다 */
+        }
+        </style>
     """, unsafe_allow_html=True)
 
     # 세션 상태 초기화
@@ -536,7 +482,7 @@ def display_calendar(calendar_data):
     days_header = ["일", "월", "화", "수", "목", "금", "토"]
 
     # 요일 헤더 생성
-    header_html = '<div class="calendar-weekdays">'
+    header_html = '<div class="calendar-container"><div class="calendar-header">'
     for day in days_header:
         color = "red" if day in ["일", "토"] else "black"
         header_html += f'<div class="calendar-header-cell" style="color: {color};">{day}</div>'
@@ -550,10 +496,8 @@ def display_calendar(calendar_data):
             calendar_html += f'<div class="calendar-cell">{cell}</div>'
         calendar_html += '</div>'
 
-    title_html = f'<div class="calendar-container"><div class="calendar-header">{year}년 {month}월</div>'
-    
     # 전체 달력 HTML 조합
-    full_calendar_html = title_html + header_html + calendar_html + '</div>'
+    full_calendar_html = header_html + calendar_html + '</div>'
 
     # HTML을 Streamlit에 표시
     st.markdown(full_calendar_html, unsafe_allow_html=True)
