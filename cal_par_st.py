@@ -304,20 +304,6 @@ def main():
         font-family: 'Roboto', sans-serif;
         background-color: #f8f9fa;
     }
-    
-    .stButton > button {
-        background-color: #007bff;
-        color: white;
-        border-radius: 5px;
-        padding: 10px 20px;
-        font-size: 16px;
-        font-weight: bold;
-        transition: background-color 0.3s ease;
-    }
-    
-    .stButton > button:hover {
-        background-color: #0056b3;
-    }
 
     .calendar-container {
         border: 2px solid #dee2e6;
@@ -325,36 +311,31 @@ def main():
         overflow: hidden;
         background-color: white;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 10px;
     }
-    
+
     .calendar-header {
         background-color: #343a40;
         color: white;
+        text-align: center;
+        padding: 10px 0;
+        border-radius: 10px 10px 0 0;
     }
-    
-    .calendar-header-cell {
-        padding: 10px;
-        font-weight: 700;
-        font-size: 16px;
-        border-right: 1px solid #495057;
-    }
-    
-    .calendar-header-cell:last-child {
-        border-right: none;
-    }
-    
+
     .calendar-row {
+        display: flex;
+        justify-content: space-between;
         border-bottom: 1px solid #dee2e6;
+        padding: 5px 0;
     }
-    
+
     .calendar-cell {
-        padding: 10px;
-        font-size: 16px;
-        border-right: 1px solid #dee2e6;
-    }
-    
-    .calendar-cell:last-child {
-        border-right: none;
+        width: 13%;
+        text-align: center;
+        font-size: 14px;
+        position: relative;
     }
 
     .calendar-cell-content {
@@ -362,33 +343,34 @@ def main():
         padding: 5px;
         transition: background-color 0.3s ease;
     }
-    
+
     .calendar-cell-content.today {
         border: 2px solid #007bff;
         background-color: #e9ecef;
     }
-    
+
     .calendar-day {
         font-weight: bold;
         color: #343a40;
     }
-    
+
     .calendar-shift {
         padding: 5px;
         border-radius: 3px;
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 500;
         color: white;
+        margin-top: 5px;
     }
 
     .calendar-shift.ju {
         background-color: #f8c291;
     }
-    
+
     .calendar-shift.ya {
         background-color: #d1d8e0;
     }
-    
+
     .calendar-shift.bi {
         background-color: #dff9fb;
         color: #1e3799;
@@ -397,9 +379,10 @@ def main():
     .calendar-shift.ol {
         background-color: #badc58;
     }
-    
+
     </style>
     """, unsafe_allow_html=True)
+
 
     # 세션 상태 초기화
     if "year" not in st.session_state or "month" not in st.session_state:
