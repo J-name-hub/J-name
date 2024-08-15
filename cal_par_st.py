@@ -421,6 +421,8 @@ def main():
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data)
 
+    compact_calendar(year, month, team, schedule_data, holidays)
+
     # 공휴일 설명 표시 (수정된 부분)
     holiday_descriptions = create_holiday_descriptions(holidays, month)
     if holiday_descriptions:
@@ -436,6 +438,91 @@ def main():
     schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
 
     sidebar_controls(year, month, schedule_data)
+
+# 근무 조 설정
+shift_patterns = {
+    "A": ["주", "야", "비", "비"],
+    "B": ["비", "주", "야", "비"],
+    "C": ["비", "비", "주", "야"],
+    "D": ["야", "비", "비", "주"],
+}
+
+# 날짜에 해당하는 근무 조를 얻는 함수
+def get_shift(target_date, team):
+    base_date = datetime(2000, 1, 3).date()
+    delta_days = (target_date - base_date).days
+    pattern = shift_patterns[team]
+    return pattern[delta_days % len(pattern)]
+
+def compact_calendar(year, month, team, schedule_data, holidays):
+    today = datetime.now(pytz.timezone('Asia/Seoul')).date()
+    cal = calendar.monthcalendar(year, month)
+    
+    st.markdown("""
+    <style>
+    .calendar {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    .calendar-day {
+        border: 1px solid #ddd;
+        padding: 5px;
+        text-align: center;
+        background-color: white;
+    }
+    .weekend { color: red; }
+    .today { background-color: #e6f3ff; }
+    .holiday { background-color: #ffeded; }
+    .shift {
+        font-weight: bold;
+        margin-top: 5px;
+    }
+    .shift-주 { color: #ff9800; }
+    .shift-야 { color: #2196f3; }
+    .shift-비 { color: #4caf50; }
+    .shift-올 { color: #9c27b0; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Weekday headers
+    weekdays = ['일', '월', '화', '수', '목', '금', '토']
+    weekday_html = ''.join([f'<div class="calendar-day"><strong>{day}</strong></div>' for day in weekdays])
+    
+    calendar_html = f'<div class="calendar">{weekday_html}'
+
+    for week in cal:
+        for day in week:
+            if day == 0:
+                calendar_html += '<div class="calendar-day"></div>'
+            else:
+                date = datetime(year, month, day).date()
+                date_str = date.strftime("%Y-%m-%d")
+                is_weekend = date.weekday() >= 5
+                is_today = date == today
+                is_holiday = date_str in holidays
+                
+                shift = schedule_data.get(date_str, get_shift(date, team))
+                
+                classes = ['calendar-day']
+                if is_weekend:
+                    classes.append('weekend')
+                if is_today:
+                    classes.append('today')
+                if is_holiday:
+                    classes.append('holiday')
+                
+                calendar_html += f"""
+                <div class="{' '.join(classes)}">
+                    <div>{day}</div>
+                    <div class="shift shift-{shift}">{shift}</div>
+                </div>
+                """
+
+    calendar_html += '</div>'
+    st.markdown(calendar_html, unsafe_allow_html=True)
 
 def update_month(delta):
     new_date = datetime(st.session_state.year, st.session_state.month, 1) + relativedelta(months=delta)
