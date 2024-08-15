@@ -233,7 +233,7 @@ def display_workdays_info(year, month, team, schedule_data):
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
-    # CSS 스타일 추가
+    # CSS 스타일 수정
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
@@ -277,10 +277,10 @@ def main():
             border-bottom: 1px solid #dee2e6;
         }
         .calendar-cell {
-            width: 13%;
+            width: 14%;
             text-align: center;
             font-size: 12px;
-            position: relative;
+            padding: 2px;
         }
         .calendar-cell-content {
             border-radius: 3px;
