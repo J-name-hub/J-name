@@ -260,12 +260,13 @@ def main():
             font-weight: bold;
         }
         .calendar-grid {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
         }
         .calendar-column {
-            flex: 1;
-            margin: 0 2px;
+            display: flex;
+            flex-direction: column;
         }
         .calendar-weekday {
             font-weight: bold;
@@ -346,7 +347,7 @@ def main():
             <div class="calendar-grid">
     """, unsafe_allow_html=True)
 
-    weekdays = ['월', '화', '수', '목', '금', '토', '일']
+    weekdays = ['일', '월', '화', '수', '목', '금', '토']
     for weekday in weekdays:
         st.markdown(f"""
             <div class="calendar-column">
