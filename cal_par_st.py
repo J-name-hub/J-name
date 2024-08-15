@@ -233,7 +233,7 @@ def display_workdays_info(year, month, team, schedule_data):
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
-    # CSS 스타일 추가
+    # CSS 스타일 업데이트
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
@@ -247,7 +247,7 @@ def main():
             overflow: hidden;
             background-color: white;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -276,7 +276,7 @@ def main():
             border-bottom: 1px solid #dee2e6;
         }
         .calendar-cell {
-            width: 13%;
+            width: 14%;
             text-align: center;
             font-size: 14px;
             position: relative;
@@ -343,7 +343,7 @@ def main():
 
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     
-    # 달력 렌더링
+     # 달력 렌더링
     st.markdown(f"""
         <div class="calendar-container">
             <div class="calendar-header">{year}년 {month}월</div>
