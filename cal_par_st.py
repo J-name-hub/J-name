@@ -247,7 +247,6 @@ def main():
             overflow: hidden;
             background-color: white;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -259,53 +258,47 @@ def main():
             border-radius: 10px 10px 0 0;
             font-size: 24px;
             font-weight: bold;
+            margin-bottom: 10px;
         }
         .calendar-weekdays {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
             background-color: #f8f9fa;
             padding: 10px 0;
             border-bottom: 1px solid #dee2e6;
             font-weight: bold;
             color: #495057;
         }
-        .calendar-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #dee2e6;
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
         }
         .calendar-cell {
-            width: 13%;
+            border: 1px solid #dee2e6;
+            padding: 5px;
             text-align: center;
             font-size: 14px;
-            position: relative;
-        }
-        .calendar-cell-content {
-            border-radius: 5px;
-            padding: 5px;
-            transition: background-color 0.3s ease;
-        }
-        .calendar-cell-content.today {
-            border: 2px solid #007bff;
-            background-color: #e9ecef;
+            min-height: 80px;
         }
         .calendar-day {
             font-weight: bold;
             color: #343a40;
         }
         .calendar-shift {
-            padding: 5px;
+            margin-top: 5px;
+            padding: 2px 5px;
             border-radius: 3px;
             font-size: 12px;
             font-weight: 500;
-            color: white;
-            margin-top: 5px;
         }
-        .calendar-shift.주 { background-color: #f8c291; }
-        .calendar-shift.야 { background-color: #d1d8e0; }
+        .calendar-shift.주 { background-color: #f8c291; color: black; }
+        .calendar-shift.야 { background-color: #d1d8e0; color: black; }
         .calendar-shift.비 { background-color: #dff9fb; color: #1e3799; }
-        .calendar-shift.올 { background-color: #badc58; }
+        .calendar-shift.올 { background-color: #badc58; color: black; }
+        .today { border: 2px solid #007bff; }
+        .weekend { color: #dc3545; }
+        .other-month { color: #6c757d; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -334,59 +327,58 @@ def main():
     if not schedule_data:
         schedule_data = {}
         sha = None
-
-    titleup_style = "font-size: 18px; font-weight: bold; text-align: center;"
-    st.markdown(f"<div style='{titleup_style}'>{year}년</div>", unsafe_allow_html=True)
-
-    title_style = "font-size: 30px; font-weight: bold; text-align: center;"
-    st.markdown(f"<div style='{title_style}'>{month}월 교대근무 달력</div>", unsafe_allow_html=True)
-
+    
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     
     # 달력 렌더링
-    st.markdown(f"""
-        <div class="calendar-container">
-            <div class="calendar-header">{year}년 {month}월</div>
-            <div class="calendar-weekdays">
-                <div class="calendar-cell">일</div>
-                <div class="calendar-cell">월</div>
-                <div class="calendar-cell">화</div>
-                <div class="calendar-cell">수</div>
-                <div class="calendar-cell">목</div>
-                <div class="calendar-cell">금</div>
-                <div class="calendar-cell">토</div>
-            </div>
+    cal = calendar.Calendar(firstweekday=6)
+    month_days = cal.itermonthdates(year, month)
+    today = datetime.now(pytz.timezone('Asia/Seoul')).date()
+
+    st.markdown("""
+    <div class="calendar-container">
+        <div class="calendar-weekdays">
+            <div>일</div>
+            <div>월</div>
+            <div>화</div>
+            <div>수</div>
+            <div>목</div>
+            <div>금</div>
+            <div>토</div>
+        </div>
+        <div class="calendar-grid">
     """, unsafe_allow_html=True)
 
-    cal = calendar.monthcalendar(year, month)
-    for week in cal:
-        st.markdown('<div class="calendar-row">', unsafe_allow_html=True)
-        for day in week:
-            if day != 0:
-                date = datetime(year, month, day).date()
-                date_str = date.strftime("%Y-%m-%d")
-                is_today = (date == today)
-                is_weekend = (date.weekday() >= 5)
-                is_holiday = (date_str in holidays)
-                
-                shift = schedule_data.get(date_str, get_shift(date, st.session_state.team))
-                
-                day_color = "red" if is_weekend or is_holiday else "black"
-                today_class = "today" if is_today else ""
-                
-                st.markdown(f"""
-                    <div class="calendar-cell">
-                        <div class="calendar-cell-content {today_class}">
-                            <div class="calendar-day" style="color: {day_color};">{day}</div>
-                            <div class="calendar-shift {shift}">{shift if shift != '비' else '&nbsp;'}</div>
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown('<div class="calendar-cell"></div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    for date in month_days:
+        if date.weekday() == 6:  # Start of new week
+            st.markdown('</div><div class="calendar-grid">', unsafe_allow_html=True)
+        
+        date_str = date.strftime("%Y-%m-%d")
+        is_today = (date == today)
+        is_weekend = (date.weekday() >= 5)
+        is_holiday = (date_str in holidays)
+        is_other_month = (date.month != month)
+        
+        shift = schedule_data.get(date_str, get_shift(date, st.session_state.team))
+        
+        cell_classes = []
+        if is_today:
+            cell_classes.append("today")
+        if is_weekend or is_holiday:
+            cell_classes.append("weekend")
+        if is_other_month:
+            cell_classes.append("other-month")
+        
+        cell_class = " ".join(cell_classes)
 
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class="calendar-cell {cell_class}">
+                <div class="calendar-day">{date.day}</div>
+                <div class="calendar-shift {shift}">{shift if shift != '비' else '&nbsp;'}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown('</div></div>', unsafe_allow_html=True)
 
     # '이전 월' 버튼
     if st.button("이전 월"):
