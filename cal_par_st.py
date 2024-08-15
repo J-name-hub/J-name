@@ -344,49 +344,49 @@ def main():
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     
     # 달력 렌더링
-st.markdown(f"""
-    <div class="calendar-container">
-        <div class="calendar-header">{year}년 {month}월</div>
-        <div class="calendar-weekdays">
-            <div class="calendar-cell">일</div>
-            <div class="calendar-cell">월</div>
-            <div class="calendar-cell">화</div>
-            <div class="calendar-cell">수</div>
-            <div class="calendar-cell">목</div>
-            <div class="calendar-cell">금</div>
-            <div class="calendar-cell">토</div>
-        </div>
-""", unsafe_allow_html=True)
+    st.markdown(f"""
+        <div class="calendar-container">
+            <div class="calendar-header">{year}년 {month}월</div>
+            <div class="calendar-weekdays">
+                <div class="calendar-cell">일</div>
+                <div class="calendar-cell">월</div>
+                <div class="calendar-cell">화</div>
+                <div class="calendar-cell">수</div>
+                <div class="calendar-cell">목</div>
+                <div class="calendar-cell">금</div>
+                <div class="calendar-cell">토</div>
+            </div>
+    """, unsafe_allow_html=True)
 
-cal = calendar.monthcalendar(year, month)
-for week in cal:
-    st.markdown('<div class="calendar-row">', unsafe_allow_html=True)
-    for day in week:
-        if day != 0:
-            date = datetime(year, month, day).date()
-            date_str = date.strftime("%Y-%m-%d")
-            is_today = (date == today)
-            is_weekend = (date.weekday() >= 5)
-            is_holiday = (date_str in holidays)
+    cal = calendar.monthcalendar(year, month)
+    for week in cal:
+        st.markdown('<div class="calendar-row">', unsafe_allow_html=True)
+        for day in week:
+            if day != 0:
+                date = datetime(year, month, day).date()
+                date_str = date.strftime("%Y-%m-%d")
+                is_today = (date == today)
+                is_weekend = (date.weekday() >= 5)
+                is_holiday = (date_str in holidays)
             
-            shift = schedule_data.get(date_str, get_shift(date, st.session_state.team))
+                shift = schedule_data.get(date_str, get_shift(date, st.session_state.team))
             
-            day_color = "red" if is_weekend or is_holiday else "black"
-            today_class = "today" if is_today else ""
+                day_color = "red" if is_weekend or is_holiday else "black"
+                today_class = "today" if is_today else ""
             
-            st.markdown(f"""
-                <div class="calendar-cell">
-                    <div class="calendar-cell-content {today_class}">
-                        <div class="calendar-day" style="color: {day_color};">{day}</div>
-                        <div class="calendar-shift {shift}">{shift if shift != '비' else '&nbsp;'}</div>
+                st.markdown(f"""
+                    <div class="calendar-cell">
+                        <div class="calendar-cell-content {today_class}">
+                            <div class="calendar-day" style="color: {day_color};">{day}</div>
+                            <div class="calendar-shift {shift}">{shift if shift != '비' else '&nbsp;'}</div>
+                        </div>
                     </div>
-                </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="calendar-cell"></div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown('<div class="calendar-cell"></div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # '이전 월' 버튼
     if st.button("이전 월"):
