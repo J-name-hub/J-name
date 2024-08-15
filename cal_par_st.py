@@ -269,46 +269,38 @@ def main():
             font-weight: bold;
             color: #495057;
         }
-        .calendar-row {
+        .calendar-week {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
             border-bottom: 1px solid #dee2e6;
         }
-        .calendar-cell {
-            width: 14%;
-            text-align: center;
-            font-size: 14px;
-            position: relative;
-        }
-        .calendar-cell-content {
-            border-radius: 5px;
-            padding: 5px;
-            transition: background-color 0.3s ease;
-        }
-        .calendar-cell-content.today {
-            border: 2px solid #007bff;
-            background-color: #e9ecef;
-        }
         .calendar-day {
+            width: 14.28%;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 14px;
+        }
+        .calendar-date {
             font-weight: bold;
             color: #343a40;
         }
         .calendar-shift {
-            padding: 5px;
+            margin-top: 5px;
+            padding: 3px;
             border-radius: 3px;
             font-size: 12px;
             font-weight: 500;
             color: white;
-            margin-top: 5px;
         }
         .calendar-shift.주 { background-color: #f8c291; }
         .calendar-shift.야 { background-color: #d1d8e0; }
         .calendar-shift.비 { background-color: #dff9fb; color: #1e3799; }
         .calendar-shift.올 { background-color: #badc58; }
+        .weekend { color: red; }
+        .today { background-color: #e9ecef; }
         </style>
     """, unsafe_allow_html=True)
-
+    
     # 세션 상태 초기화
     if "year" not in st.session_state or "month" not in st.session_state:
         today = datetime.now(pytz.timezone('Asia/Seoul'))
@@ -343,24 +335,24 @@ def main():
 
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     
-     # 달력 렌더링
+    # 달력 렌더링
     st.markdown(f"""
         <div class="calendar-container">
             <div class="calendar-header">{year}년 {month}월</div>
             <div class="calendar-weekdays">
-                <div class="calendar-cell">일</div>
-                <div class="calendar-cell">월</div>
-                <div class="calendar-cell">화</div>
-                <div class="calendar-cell">수</div>
-                <div class="calendar-cell">목</div>
-                <div class="calendar-cell">금</div>
-                <div class="calendar-cell">토</div>
+                <div class="calendar-day">일</div>
+                <div class="calendar-day">월</div>
+                <div class="calendar-day">화</div>
+                <div class="calendar-day">수</div>
+                <div class="calendar-day">목</div>
+                <div class="calendar-day">금</div>
+                <div class="calendar-day">토</div>
             </div>
     """, unsafe_allow_html=True)
 
     cal = calendar.monthcalendar(year, month)
     for week in cal:
-        st.markdown('<div class="calendar-row">', unsafe_allow_html=True)
+        st.markdown('<div class="calendar-week">', unsafe_allow_html=True)
         for day in week:
             if day != 0:
                 date = datetime(year, month, day).date()
@@ -371,19 +363,17 @@ def main():
             
                 shift = schedule_data.get(date_str, get_shift(date, st.session_state.team))
             
-                day_color = "red" if is_weekend or is_holiday else "black"
+                day_class = "weekend" if is_weekend or is_holiday else ""
                 today_class = "today" if is_today else ""
             
                 st.markdown(f"""
-                    <div class="calendar-cell">
-                        <div class="calendar-cell-content {today_class}">
-                            <div class="calendar-day" style="color: {day_color};">{day}</div>
-                            <div class="calendar-shift {shift}">{shift if shift != '비' else '&nbsp;'}</div>
-                        </div>
+                    <div class="calendar-day {today_class}">
+                        <div class="calendar-date {day_class}">{day}</div>
+                        <div class="calendar-shift {shift}">{shift if shift != '비' else '&nbsp;'}</div>
                     </div>
                 """, unsafe_allow_html=True)
             else:
-                st.markdown('<div class="calendar-cell"></div>', unsafe_allow_html=True)
+                st.markdown('<div class="calendar-day"></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
