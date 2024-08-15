@@ -298,83 +298,72 @@ def main():
     # CSS 스타일 추가
     st.markdown("""
         <style>
-        .stButton > button {
-            width: 100%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            padding: 0px 4px;
-            height: 30px;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
         }
         .calendar-container {
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
             overflow: hidden;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
         }
         .calendar-header {
-            display: flex;
-            width: 100%;
-            border-bottom: 1px solid #ddd;
-        }
-        .calendar-header-cell {
-            flex: 1;
+            background-color: #343a40;
+            color: white;
             text-align: center;
-            padding: 5px;
+            padding: 10px 0;
+            border-radius: 10px 10px 0 0;
+            font-size: 24px;
             font-weight: bold;
-            font-size: 20px;
-            border-right: 1px solid #ddd;
         }
-        .calendar-header-cell:last-child {
-            border-right: none;
-        }
-        .calendar-row {
-            display: flex;
-            width: 100%;
-            border-bottom: 1px solid #ddd;
-        }
-        .calendar-row:last-child {
-            border-bottom: 0;
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            padding: 10px;
         }
         .calendar-cell {
-            flex: 1;
-            text-align: center;
-            height: 65px;  /* 높이를 약간 늘렸습니다 */
-            font-size: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            border-right: 1px solid #ddd;
-        }
-        .calendar-cell:last-child {
-            border-right: none;
-        }
-        .calendar-cell-content {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .calendar-cell-content.today {
-            border: 2px solid #007bff;
+            aspect-ratio: 1;
+            border: 1px solid #dee2e6;
             border-radius: 5px;
+            padding: 5px;
+            text-align: center;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .calendar-weekday {
+            font-weight: bold;
+            background-color: #f8f9fa;
+            padding: 5px;
+            text-align: center;
         }
         .calendar-day {
             font-weight: bold;
-            margin-bottom: 0px;
+            color: #343a40;
         }
         .calendar-shift {
-            padding: 0 5px;
+            padding: 2px;
             border-radius: 3px;
-            font-size: 18px;  /* 글자 크기를 키웠습니다 */
-            font-weight: bold;  /* 글자를 굵게 만들었습니다 */
+            font-size: 12px;
+            font-weight: 500;
+            color: white;
+            margin-top: 2px;
         }
+        .calendar-shift.주 { background-color: #f8c291; }
+        .calendar-shift.야 { background-color: #d1d8e0; }
+        .calendar-shift.비 { background-color: #dff9fb; color: #1e3799; }
+        .calendar-shift.올 { background-color: #badc58; }
+        .today { border: 2px solid #007bff; background-color: #e9ecef; }
+        .weekend { color: red; }
+        .other-month { opacity: 0.5; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -412,6 +401,53 @@ def main():
 
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     yesterday = today - timedelta(days=1)
+
+    # 달력 렌더링
+    st.markdown(f"""
+        <div class="calendar-container">
+            <div class="calendar-header">{year}년 {month}월</div>
+            <div class="calendar-grid">
+                <div class="calendar-weekday">일</div>
+                <div class="calendar-weekday">월</div>
+                <div class="calendar-weekday">화</div>
+                <div class="calendar-weekday">수</div>
+                <div class="calendar-weekday">목</div>
+                <div class="calendar-weekday">금</div>
+                <div class="calendar-weekday">토</div>
+    """, unsafe_allow_html=True)
+
+    cal = calendar.monthcalendar(year, month)
+    today = datetime.now(pytz.timezone('Asia/Seoul')).date()
+    
+    for week in cal:
+        for day in week:
+            if day != 0:
+                date = datetime(year, month, day).date()
+                date_str = date.strftime("%Y-%m-%d")
+                is_today = (date == today)
+                is_weekend = (date.weekday() >= 5)
+                is_holiday = (date_str in holidays)
+                
+                shift = schedule_data.get(date_str, get_shift(date, st.session_state.team))
+                
+                class_list = []
+                if is_today:
+                    class_list.append("today")
+                if is_weekend or is_holiday:
+                    class_list.append("weekend")
+                
+                classes = " ".join(class_list)
+                
+                st.markdown(f"""
+                    <div class="calendar-cell {classes}">
+                        <div class="calendar-day">{day}</div>
+                        <div class="calendar-shift {shift}">{shift if shift != '비' else '&nbsp;'}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown('<div class="calendar-cell other-month"></div>', unsafe_allow_html=True)
+
+    st.markdown('</div></div>', unsafe_allow_html=True)
     
     # '이전 월' 버튼
     if st.button("이전 월"):
