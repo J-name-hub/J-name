@@ -233,7 +233,7 @@ def display_workdays_info(year, month, team, schedule_data):
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
-    # CSS 스타일 업데이트
+    # CSS 스타일 정의
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
@@ -341,18 +341,18 @@ def main():
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     
     # 달력 렌더링
-    st.markdown(f"""
+    calendar_html = f"""
         <div class="calendar-container">
             <div class="calendar-header">{year}년 {month}월</div>
             <div class="calendar-grid">
-    """, unsafe_allow_html=True)
+    """
 
     weekdays = ['일', '월', '화', '수', '목', '금', '토']
     for weekday in weekdays:
-        st.markdown(f"""
+        calendar_html += f"""
             <div class="calendar-column">
                 <div class="calendar-weekday">{weekday}</div>
-        """, unsafe_allow_html=True)
+        """
 
         cal = calendar.monthcalendar(year, month)
         for week in cal:
@@ -376,16 +376,21 @@ def main():
                 
                 class_str = " ".join(classes)
                 
-                st.markdown(f"""
+                calendar_html += f"""
                     <div class="calendar-cell {class_str}">
                         <div class="calendar-day">{day}</div>
                         <div class="calendar-shift {shift}">{shift if shift != '비' else '&nbsp;'}</div>
                     </div>
-                """, unsafe_allow_html=True)
+                """
+            else:
+                calendar_html += '<div class="calendar-cell"></div>'
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        calendar_html += '</div>'
 
-    st.markdown('</div></div>', unsafe_allow_html=True)
+    calendar_html += '</div></div>'
+
+    # 전체 달력 HTML을 한 번에 렌더링
+    st.markdown(calendar_html, unsafe_allow_html=True)
 
     # '이전 월' 버튼
     if st.button("이전 월"):
