@@ -402,76 +402,30 @@ def main():
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     yesterday = today - timedelta(days=1)
 
-    # 달력 렌더링
-    st.markdown(f"""
-        <div class="calendar-container">
-            <div class="calendar-header">{year}년 {month}월</div>
-            <div class="calendar-grid">
-                <div class="calendar-weekday">일</div>
-                <div class="calendar-weekday">월</div>
-                <div class="calendar-weekday">화</div>
-                <div class="calendar-weekday">수</div>
-                <div class="calendar-weekday">목</div>
-                <div class="calendar-weekday">금</div>
-                <div class="calendar-weekday">토</div>
-    """, unsafe_allow_html=True)
-
-    cal = calendar.monthcalendar(year, month)
-    today = datetime.now(pytz.timezone('Asia/Seoul')).date()
-    
-    for week in cal:
-        for day in week:
-            if day != 0:
-                date = datetime(year, month, day).date()
-                date_str = date.strftime("%Y-%m-%d")
-                is_today = (date == today)
-                is_weekend = (date.weekday() >= 5)
-                is_holiday = (date_str in holidays)
-                
-                shift = schedule_data.get(date_str, get_shift(date, st.session_state.team))
-                
-                class_list = []
-                if is_today:
-                    class_list.append("today")
-                if is_weekend or is_holiday:
-                    class_list.append("weekend")
-                
-                classes = " ".join(class_list)
-                
-                st.markdown(f"""
-                    <div class="calendar-cell {classes}">
-                        <div class="calendar-day">{day}</div>
-                        <div class="calendar-shift {shift}">{shift if shift != '비' else '&nbsp;'}</div>
-                    </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown('<div class="calendar-cell other-month"></div>', unsafe_allow_html=True)
-
-    st.markdown('</div></div>', unsafe_allow_html=True)
-    
-    # '이전 월' 버튼
-    if st.button("이전 월"):
-        update_month(-1)
-
+    # 달력 데이터 생성 및 표시
     month_days = generate_calendar(year, month)
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data)
 
-    # 공휴일 설명 표시 (수정된 부분)
+    # 공휴일 설명 표시
     holiday_descriptions = create_holiday_descriptions(holidays, month)
     if holiday_descriptions:
         st.markdown(" / ".join(holiday_descriptions))
     else:
         st.markdown("&nbsp;", unsafe_allow_html=True)  # 공휴일 데이터가 없을 때 빈 줄 추가
-    
+
+    # '이전 월' 버튼
+    if st.button("이전 월"):
+        update_month(-1)
+
     # '다음 월' 버튼
     if st.button("다음 월"):
         update_month(1)
 
+    sidebar_controls(year, month, schedule_data)
+
     # GitHub에서 스케줄 데이터 로드
     schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
-
-    sidebar_controls(year, month, schedule_data)
 
 def update_month(delta):
     new_date = datetime(st.session_state.year, st.session_state.month, 1) + relativedelta(months=delta)
@@ -491,52 +445,45 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                     schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
 
                 shift = schedule_data[date_str]
-                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))  # 교대 근무 배경색
+                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
 
-                if current_date.weekday() == 5 or current_date.weekday() == 6 or date_str in holidays:
-                    day_color = "red"
-                else:
-                    day_color = "black"
+                is_weekend = current_date.weekday() >= 5
+                is_holiday = date_str in holidays
+                day_color = "red" if is_weekend or is_holiday else "black"
 
-                # 오늘 날짜 테두리 처리
                 today_class = "today" if current_date == today else ""
+                weekend_class = "weekend" if is_weekend or is_holiday else ""
 
-                shift_text = shift if shift != '비' else '&nbsp;'
                 cell_content = f'''
-                    <div class="calendar-cell-content {today_class}">
-                        <span class="calendar-day" style="color: {day_color};">{day}</span>
-                        <span class="calendar-shift" style="background-color: {shift_background}; color: {shift_color};">{shift_text}</span>
+                    <div class="calendar-cell {today_class} {weekend_class}">
+                        <div class="calendar-day" style="color: {day_color};">{day}</div>
+                        <div class="calendar-shift {shift}">{shift if shift != '비' else '&nbsp;'}</div>
                     </div>
                 '''
                 week_data.append(cell_content)
             else:
-                week_data.append('&nbsp;')
+                week_data.append('<div class="calendar-cell other-month"></div>')
         calendar_data.append(week_data)
     return calendar_data
-
+    
 def display_calendar(calendar_data):
     days_header = ["일", "월", "화", "수", "목", "금", "토"]
 
-    # 요일 헤더 생성
-    header_html = '<div class="calendar-container"><div class="calendar-header">'
+    st.markdown("""
+        <div class="calendar-container">
+            <div class="calendar-grid">
+    """, unsafe_allow_html=True)
+
+    # 요일 헤더 표시
     for day in days_header:
-        color = "red" if day in ["일", "토"] else "black"
-        header_html += f'<div class="calendar-header-cell" style="color: {color};">{day}</div>'
-    header_html += '</div>'
+        st.markdown(f'<div class="calendar-weekday">{day}</div>', unsafe_allow_html=True)
 
-    # 달력 데이터 생성
-    calendar_html = ''
+    # 달력 데이터 표시
     for week in calendar_data:
-        calendar_html += '<div class="calendar-row">'
         for cell in week:
-            calendar_html += f'<div class="calendar-cell">{cell}</div>'
-        calendar_html += '</div>'
+            st.markdown(cell, unsafe_allow_html=True)
 
-    # 전체 달력 HTML 조합
-    full_calendar_html = header_html + calendar_html + '</div>'
-
-    # HTML을 Streamlit에 표시
-    st.markdown(full_calendar_html, unsafe_allow_html=True)
+    st.markdown("</div></div>", unsafe_allow_html=True)
 
 def sidebar_controls(year, month, schedule_data):
     st.sidebar.title("근무 조 설정")
