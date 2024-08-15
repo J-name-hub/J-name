@@ -233,7 +233,7 @@ def display_workdays_info(year, month, team, schedule_data):
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
-    # CSS 스타일 추가
+    # CSS 스타일 업데이트
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
@@ -260,10 +260,20 @@ def main():
             font-weight: bold;
         }
         .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 5px;
-            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .calendar-column {
+            flex: 1;
+            margin: 0 2px;
+        }
+        .calendar-weekday {
+            font-weight: bold;
+            background-color: #f8f9fa;
+            color: #495057;
+            text-align: center;
+            padding: 5px;
+            border-bottom: 2px solid #dee2e6;
         }
         .calendar-cell {
             border: 1px solid #dee2e6;
@@ -271,11 +281,7 @@ def main():
             padding: 5px;
             text-align: center;
             font-size: 14px;
-        }
-        .calendar-weekday {
-            font-weight: bold;
-            background-color: #f8f9fa;
-            color: #495057;
+            margin-top: 2px;
         }
         .calendar-day {
             font-weight: bold;
@@ -338,18 +344,18 @@ def main():
         <div class="calendar-container">
             <div class="calendar-header">{year}년 {month}월</div>
             <div class="calendar-grid">
-                <div class="calendar-cell calendar-weekday">일</div>
-                <div class="calendar-cell calendar-weekday">월</div>
-                <div class="calendar-cell calendar-weekday">화</div>
-                <div class="calendar-cell calendar-weekday">수</div>
-                <div class="calendar-cell calendar-weekday">목</div>
-                <div class="calendar-cell calendar-weekday">금</div>
-                <div class="calendar-cell calendar-weekday">토</div>
     """, unsafe_allow_html=True)
 
-    cal = calendar.monthcalendar(year, month)
-    for week in cal:
-        for day in week:
+    weekdays = ['월', '화', '수', '목', '금', '토', '일']
+    for weekday in weekdays:
+        st.markdown(f"""
+            <div class="calendar-column">
+                <div class="calendar-weekday">{weekday}</div>
+        """, unsafe_allow_html=True)
+
+        cal = calendar.monthcalendar(year, month)
+        for week in cal:
+            day = week[weekdays.index(weekday)]
             if day != 0:
                 date = datetime(year, month, day).date()
                 date_str = date.strftime("%Y-%m-%d")
@@ -375,8 +381,8 @@ def main():
                         <div class="calendar-shift {shift}">{shift if shift != '비' else '&nbsp;'}</div>
                     </div>
                 """, unsafe_allow_html=True)
-            else:
-                st.markdown('<div class="calendar-cell"></div>', unsafe_allow_html=True)
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('</div></div>', unsafe_allow_html=True)
 
