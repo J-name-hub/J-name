@@ -230,6 +230,114 @@ def display_workdays_info(year, month, team, schedule_data):
     st.sidebar.title(f"**월 근무일수 : {total_workdays}일**")
     st.sidebar.write(f"**(오늘제외 남은일수  {remaining_workdays}일)**")
 
+def create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday):
+    calendar_data = []
+    for week in month_days:
+        week_data = []
+        for day in week:
+            if day != 0:
+                date_str = f"{year}-{month:02d}-{day:02d}"
+                current_date = datetime(year, month, day).date()
+                if date_str not in schedule_data:
+                    schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
+
+                shift = schedule_data[date_str]
+                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
+
+                if current_date.weekday() >= 5 or date_str in holidays:
+                    day_color = "red"
+                else:
+                    day_color = "black"
+
+                today_class = "today" if current_date == today else ""
+
+                shift_text = shift if shift != '비' else '&nbsp;'
+                cell_content = {
+                    'day': day,
+                    'day_color': day_color,
+                    'shift': shift_text,
+                    'shift_background': shift_background,
+                    'shift_color': shift_color,
+                    'today_class': today_class
+                }
+                week_data.append(cell_content)
+            else:
+                week_data.append(None)
+        calendar_data.append(week_data)
+    return calendar_data
+
+def display_calendar(calendar_data):
+    days_header = ["일", "월", "화", "수", "목", "금", "토"]
+
+    st.markdown("""
+    <style>
+    .calendar-container {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+    .calendar-header, .calendar-row {
+        display: flex;
+        width: 100%;
+    }
+    .calendar-header-cell, .calendar-cell {
+        flex: 1;
+        text-align: center;
+        padding: 10px 5px;
+        border-right: 1px solid #ddd;
+        border-bottom: 1px solid #ddd;
+    }
+    .calendar-header-cell:last-child, .calendar-cell:last-child {
+        border-right: none;
+    }
+    .calendar-row:last-child .calendar-cell {
+        border-bottom: none;
+    }
+    .calendar-day {
+        font-weight: bold;
+    }
+    .calendar-shift {
+        margin-top: 5px;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-size: 14px;
+    }
+    .today {
+        background-color: #e6f3ff;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    calendar_html = '<div class="calendar-container">'
+    
+    # Header
+    calendar_html += '<div class="calendar-header">'
+    for day in days_header:
+        color = "red" if day in ["일", "토"] else "black"
+        calendar_html += f'<div class="calendar-header-cell" style="color: {color};">{day}</div>'
+    calendar_html += '</div>'
+
+    # Calendar body
+    for week in calendar_data:
+        calendar_html += '<div class="calendar-row">'
+        for cell in week:
+            if cell:
+                calendar_html += f'''
+                <div class="calendar-cell {cell['today_class']}">
+                    <div class="calendar-day" style="color: {cell['day_color']};">{cell['day']}</div>
+                    <div class="calendar-shift" style="background-color: {cell['shift_background']}; color: {cell['shift_color']};">
+                        {cell['shift']}
+                    </div>
+                </div>
+                '''
+            else:
+                calendar_html += '<div class="calendar-cell"></div>'
+        calendar_html += '</div>'
+
+    calendar_html += '</div>'
+
+    st.markdown(calendar_html, unsafe_allow_html=True)
+
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
@@ -332,6 +440,10 @@ def main():
 
     title_style = "font-size: 30px; font-weight: bold; text-align: center;"
     st.markdown(f"<div style='{title_style}'>{month}월 교대근무 달력</div>", unsafe_allow_html=True)
+
+    month_days = generate_calendar(year, month)
+    calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
+    display_calendar(calendar_data)
 
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     
