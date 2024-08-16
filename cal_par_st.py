@@ -383,7 +383,7 @@ def main():
                     </div>
                 """, unsafe_allow_html=True)
             else:
-                st.markdown('<div class="calendar-cell"></div>', unsafe_allow_html=True)
+                st.markdown('<div class="calendar-cell">', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
