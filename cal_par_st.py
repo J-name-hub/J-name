@@ -380,10 +380,9 @@ def main():
                             <div class="calendar-day" style="color: {day_color};">{day}</div>
                             <div class="calendar-shift {shift}">{shift if shift != '비' else '&nbsp;'}</div>
                         </div>
-                    </div>
                 """, unsafe_allow_html=True)
             else:
-                st.markdown('<div class="calendar-cell">', unsafe_allow_html=True)
+                st.markdown('<div class="calendar-cell"></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
