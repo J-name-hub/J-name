@@ -233,7 +233,7 @@ def display_workdays_info(year, month, team, schedule_data):
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
-     # CSS 스타일 업데이트
+    # CSS 스타일 업데이트
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
@@ -259,31 +259,33 @@ def main():
             border-radius: 10px 10px 0 0;
             font-size: 24px;
             font-weight: bold;
+            margin-bottom: 10px;
         }
         .calendar-weekdays {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
             background-color: #f8f9fa;
-            padding: 10px 0;
-            border-bottom: 1px solid #dee2e6;
             font-weight: bold;
             color: #495057;
+            border-bottom: 1px solid #dee2e6;
         }
-        .calendar-column {
-            flex: 1;
+        .calendar-weekday {
             text-align: center;
+            padding: 10px;
         }
-        .calendar-day {
-            font-weight: bold;
-            color: #343a40;
-            padding: 5px 0;
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
         }
         .calendar-cell {
-            padding: 5px 0;
-            border-bottom: 1px solid #dee2e6;
+            border: 1px solid #dee2e6;
+            padding: 5px;
+            min-height: 80px;
         }
         .calendar-date {
             font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
         }
         .calendar-shift {
             padding: 3px;
@@ -291,7 +293,7 @@ def main():
             font-size: 12px;
             font-weight: 500;
             color: white;
-            margin-top: 3px;
+            text-align: center;
         }
         .calendar-shift.주 { background-color: #f8c291; }
         .calendar-shift.야 { background-color: #d1d8e0; }
@@ -299,6 +301,7 @@ def main():
         .calendar-shift.올 { background-color: #badc58; }
         .weekend { color: red; }
         .today { background-color: #e9ecef; }
+        .other-month { opacity: 0.5; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -341,25 +344,34 @@ def main():
         <div class="calendar-container">
             <div class="calendar-header">{year}년 {month}월</div>
             <div class="calendar-weekdays">
-                <div class="calendar-column">일</div>
-                <div class="calendar-column">월</div>
-                <div class="calendar-column">화</div>
-                <div class="calendar-column">수</div>
-                <div class="calendar-column">목</div>
-                <div class="calendar-column">금</div>
-                <div class="calendar-column">토</div>
+                <div class="calendar-weekday weekend">일</div>
+                <div class="calendar-weekday">월</div>
+                <div class="calendar-weekday">화</div>
+                <div class="calendar-weekday">수</div>
+                <div class="calendar-weekday">목</div>
+                <div class="calendar-weekday">금</div>
+                <div class="calendar-weekday weekend">토</div>
             </div>
+            <div class="calendar-grid">
     """, unsafe_allow_html=True)
 
     cal = calendar.monthcalendar(year, month)
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
 
-    st.markdown('<div style="display: flex;">', unsafe_allow_html=True)
-    
-    for weekday in range(7):
-        st.markdown(f'<div class="calendar-column">', unsafe_allow_html=True)
-        for week in cal:
-            day = week[weekday]
+    # 이전 달의 마지막 날짜들 추가
+    prev_month = datetime(year, month, 1) - timedelta(days=1)
+    _, last_day_prev_month = calendar.monthrange(prev_month.year, prev_month.month)
+    first_weekday, _ = calendar.monthrange(year, month)
+    for i in range(first_weekday):
+        day = last_day_prev_month - first_weekday + i + 1
+        st.markdown(f"""
+            <div class="calendar-cell other-month">
+                <div class="calendar-date weekend">{day}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    for week in cal:
+        for weekday, day in enumerate(week):
             if day != 0:
                 date = datetime(year, month, day).date()
                 date_str = date.strftime("%Y-%m-%d")
@@ -379,8 +391,13 @@ def main():
                     </div>
                 """, unsafe_allow_html=True)
             else:
-                st.markdown('<div class="calendar-cell"></div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+                # 다음 달의 날짜 추가
+                next_month_day = week.index(day) + 1
+                st.markdown(f"""
+                    <div class="calendar-cell other-month">
+                        <div class="calendar-date weekend">{next_month_day}</div>
+                    </div>
+                """, unsafe_allow_html=True)
 
     st.markdown('</div></div>', unsafe_allow_html=True)
 
