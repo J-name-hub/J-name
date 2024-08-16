@@ -240,26 +240,40 @@ def main():
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+        .page-container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .sidebar {
+            flex: 0 0 250px;
+            padding: 20px;
+            background-color: #e9ecef;
+            border-right: 1px solid #dee2e6;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px;
         }
         .calendar-container {
-            border: 2px solid #dee2e6;
+            border: 1px solid #dee2e6;
             border-radius: 10px;
             overflow: hidden;
-            background-color: white;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
         }
         .calendar-header {
             background-color: #343a40;
             color: white;
             text-align: center;
             padding: 10px 0;
-            border-radius: 10px 10px 0 0;
             font-size: 24px;
             font-weight: bold;
-            margin-bottom: 10px;
         }
         .calendar-weekdays {
             display: grid;
@@ -302,6 +316,19 @@ def main():
         .weekend { color: red; }
         .today { background-color: #e9ecef; }
         .other-month { opacity: 0.5; }
+        .button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px 0;
+            width: 100%;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -339,22 +366,33 @@ def main():
 
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     
-    # 달력 렌더링 부분 수정
-    st.markdown(f"""
-        <div class="calendar-container">
-            <div class="calendar-header">{year}년 {month}월</div>
-            <div class="calendar-weekdays">
-                <div class="calendar-weekday weekend">일</div>
-                <div class="calendar-weekday">월</div>
-                <div class="calendar-weekday">화</div>
-                <div class="calendar-weekday">수</div>
-                <div class="calendar-weekday">목</div>
-                <div class="calendar-weekday">금</div>
-                <div class="calendar-weekday weekend">토</div>
+    # 페이지 레이아웃
+    st.markdown("""
+        <div class="page-container">
+            <div class="sidebar">
+                <h2>근무 조 설정</h2>
+                <!-- 근무 조 설정 폼 -->
+                <h2>스케줄 변경</h2>
+                <!-- 스케줄 변경 폼 -->
+                <h2>근무일수 정보</h2>
+                <!-- 근무일수 정보 표시 -->
             </div>
-            <div class="calendar-grid">
+            <div class="main-content">
+                <div class="calendar-container">
+                    <div class="calendar-header">{year}년 {month}월</div>
+                    <div class="calendar-weekdays">
+                        <div class="calendar-weekday weekend">일</div>
+                        <div class="calendar-weekday">월</div>
+                        <div class="calendar-weekday">화</div>
+                        <div class="calendar-weekday">수</div>
+                        <div class="calendar-weekday">목</div>
+                        <div class="calendar-weekday">금</div>
+                        <div class="calendar-weekday weekend">토</div>
+                    </div>
+                    <div class="calendar-grid">
     """, unsafe_allow_html=True)
 
+    # 달력 그리기
     cal = calendar.monthcalendar(year, month)
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
 
@@ -399,17 +437,11 @@ def main():
                     </div>
                 """, unsafe_allow_html=True)
 
-    st.markdown('</div></div>', unsafe_allow_html=True)
+    st.markdown('</div></div></div></div>', unsafe_allow_html=True)
 
-    # '이전 월' 버튼
-    if st.button("이전 월"):
-        update_month(-1)
-
-    # '다음 월' 버튼
-    if st.button("다음 월"):
-        update_month(1)
-
-    sidebar_controls(year, month, schedule_data)
+    # 사이드바 컨트롤
+    with st.sidebar:
+        sidebar_controls(year, month, schedule_data)
 
 def update_month(delta):
     new_date = datetime(st.session_state.year, st.session_state.month, 1) + relativedelta(months=delta)
