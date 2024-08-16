@@ -233,7 +233,6 @@ def display_workdays_info(year, month, team, schedule_data):
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
-    # CSS 스타일 추가
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
@@ -247,7 +246,7 @@ def main():
             overflow: hidden;
             background-color: white;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -261,8 +260,8 @@ def main():
             font-weight: bold;
         }
         .calendar-weekdays {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
             background-color: #f8f9fa;
             padding: 10px 0;
             border-bottom: 1px solid #dee2e6;
@@ -270,15 +269,13 @@ def main():
             color: #495057;
         }
         .calendar-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
             border-bottom: 1px solid #dee2e6;
         }
         .calendar-cell {
-            width: 13%;
             text-align: center;
-            font-size: 14px;
+            padding: 10px 5px;
             position: relative;
         }
         .calendar-cell-content {
@@ -295,12 +292,12 @@ def main():
             color: #343a40;
         }
         .calendar-shift {
-            padding: 5px;
+            padding: 3px;
             border-radius: 3px;
             font-size: 12px;
             font-weight: 500;
             color: white;
-            margin-top: 5px;
+            margin-top: 3px;
         }
         .calendar-shift.주 { background-color: #f8c291; }
         .calendar-shift.야 { background-color: #d1d8e0; }
@@ -343,18 +340,18 @@ def main():
 
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     
-    # 달력 렌더링
+    # 달력 렌더링 부분 수정
     st.markdown(f"""
         <div class="calendar-container">
             <div class="calendar-header">{year}년 {month}월</div>
             <div class="calendar-weekdays">
-                <div class="calendar-cell">일</div>
-                <div class="calendar-cell">월</div>
-                <div class="calendar-cell">화</div>
-                <div class="calendar-cell">수</div>
-                <div class="calendar-cell">목</div>
-                <div class="calendar-cell">금</div>
-                <div class="calendar-cell">토</div>
+                <div>일</div>
+                <div>월</div>
+                <div>화</div>
+                <div>수</div>
+                <div>목</div>
+                <div>금</div>
+                <div>토</div>
             </div>
     """, unsafe_allow_html=True)
 
@@ -380,6 +377,7 @@ def main():
                             <div class="calendar-day" style="color: {day_color};">{day}</div>
                             <div class="calendar-shift {shift}">{shift if shift != '비' else '&nbsp;'}</div>
                         </div>
+                    </div>
                 """, unsafe_allow_html=True)
             else:
                 st.markdown('<div class="calendar-cell"></div>', unsafe_allow_html=True)
