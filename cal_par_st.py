@@ -274,12 +274,12 @@ def calculate_workdays_until_date(year, month, team, schedule_data, end_date):
 def display_workdays_info(year, month, team, schedule_data):
     total_workdays = calculate_workdays(year, month, team, schedule_data)
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
-    
+
     # 현재 월의 첫날과 마지막 날을 구합니다
     first_date = datetime(year, month, 1).date()
     _, last_day = calendar.monthrange(year, month)
     last_date = datetime(year, month, last_day).date()
-    
+
     # 이전 월, 현재 월, 미래 월을 구분하여 처리합니다
     if last_date < today:  # 이전 월
         remaining_workdays = 0
@@ -295,130 +295,88 @@ def display_workdays_info(year, month, team, schedule_data):
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
+    # CSS 스타일 추가
     st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-
-    body {
-        font-family: 'Roboto', sans-serif;
-        background-color: #f8f9fa;
-    }
-
-    .calendar-container {
-        border: 2px solid #dee2e6;
-        border-radius: 10px;
-        overflow: hidden;
-        background-color: white;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-
-    .calendar-header {
-        background-color: #343a40;
-        color: white;
-        text-align: center;
-        padding: 10px 0;
-        border-radius: 10px 10px 0 0;
-        font-size: 18px;
-        font-weight: bold;
-    }
-
-    .calendar-weekdays {
-        display: flex;
-        justify-content: space-between;
-        background-color: #f8f9fa;
-        padding: 10px 0;
-        border-bottom: 1px solid #dee2e6;
-        font-weight: bold;
-        color: #495057;
-    }
-
-    .calendar-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 10px 0;
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    .calendar-cell {
-        width: 13%;
-        text-align: center;
-        font-size: 14px;
-        position: relative;
-    }
-
-    .calendar-cell-content {
-        border-radius: 5px;
-        padding: 5px;
-        transition: background-color 0.3s ease;
-    }
-
-    .calendar-cell-content.today {
-        border: 2px solid #007bff;
-        background-color: #e9ecef;
-    }
-
-    .calendar-day {
-        font-weight: bold;
-        color: #343a40;
-    }
-
-    .calendar-shift {
-        padding: 5px;
-        border-radius: 3px;
-        font-size: 12px;
-        font-weight: 500;
-        color: white;
-        margin-top: 5px;
-    }
-
-    .calendar-shift.ju {
-        background-color: #f8c291;
-    }
-
-    .calendar-shift.ya {
-        background-color: #d1d8e0;
-    }
-
-    .calendar-shift.bi {
-        background-color: #dff9fb;
-        color: #1e3799;
-    }
-
-    .calendar-shift.ol {
-        background-color: #badc58;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# HTML 코드
-st.markdown("""
-    <div class="calendar-container">
-        <div class="calendar-header">
-            August 2024
-        </div>
-        <div class="calendar-weekdays">
-            <div class="calendar-cell">Sun</div>
-            <div class="calendar-cell">Mon</div>
-            <div class="calendar-cell">Tue</div>
-            <div class="calendar-cell">Wed</div>
-            <div class="calendar-cell">Thu</div>
-            <div class="calendar-cell">Fri</div>
-            <div class="calendar-cell">Sat</div>
-        </div>
-        <div class="calendar-row">
-            <div class="calendar-cell">
-                <div class="calendar-cell-content">
-                    <div class="calendar-day">1</div>
-                    <div class="calendar-shift ju">Day Shift</div>
-                </div>
-            </div>
-            <!-- 나머지 날짜와 셀도 같은 방식으로 추가 -->
-        </div>
-    </div>
-""", unsafe_allow_html=True)
+        <style>
+        .stButton > button {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            padding: 0px 4px;
+            height: 30px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+        }
+        .calendar-container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .calendar-header {
+            display: flex;
+            width: 100%;
+            border-bottom: 1px solid #ddd;
+        }
+        .calendar-header-cell {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            font-weight: bold;
+            font-size: 20px;
+            border-right: 1px solid #ddd;
+        }
+        .calendar-header-cell:last-child {
+            border-right: none;
+        }
+        .calendar-row {
+            display: flex;
+            width: 100%;
+            border-bottom: 1px solid #ddd;
+        }
+        .calendar-row:last-child {
+            border-bottom: 0;
+        }
+        .calendar-cell {
+            flex: 1;
+            text-align: center;
+            height: 65px;  /* 높이를 약간 늘렸습니다 */
+            font-size: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-right: 1px solid #ddd;
+        }
+        .calendar-cell:last-child {
+            border-right: none;
+        }
+        .calendar-cell-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .calendar-cell-content.today {
+            border: 2px solid #007bff;
+            border-radius: 5px;
+        }
+        .calendar-day {
+            font-weight: bold;
+            margin-bottom: 0px;
+        }
+        .calendar-shift {
+            padding: 0 5px;
+            border-radius: 3px;
+            font-size: 18px;  /* 글자 크기를 키웠습니다 */
+            font-weight: bold;  /* 글자를 굵게 만들었습니다 */
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
     # 세션 상태 초기화
     if "year" not in st.session_state or "month" not in st.session_state:
@@ -454,7 +412,7 @@ st.markdown("""
 
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     yesterday = today - timedelta(days=1)
-    
+
     # '이전 월' 버튼
     if st.button("이전 월"):
         update_month(-1)
@@ -469,7 +427,7 @@ st.markdown("""
         st.markdown(" / ".join(holiday_descriptions))
     else:
         st.markdown("&nbsp;", unsafe_allow_html=True)  # 공휴일 데이터가 없을 때 빈 줄 추가
-    
+
     # '다음 월' 버튼
     if st.button("다음 월"):
         update_month(1)
