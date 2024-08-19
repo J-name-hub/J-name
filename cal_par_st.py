@@ -317,15 +317,25 @@ def main():
             text-decoration: none;
         }
         .calendar-container {
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
             overflow: hidden;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
         }
         .calendar-header {
-            display: flex;
-            width: 100%;
-            border-bottom: 1px solid #ddd;
+            background-color: #343a40;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            border-radius: 10px 10px 0 0;
+            font-size: 18px;
+            font-weight: bold;
         }
+        #변경전
         .calendar-header-cell {
             flex: 1;
             text-align: center;
@@ -339,47 +349,55 @@ def main():
         }
         .calendar-row {
             display: flex;
-            width: 100%;
-            border-bottom: 1px solid #ddd;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #dee2e6;
         }
         .calendar-row:last-child {
             border-bottom: 0;
         }
         .calendar-cell {
-            flex: 1;
+            width: 13%;
             text-align: center;
-            height: 65px;  /* 높이를 약간 늘렸습니다 */
-            font-size: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            border-right: 1px solid #ddd;
+            font-size: 14px;
+            position: relative;
         }
         .calendar-cell:last-child {
             border-right: none;
         }
         .calendar-cell-content {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            border-radius: 5px;
+            padding: 5px;
+            transition: background-color 0.3s ease;
         }
         .calendar-cell-content.today {
             border: 2px solid #007bff;
-            border-radius: 5px;
+            background-color: #e9ecef;
         }
         .calendar-day {
             font-weight: bold;
-            margin-bottom: 0px;
+            color: #343a40;
         }
         .calendar-shift {
-            padding: 0 5px;
+            padding: 5px;
             border-radius: 3px;
-            font-size: 18px;  /* 글자 크기를 키웠습니다 */
-            font-weight: bold;  /* 글자를 굵게 만들었습니다 */
+            font-size: 12px;
+            font-weight: 500;
+            color: white;
+            margin-top: 5px;
+        }
+        .calendar-shift.ju {
+            background-color: #f8c291;
+        }
+        .calendar-shift.ya {
+            background-color: #d1d8e0;
+        }
+        .calendar-shift.bi {
+            background-color: #dff9fb;
+            color: #1e3799;
+        }
+        .calendar-shift.ol {
+            background-color: #badc58;
         }
         </style>
     """, unsafe_allow_html=True)
