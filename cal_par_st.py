@@ -332,14 +332,14 @@ def main():
             text-align: center;
             padding: 5px 0;
             border-radius: 10px 10px 0 0;
-            font-size: 30px;
+            font-size: 28px;
             font-weight: bold;
         }
         .calendar-header .year {
             font-size: 18px;
         }
         .calendar-header .month {
-            font-size: 30px;
+            font-size: 28px;
         }
         .calendar-header-cell {
             flex: 1;
@@ -365,7 +365,7 @@ def main():
             text-align: center;
             padding: 2px;
             font-weight: bold;
-            font-size: 20px;
+            font-size: 18px;
         }
         .calendar-weekdays-cell:last-child {
             border-right: none;
@@ -428,6 +428,7 @@ def main():
             background-color: #f8f9fa;
             border-radius: 5px;
             font-size: 14px;
+            font-weight: bold;
             color: #343a40;
         }
         </style>
