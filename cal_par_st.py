@@ -214,7 +214,7 @@ shift_colors = {
     "주": ("yellow", "black"),
     "야": ("lightgray", "black"),
     "비": ("white", "black"),
-    "올": ("lightgreen", "black")
+    "올": ("lightblue", "black")
 }
 
 shifts = ["주", "야", "비", "비"]
