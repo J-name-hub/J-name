@@ -539,7 +539,7 @@ def main():
 
     month_days = generate_calendar(year, month)
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
-    display_calendar(calendar_data, year, month, holidays, st.session_state.get('slide_direction', ''))
+    display_calendar(calendar_data, year, month, holidays)
 
     # 버튼 컨테이너 시작
     st.markdown('<div class="button-container">', unsafe_allow_html=True)
@@ -606,7 +606,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
         calendar_data.append(week_data)
     return calendar_data
 
-def display_calendar(calendar_data, year, month, holidays, slide_direction=''):
+def display_calendar(calendar_data, year, month, holidays):
     # 년월 헤더 생성
     header_html = '<div class="calendar-container"><div class="calendar-header">'
     header_html += f'<div class="calendar-header"><span class="year">{year}.</span><span class="month"> {month}</span></span><span class="year">월</span></div>' + '</div>'
