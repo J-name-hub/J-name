@@ -305,7 +305,7 @@ def main():
             background-color: #f8f9fa;
         }
         .stButton > button {
-            width: 800px;
+            width: 100%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
