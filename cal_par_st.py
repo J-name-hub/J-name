@@ -482,19 +482,14 @@ def main():
     month_days = generate_calendar(year, month)
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data, year, month, holidays)
-
-    # 버튼을 위한 컬럼 생성
-    col1, col2, col3 = st.columns([1,2,1])
-
+    
     # '이전 월' 버튼
-    with col1:
-        if st.button("이전 월"):
-            update_month(-1)
-
+    if st.button("이전 월"):
+        update_month(-1)
+    
     # '다음 월' 버튼
-    with col3:
-        if st.button("다음 월"):
-            update_month(1)
+    if st.button("다음 월"):
+        update_month(1)
 
     # GitHub에서 스케줄 데이터 로드
     schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
