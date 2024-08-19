@@ -305,6 +305,8 @@ def main():
             background-color: #f8f9fa;
         }
         .button-container {
+            width: 100%;
+            max-width: 800px;
             display: flex;
             justify-content: center;
             gap: 10px;
