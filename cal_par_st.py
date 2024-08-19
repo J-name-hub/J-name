@@ -304,6 +304,15 @@ def main():
             font-family: 'Roboto', sans-serif;
             background-color: #f8f9fa;
         }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .stButton {
+            display: inline-block;
+        }
         .stButton > button {
             width: 100%;
             display: inline-flex;
@@ -488,6 +497,9 @@ def main():
     month_days = generate_calendar(year, month)
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data, year, month, holidays)
+
+    # 버튼 컨테이너 시작
+    st.markdown('<div class="button-container">', unsafe_allow_html=True)
     
     # '이전 월' 버튼
     if st.button("이전 월"):
@@ -496,6 +508,9 @@ def main():
     # '다음 월' 버튼
     if st.button("다음 월"):
         update_month(1)
+
+    # 버튼 컨테이너 종료
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # GitHub에서 스케줄 데이터 로드
     schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
