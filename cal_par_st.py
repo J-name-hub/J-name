@@ -503,7 +503,7 @@ def main():
     st.markdown('<div class="button-container">', unsafe_allow_html=True)
     
     # 버튼을 위한 컬럼 생성
-    col1, col2, col3 = st.columns([1,3,1])
+    col1, col2, col3 = st.columns([1,2,1])
 
     # '이전 월' 버튼
     with col1:
