@@ -335,10 +335,10 @@ def main():
             font-size: 30px;
             font-weight: bold;
         }
-        .calendar-header.year {
+        .calendar-header .year {
             font-size: 18px;
         }
-        .calendar-header.month {
+        .calendar-header .month {
             font-size: 30px;
         }
         .calendar-header-cell {
