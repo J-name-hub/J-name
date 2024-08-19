@@ -327,12 +327,13 @@ def main():
             padding: 20px;
         }
         .calendar-header {
-            display: flex;
-            justify-content: space-between;
             background-color: #343a40;
             color: white;
+            text-align: center;
             padding: 10px 0;
             border-radius: 10px 10px 0 0;
+            font-size: 18px;
+            font-weight: bold;
         }
         .calendar-header-cell {
             flex: 1;
