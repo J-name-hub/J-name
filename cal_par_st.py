@@ -211,10 +211,10 @@ def generate_calendar(year, month):
 
 # 근무 조 설정
 shift_colors = {
-    "주": ("#badc58", "black"),
-    "야": ("#d1d8e0", "black"),
+    "주": ("yellow", "black"),
+    "야": ("lightgray", "black"),
     "비": ("white", "black"),
-    "올": ("#dff9fb", "black")
+    "올": ("lightblue", "black")
 }
 
 shifts = ["주", "야", "비", "비"]
