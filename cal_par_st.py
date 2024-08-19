@@ -330,7 +330,7 @@ def main():
             background-color: #343a40;
             color: white;
             text-align: center;
-            padding: 10px 0;
+            padding: 5px 0;
             border-radius: 10px 10px 0 0;
             font-size: 30px;
             font-weight: bold;
@@ -344,7 +344,7 @@ def main():
         .calendar-header-cell {
             flex: 1;
             text-align: center;
-            padding: 5px;
+            padding: 2px;
             font-weight: bold;
             font-size: 30px;
         }
@@ -355,7 +355,7 @@ def main():
             display: flex;
             justify-content: space-between;
             background-color: #f8f9fa;
-            padding: 10px 0;
+            padding: 5px 0;
             border-bottom: 1px solid #dee2e6;
             font-weight: bold;
             color: #495057;
@@ -363,7 +363,7 @@ def main():
         .calendar-weekdays-cell {
             flex: 1;
             text-align: center;
-            padding: 5px;
+            padding: 2px;
             font-weight: bold;
             font-size: 20px;
         }
@@ -373,7 +373,7 @@ def main():
         .calendar-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
+            padding: 5px 0;
             border-bottom: 1px solid #dee2e6;
         }
         .calendar-row:last-child {
@@ -390,7 +390,7 @@ def main():
         }
         .calendar-cell-content {
             border-radius: 5px;
-            padding: 5px;
+            padding: 2px;
             transition: background-color 0.3s ease;
         }
         .calendar-cell-content.today {
@@ -402,7 +402,7 @@ def main():
             color: #343a40;
         }
         .calendar-shift {
-            padding: 5px;
+            padding: 2px;
             border-radius: 3px;
             font-size: 18px;
             font-weight: bold;
@@ -424,7 +424,7 @@ def main():
         }
         .holiday-descriptions {
             margin-top: 10px;
-            padding: 10px;
+            padding: 5px;
             background-color: #f8f9fa;
             border-radius: 5px;
             font-size: 14px;
