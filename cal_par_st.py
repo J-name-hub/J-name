@@ -342,7 +342,7 @@ def main():
             background-color: white;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             max-width: 800px;
-            margin: 0 auto 15px auto;
+            margin: 0 auto 0 auto;
             padding: 10px;
         }
         .calendar-header {
@@ -502,13 +502,18 @@ def main():
     # 버튼 컨테이너 시작
     st.markdown('<div class="button-container">', unsafe_allow_html=True)
     
+    # 버튼을 위한 컬럼 생성
+    col1, col2, col3 = st.columns([1,2,1])
+
     # '이전 월' 버튼
-    if st.button("이전 월"):
-       update_month(-1)
-    
+    with col1:
+        if st.button("이전 월"):
+            update_month(-1)
+
     # '다음 월' 버튼
-    if st.button("다음 월"):
-        update_month(1)
+    with col3:
+        if st.button("다음 월"):
+            update_month(1)
 
     # 버튼 컨테이너 종료
     st.markdown('</div>', unsafe_allow_html=True)
