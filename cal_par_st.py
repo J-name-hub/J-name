@@ -311,7 +311,7 @@ def main():
             justify-content: center;
             font-size: 16px;
             padding: 0px 4px;
-            margin: 0 auto 5px auto;
+            margin: 0 auto 0 auto;
             height: 30px;
             cursor: pointer;
             text-align: center;
