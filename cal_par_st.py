@@ -298,6 +298,12 @@ def main():
     # CSS 스타일 추가
     st.markdown("""
         <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+        }
         .stButton > button {
             width: 100%;
             display: inline-flex;
