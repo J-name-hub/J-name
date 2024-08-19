@@ -420,7 +420,7 @@ def main():
             height: 100%;
         }
         .calendar-cell-content.today {
-            border: 2px solid #007bff;
+            border: 1px solid #007bff;
             background-color: #dff9fb;
         }
         .calendar-day {
