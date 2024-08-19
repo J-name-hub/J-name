@@ -408,13 +408,13 @@ def main():
         .calendar-day {
             font-weight: bold;
             color: #343a40;
-            margin-bottom: 1px;  /* 하단 여백을 줄임 */
-            font-size: 16px;  /* 글자 크기를 조정 */
+            margin-bottom: 0px;  /* 하단 여백을 줄임 */
+            font-size: 17px;  /* 글자 크기를 조정 */
         }
         .calendar-shift {
             padding: 1px 3px;  /* 패딩을 줄임 */
             border-radius: 3px;
-            font-size: 16px;  /* 글자 크기를 조정 */
+            font-size: 17px;  /* 글자 크기를 조정 */
             font-weight: bold;
             color: white;
         }
