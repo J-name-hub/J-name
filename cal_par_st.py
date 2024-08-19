@@ -323,7 +323,7 @@ def main():
             background-color: white;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             max-width: 800px;
-            margin: 15px auto;
+            margin: 0 auto 15px auto;
             padding: 10px;
         }
         .calendar-header {
