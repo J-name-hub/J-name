@@ -409,12 +409,12 @@ def main():
             font-weight: bold;
             color: #343a40;
             margin-bottom: 0px;  /* 하단 여백을 줄임 */
-            font-size: 17px;  /* 글자 크기를 조정 */
+            font-size: 18px;  /* 글자 크기를 조정 */
         }
         .calendar-shift {
-            padding: 1px 3px;  /* 패딩을 줄임 */
+            padding: 0px 3px;  /* 패딩을 줄임 */
             border-radius: 3px;
-            font-size: 17px;  /* 글자 크기를 조정 */
+            font-size: 18px;  /* 글자 크기를 조정 */
             font-weight: bold;
             color: white;
         }
