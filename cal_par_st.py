@@ -414,7 +414,7 @@ def main():
         .calendar-shift {
             padding: 1px 3px;  /* 패딩을 줄임 */
             border-radius: 3px;
-            font-size: 14px;  /* 글자 크기를 조정 */
+            font-size: 16px;  /* 글자 크기를 조정 */
             font-weight: bold;
             color: white;
         }
@@ -436,7 +436,7 @@ def main():
             padding: 5px;
             background-color: #f8f9fa;
             border-radius: 5px;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: bold;
             color: #343a40;
         }
