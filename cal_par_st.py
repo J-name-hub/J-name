@@ -335,6 +335,12 @@ def main():
             font-size: 30px;
             font-weight: bold;
         }
+        .calendar-header.year {
+            font-size: 18px;
+        }
+        .calendar-header.month {
+            font-size: 30px;
+        }
         .calendar-header-cell {
             flex: 1;
             text-align: center;
@@ -344,24 +350,6 @@ def main():
         }
         .calendar-header-cell:last-child {
             border-right: none;
-        }
-        .calendar-header.month-year {
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            padding: 15px 0;
-            background: linear-gradient(45deg, #007bff, #6610f2);
-            color: white;
-            border-radius: 10px 10px 0 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        .calendar-header.month-year .year {
-            font-size: 18px;
-            opacity: 0.8;
-            margin-right: 10px;
-        }
-        .calendar-header.month-year .month {
-            font-size: 32px;
         }
         .calendar-weekdays {
             display: flex;
@@ -535,7 +523,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
 def display_calendar(calendar_data, year, month, holidays):
     # 년월 헤더 생성
     header_html = '<div class="calendar-container"><div class="calendar-header">'
-    header_html += f'<div class="calendar-header month-year"><span class="year">{year}</span><span class="month">{month:02d}</span></div>' + '</div>'
+    header_html += f'<div class="calendar-header"><span class="year">{year}</span><span class="month">{month:02d}</span></div>' + '</div>'
     
     days_weekdays = ["일", "월", "화", "수", "목", "금", "토"]
     # 요일 헤더 생성
