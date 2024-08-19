@@ -314,6 +314,7 @@ def main():
             display: inline-block;
         }
         .stButton > button {
+            width: 100%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -397,13 +398,13 @@ def main():
             border-bottom: 0;
         }
         .calendar-cell {
-                width: 13%;
-        text-align: center;
-        position: relative;
-        height: 54px;  /* 셀의 전체 높이를 줄임 */
-        display: flex;
-        align-items: center;
-        justify-content: center;
+            width: 13%;
+            text-align: center;
+            position: relative;
+            height: 54px;  /* 셀의 전체 높이를 줄임 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .calendar-cell:last-child {
             border-right: none;
