@@ -421,7 +421,7 @@ def main():
         }
         .calendar-cell-content.today {
             border: 2px solid #007bff;
-            background-color: #dff9fb;
+            background-color: #E8F0FE;
         }
         .calendar-day {
             font-weight: bold;
