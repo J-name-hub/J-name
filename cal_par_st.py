@@ -383,7 +383,7 @@ def main():
                 width: 13%;
         text-align: center;
         position: relative;
-        height: 53px;  /* 셀의 전체 높이를 줄임 */
+        height: 54px;  /* 셀의 전체 높이를 줄임 */
         display: flex;
         align-items: center;
         justify-content: center;
