@@ -318,7 +318,6 @@ def main():
             text-decoration: none;
             background-color: #fafafa;
             color: black;
-            margin: auto;
         }
         .calendar-container {
             border: 2px solid #dee2e6;
@@ -483,6 +482,19 @@ def main():
     month_days = generate_calendar(year, month)
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data, year, month, holidays)
+
+    # 버튼을 위한 컬럼 생성
+    col1, col2, col3 = st.columns([1,2,1])
+
+    # '이전 월' 버튼
+    with col1:
+        if st.button("이전 월"):
+            update_month(-1)
+
+    # '다음 월' 버튼
+    with col3:
+        if st.button("다음 월"):
+            update_month(1)
     
     # '이전 월' 버튼
     if st.button("이전 월"):
