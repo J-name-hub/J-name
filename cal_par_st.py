@@ -327,22 +327,19 @@ def main():
             padding: 20px;
         }
         .calendar-header {
+            display: flex;
+            justify-content: space-between;
             background-color: #343a40;
             color: white;
-            text-align: center;
             padding: 10px 0;
             border-radius: 10px 10px 0 0;
-            font-size: 18px;
-            font-weight: bold;
         }
-        #변경전
         .calendar-header-cell {
             flex: 1;
             text-align: center;
             padding: 5px;
             font-weight: bold;
-            font-size: 20px;
-            border-right: 1px solid #ddd;
+            font-size: 16px;
         }
         .calendar-header-cell:last-child {
             border-right: none;
