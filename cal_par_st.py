@@ -315,7 +315,7 @@ def main():
             cursor: pointer;
             text-align: center;
             text-decoration: none;
-            background-color: lightgray;
+            background-color: #f5f5f5;
             color: black;
         }
         .calendar-container {
