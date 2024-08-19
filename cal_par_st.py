@@ -293,7 +293,6 @@ def display_workdays_info(year, month, team, schedule_data):
     st.sidebar.write(f"**(오늘제외 남은일수  {remaining_workdays}일)**")
 
 def main():
-    
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
     # CSS 스타일 추가
@@ -305,22 +304,11 @@ def main():
             font-family: 'Roboto', sans-serif;
             background-color: #f8f9fa;
         }
-        .touch-area {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 33.33%;
-        }
-        .touch-area.left {
-            left: 0;
-        }
-        .touch-area.right {
-            right: 0;
-        }
         .button-container {
             display: flex;
             justify-content: center;
             gap: 10px;
+            margin-bottom: 0;
         }
         .stButton {
             display: inline-block;
@@ -475,36 +463,6 @@ def main():
             font-weight: bold;
             color: #343a40;
         }
-        .calendar-nav {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: space-between;
-            pointer-events: none;
-        }
-        .nav-button {
-            background-color: rgba(0,0,0,0.1);
-            border: none;
-            color: white;
-            padding: 10px 15px;
-            font-size: 18px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            pointer-events: auto;
-        }
-        .nav-button:hover {
-            background-color: rgba(0,0,0,0.2);
-        }
-        .nav-button.prev {
-            border-top-right-radius: 5px;
-            border-bottom-right-radius: 5px;
-        }
-        .nav-button.next {
-            border-top-left-radius: 5px;
-            border-bottom-left-radius: 5px;
-        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -539,19 +497,19 @@ def main():
 
     month_days = generate_calendar(year, month)
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
-    display_calendar(calendar_data, year, month, holidays)
 
     # 버튼 컨테이너 시작
     st.markdown('<div class="button-container">', unsafe_allow_html=True)
     
     # 버튼을 위한 컬럼 생성
-    col1, col2, col3 = st.columns([1,3,1])
+    col1, col2, col3 = st.columns([1,2,1])
 
     # '이전 월' 버튼
     with col1:
         if st.button("이전 월"):
             update_month(-1)
-
+    with col2:
+        display_calendar(calendar_data, year, month, holidays)
     # '다음 월' 버튼
     with col3:
         if st.button("다음 월"):
@@ -636,37 +594,8 @@ def display_calendar(calendar_data, year, month, holidays):
         holiday_html += '&nbsp;'  # 공휴일 데이터가 없을 때 빈 줄 추가
     holiday_html += '</div>'
 
-    # 이전 월과 다음 월 버튼 추가
-    nav_buttons = '''
-    <div class="calendar-nav">
-        <button class="nav-button prev" onclick="changeMonth(-1)">&#9664;</button>
-        <button class="nav-button next" onclick="changeMonth(1)">&#9654;</button>
-    </div>
-    '''
-
     # 전체 달력 HTML 조합
-    full_calendar_html = f'''
-    <div class="calendar-container" style="position: relative;">
-        {nav_buttons}
-        {header_html}
-        {weekdays_html}
-        {calendar_html}
-        {holiday_html}
-    </div>
-    '''
-
-    # JavaScript 함수 추가
-    st.markdown('''
-    <script>
-    function changeMonth(delta) {
-        if (delta > 0) {
-            document.querySelector('button:contains("다음 월")').click();
-        } else {
-            document.querySelector('button:contains("이전 월")').click();
-        }
-    }
-    </script>
-    ''', unsafe_allow_html=True)
+    full_calendar_html = header_html + weekdays_html + calendar_html + holiday_html + '</div>'
 
     # HTML을 Streamlit에 표시
     st.markdown(full_calendar_html, unsafe_allow_html=True)
