@@ -344,6 +344,25 @@ def main():
         .calendar-header-cell:last-child {
             border-right: none;
         }
+        .calendar-weekdays {
+            display: flex;
+            justify-content: space-between;
+            background-color: #f8f9fa;
+            padding: 10px 0;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: bold;
+            color: #495057;
+        }
+        .calendar-weekdays-cell {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .calendar-weekdays-cell:last-child {
+            border-right: none;
+        }
         .calendar-row {
             display: flex;
             justify-content: space-between;
@@ -500,14 +519,14 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
     return calendar_data
 
 def display_calendar(calendar_data):
-    days_header = ["일", "월", "화", "수", "목", "금", "토"]
+    days_weekdays = ["일", "월", "화", "수", "목", "금", "토"]
 
     # 요일 헤더 생성
-    header_html = '<div class="calendar-container"><div class="calendar-header">'
-    for day in days_header:
+    weekdays_html = '<div class="calendar-container"><div class="calendar-weekdays">'
+    for day in days_weekdays:
         color = "red" if day in ["일", "토"] else "black"
-        header_html += f'<div class="calendar-header-cell" style="color: {color};">{day}</div>'
-    header_html += '</div>'
+        weekdays_html += f'<div class="calendar-weekdays-cell" style="color: {color};">{day}</div>'
+    weekdays_html += '</div>'
 
     # 달력 데이터 생성
     calendar_html = ''
@@ -518,7 +537,7 @@ def display_calendar(calendar_data):
         calendar_html += '</div>'
 
     # 전체 달력 HTML 조합
-    full_calendar_html = header_html + calendar_html + '</div>'
+    full_calendar_html = weekdays_html + calendar_html + '</div>'
 
     # HTML을 Streamlit에 표시
     st.markdown(full_calendar_html, unsafe_allow_html=True)
