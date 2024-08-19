@@ -497,9 +497,6 @@ def main():
 
     month_days = generate_calendar(year, month)
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
-
-    # 버튼 컨테이너 시작
-    st.markdown('<div class="button-container">', unsafe_allow_html=True)
     
     # 버튼을 위한 컬럼 생성
     col1, col2, col3 = st.columns([1,2,1])
@@ -514,9 +511,6 @@ def main():
     with col3:
         if st.button("다음 월"):
             update_month(1)
-
-    # 버튼 컨테이너 종료
-    st.markdown('</div>', unsafe_allow_html=True)
 
     # GitHub에서 스케줄 데이터 로드
     schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
