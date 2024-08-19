@@ -537,7 +537,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
 def display_calendar(calendar_data, year, month, holidays):
     # 년월 헤더 생성
     header_html = '<div class="calendar-container"><div class="calendar-header">'
-    header_html += f'<div class="calendar-header"><span class="year">{year}년</span><span class="month"> {month}월 교대근무</span></div>' + '</div>'
+    header_html += f'<div class="calendar-header"><span class="year">{year}</span><span class="month">  {month}月</span></div>' + '</div>'
     
     days_weekdays = ["일", "월", "화", "수", "목", "금", "토"]
     # 요일 헤더 생성
