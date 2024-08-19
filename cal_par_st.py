@@ -518,11 +518,14 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
         calendar_data.append(week_data)
     return calendar_data
 
-def display_calendar(calendar_data):
+def display_calendar(calendar_data, year, month):
+    # 년월 헤더 생성
+    header_html = '<div class="calendar-container"><div class="calendar-header">'
+    header_html += f'<div class="calendar-header month-year">{year}년 {month}월</div>'
+    
     days_weekdays = ["일", "월", "화", "수", "목", "금", "토"]
-
     # 요일 헤더 생성
-    weekdays_html = '<div class="calendar-container"><div class="calendar-weekdays">'
+    weekdays_html = '<div class="calendar-weekdays">'
     for day in days_weekdays:
         color = "red" if day in ["일", "토"] else "black"
         weekdays_html += f'<div class="calendar-weekdays-cell" style="color: {color};">{day}</div>'
@@ -537,7 +540,7 @@ def display_calendar(calendar_data):
         calendar_html += '</div>'
 
     # 전체 달력 HTML 조합
-    full_calendar_html = weekdays_html + calendar_html + '</div>'
+    full_calendar_html = header_html + weekdays_html + calendar_html + '</div>'
 
     # HTML을 Streamlit에 표시
     st.markdown(full_calendar_html, unsafe_allow_html=True)
