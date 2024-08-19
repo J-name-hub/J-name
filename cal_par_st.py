@@ -293,6 +293,9 @@ def display_workdays_info(year, month, team, schedule_data):
     st.sidebar.write(f"**(오늘제외 남은일수  {remaining_workdays}일)**")
 
 def main():
+    if 'slide_direction' not in st.session_state:
+    st.session_state.slide_direction = ''
+    
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
     # CSS 스타일 추가
@@ -605,34 +608,13 @@ def display_calendar(calendar_data, year, month, holidays, slide_direction=''):
         holiday_html += '&nbsp;'  # 공휴일 데이터가 없을 때 빈 줄 추가
     holiday_html += '</div>'
 
-    touch_areas = '''
-    <div class="touch-area left" onclick="changeMonth(-1)"></div>
-    <div class="touch-area right" onclick="changeMonth(1)"></div>
-    '''
+    # 슬라이드 방향에 따른 클래스 추가
+    slide_class = f' {slide_direction}' if slide_direction else ''
 
-    full_calendar_html = f'''
-    <div class="calendar-container{slide_class}" style="position: relative;">
-        {header_html}
-        {weekdays_html}
-        {calendar_html}
-        {holiday_html}
-        {touch_areas}
-    </div>
-    '''
+    # 전체 달력 HTML 조합
+    full_calendar_html = f'<div class="calendar-container{slide_class}">{header_html}{weekdays_html}{calendar_html}{holiday_html}</div>'
 
-    # JavaScript 함수 추가
-    st.markdown('''
-    <script>
-    function changeMonth(delta) {
-        if (delta > 0) {
-            document.querySelector('button:contains("다음 월")').click();
-        } else {
-            document.querySelector('button:contains("이전 월")').click();
-        }
-    }
-    </script>
-    ''', unsafe_allow_html=True)
-
+    # HTML을 Streamlit에 표시
     st.markdown(full_calendar_html, unsafe_allow_html=True)
 
 def sidebar_controls(year, month, schedule_data):
