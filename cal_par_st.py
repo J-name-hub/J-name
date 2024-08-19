@@ -332,7 +332,7 @@ def main():
             text-align: center;
             padding: 10px 0;
             border-radius: 10px 10px 0 0;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
         }
         .calendar-header-cell {
@@ -340,7 +340,7 @@ def main():
             text-align: center;
             padding: 5px;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 20px;
         }
         .calendar-header-cell:last-child {
             border-right: none;
@@ -359,7 +359,7 @@ def main():
             text-align: center;
             padding: 5px;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 20px;
         }
         .calendar-weekdays-cell:last-child {
             border-right: none;
@@ -376,7 +376,7 @@ def main():
         .calendar-cell {
             width: 13%;
             text-align: center;
-            font-size: 14px;
+            font-size: 18px;
             position: relative;
         }
         .calendar-cell:last-child {
@@ -398,7 +398,7 @@ def main():
         .calendar-shift {
             padding: 5px;
             border-radius: 3px;
-            font-size: 12px;
+            font-size: 18px;
             font-weight: 500;
             color: white;
             margin-top: 5px;
