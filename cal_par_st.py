@@ -332,7 +332,7 @@ def main():
             text-align: center;
             padding: 10px 0;
             border-radius: 10px 10px 0 0;
-            font-size: 20px;
+            font-size: 30px;
             font-weight: bold;
         }
         .calendar-header-cell {
@@ -340,7 +340,7 @@ def main():
             text-align: center;
             padding: 5px;
             font-weight: bold;
-            font-size: 20px;
+            font-size: 30px;
         }
         .calendar-header-cell:last-child {
             border-right: none;
@@ -444,12 +444,6 @@ def main():
     if not schedule_data:
         schedule_data = {}
         sha = None
-
-    titleup_style = "font-size: 18px; font-weight: bold; text-align: center;"
-    st.markdown(f"<div style='{titleup_style}'>{year}년</div>", unsafe_allow_html=True)
-
-    title_style = "font-size: 30px; font-weight: bold; text-align: center;"
-    st.markdown(f"<div style='{title_style}'>{month}월 교대근무 달력</div>", unsafe_allow_html=True)
 
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     yesterday = today - timedelta(days=1)
