@@ -412,11 +412,15 @@ def main():
             font-size: 18px;  /* 글자 크기를 조정 */
         }
         .calendar-shift {
-            padding: 0px 3px;  /* 패딩을 줄임 */
+            padding: 0px 2px;
+            margin: 1px 0;
             border-radius: 3px;
-            font-size: 18px;  /* 글자 크기를 조정 */
+            font-size: 18px;
             font-weight: bold;
             color: white;
+            display: inline-block;
+            min-width: 28px;  /* 최소 폭을 약간 늘림 */
+            line-height: 1.2;  /* 줄 간격을 조정 */
         }
         .calendar-shift.ju {
             background-color: #f8c291;
