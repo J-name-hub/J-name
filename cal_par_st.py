@@ -305,8 +305,6 @@ def main():
             background-color: #f8f9fa;
         }
         .button-container {
-            width: 100%;
-            max-width: 800px;
             display: flex;
             justify-content: center;
             gap: 10px;
@@ -317,7 +315,7 @@ def main():
         }
         .stButton > button {
             width: 100%;
-            max-width: 80px;
+            max-width: 800px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
