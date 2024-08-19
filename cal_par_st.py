@@ -511,8 +511,8 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 shift_text = shift if shift != '비' else '&nbsp;'
                 cell_content = f'''
                     <div class="calendar-cell-content {today_class}">
-                        <span class="calendar-day" style="color: {day_color};">{day}</span>
-                        <span class="calendar-shift" style="background-color: {shift_background}; color: {shift_color};">{shift_text}</span>
+                        <div class="calendar-day" style="color: {day_color};">{day}</div>
+                        <div class="calendar-shift" style="background-color: {shift_background}; color: {shift_color};">{shift_text}</div>
                     </div>
                 '''
                 week_data.append(cell_content)
