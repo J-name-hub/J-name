@@ -310,13 +310,20 @@ def main():
             align-items: center;
             justify-content: center;
             font-size: 16px;
-            padding: 0px 4px;
-            height: 30px;
+            padding: 8px 16px;
+            height: 40px;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
-            background-color: #fafafa;
-            color: black;
+            background-color: #4F4F4F;  /* 어두운 회색 배경 */
+            color: #FFFFFF;  /* 흰색 글자 */
+            border: 1px solid #6E6E6E;  /* 약간 밝은 회색 테두리 */
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        .stButton > button:hover {
+            background-color: #6E6E6E;  /* 호버 시 밝은 회색으로 변경 */
+            border-color: #8E8E8E;
         }
         .calendar-container {
             border: 2px solid #dee2e6;
