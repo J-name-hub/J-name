@@ -212,7 +212,7 @@ def generate_calendar(year, month):
 # 근무 조 설정
 shift_colors = {
     "주": ("yellow", "black"),
-    "야": ("lightgray", "black"),
+    "야": ("#d1d8e0", "black"),
     "비": ("white", "black"),
     "올": ("lightblue", "black")
 }
