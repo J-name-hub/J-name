@@ -646,7 +646,7 @@ def display_calendar(calendar_data, year, month, holidays):
 
     # 전체 달력 HTML 조합
     full_calendar_html = f'''
-    <div class="calendar-container{slide_class}" style="position: relative;">
+    <div class="calendar-container" style="position: relative;">
         {nav_buttons}
         {header_html}
         {weekdays_html}
