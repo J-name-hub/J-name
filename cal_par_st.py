@@ -399,7 +399,7 @@ def main():
             padding: 5px;
             border-radius: 3px;
             font-size: 18px;
-            font-weight: 500;
+            font-weight: bold;
             color: white;
             margin-top: 5px;
         }
