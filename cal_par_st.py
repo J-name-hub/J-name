@@ -324,7 +324,7 @@ def main():
             overflow: hidden;
             background-color: white;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-width: 800px;
+            max-width: 100%;
             margin: 0 auto 15px auto;
             padding: 10px;
         }
