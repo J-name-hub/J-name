@@ -330,7 +330,7 @@ def main():
             background-color: #343a40;
             color: white;
             text-align: center;
-            padding: 5px 0;
+            padding: 3px 0;
             border-radius: 10px 10px 0 0;
             font-size: 28px;
             font-weight: bold;
@@ -355,7 +355,7 @@ def main():
             display: flex;
             justify-content: space-between;
             background-color: #f8f9fa;
-            padding: 5px 0;
+            padding: 3px 0;
             border-bottom: 1px solid #dee2e6;
             font-weight: bold;
             color: #495057;
