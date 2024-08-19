@@ -306,6 +306,7 @@ def main():
         }
         .stButton > button {
             width: 100%;
+            max-width: 800px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -324,7 +325,7 @@ def main():
             overflow: hidden;
             background-color: white;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-width: 100%;
+            max-width: 800px;
             margin: 0 auto 15px auto;
             padding: 10px;
         }
