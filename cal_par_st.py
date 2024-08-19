@@ -416,6 +416,14 @@ def main():
         .calendar-shift.ol {
             background-color: #badc58;
         }
+        .holiday-descriptions {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #343a40;
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -448,21 +456,14 @@ def main():
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     yesterday = today - timedelta(days=1)
 
+    month_days = generate_calendar(year, month)
+    calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
+    display_calendar(calendar_data, year, month, holidays)
+    
     # '이전 월' 버튼
     if st.button("이전 월"):
         update_month(-1)
-
-    month_days = generate_calendar(year, month)
-    calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
-    display_calendar(calendar_data, year, month)
-
-    # 공휴일 설명 표시 (수정된 부분)
-    holiday_descriptions = create_holiday_descriptions(holidays, month)
-    if holiday_descriptions:
-        st.markdown(" / ".join(holiday_descriptions))
-    else:
-        st.markdown("&nbsp;", unsafe_allow_html=True)  # 공휴일 데이터가 없을 때 빈 줄 추가
-
+    
     # '다음 월' 버튼
     if st.button("다음 월"):
         update_month(1)
@@ -513,10 +514,10 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
         calendar_data.append(week_data)
     return calendar_data
 
-def display_calendar(calendar_data, year, month):
+def display_calendar(calendar_data, year, month, holidays):
     # 년월 헤더 생성
     header_html = '<div class="calendar-container"><div class="calendar-header">'
-    header_html += f'<div class="calendar-header month-year">{year}년 {month}월</div>' + '</div>'
+    header_html += f'<div class="calendar-header month-year">{year}년 {month}월 교대근무 달력</div>' + '</div>'
     
     days_weekdays = ["일", "월", "화", "수", "목", "금", "토"]
     # 요일 헤더 생성
@@ -534,8 +535,17 @@ def display_calendar(calendar_data, year, month):
             calendar_html += f'<div class="calendar-cell">{cell}</div>'
         calendar_html += '</div>'
 
+    # 공휴일 설명 생성
+    holiday_html = '<div class="holiday-descriptions">'
+    holiday_descriptions = create_holiday_descriptions(holidays, month)
+    if holiday_descriptions:
+        holiday_html += " / ".join(holiday_descriptions)
+    else:
+        holiday_html += '&nbsp;'  # 공휴일 데이터가 없을 때 빈 줄 추가
+    holiday_html += '</div>'
+
     # 전체 달력 HTML 조합
-    full_calendar_html = header_html + weekdays_html + calendar_html + '</div>'
+    full_calendar_html = header_html + weekdays_html + calendar_html + holiday_html + '</div>'
 
     # HTML을 Streamlit에 표시
     st.markdown(full_calendar_html, unsafe_allow_html=True)
