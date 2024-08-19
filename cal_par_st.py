@@ -344,7 +344,7 @@ def main():
         .calendar-header-cell {
             flex: 1;
             text-align: center;
-            padding: 2px;
+            padding: 1px;
             font-weight: bold;
             font-size: 30px;
         }
@@ -363,7 +363,7 @@ def main():
         .calendar-weekdays-cell {
             flex: 1;
             text-align: center;
-            padding: 2px;
+            padding: 1px;
             font-weight: bold;
             font-size: 18px;
         }
@@ -373,7 +373,7 @@ def main():
         .calendar-row {
             display: flex;
             justify-content: space-between;
-            padding: 5px 0;
+            padding: 3px 0;
             border-bottom: 1px solid #dee2e6;
         }
         .calendar-row:last-child {
@@ -390,7 +390,7 @@ def main():
         }
         .calendar-cell-content {
             border-radius: 5px;
-            padding: 2px;
+            padding: 1px;
             transition: background-color 0.3s ease;
         }
         .calendar-cell-content.today {
@@ -402,7 +402,7 @@ def main():
             color: #343a40;
         }
         .calendar-shift {
-            padding: 2px;
+            padding: 1px;
             border-radius: 3px;
             font-size: 18px;
             font-weight: bold;
