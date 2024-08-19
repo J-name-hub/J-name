@@ -475,6 +475,36 @@ def main():
             font-weight: bold;
             color: #343a40;
         }
+        .calendar-nav {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+        .nav-button {
+            background-color: rgba(0,0,0,0.1);
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            pointer-events: auto;
+        }
+        .nav-button:hover {
+            background-color: rgba(0,0,0,0.2);
+        }
+        .nav-button.prev {
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+        .nav-button.next {
+            border-top-left-radius: 5px;
+            border-bottom-left-radius: 5px;
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -606,23 +636,22 @@ def display_calendar(calendar_data, year, month, holidays, slide_direction=''):
         holiday_html += '&nbsp;'  # 공휴일 데이터가 없을 때 빈 줄 추가
     holiday_html += '</div>'
 
-    # 슬라이드 방향에 따른 클래스 추가
-    slide_class = f' {slide_direction}' if slide_direction else ''
-
-    # 터치 영역 추가
-    touch_areas = '''
-    <div class="touch-area left" onclick="changeMonth(-1)"></div>
-    <div class="touch-area right" onclick="changeMonth(1)"></div>
+    # 이전 월과 다음 월 버튼 추가
+    nav_buttons = '''
+    <div class="calendar-nav">
+        <button class="nav-button prev" onclick="changeMonth(-1)">&#9664;</button>
+        <button class="nav-button next" onclick="changeMonth(1)">&#9654;</button>
+    </div>
     '''
 
     # 전체 달력 HTML 조합
     full_calendar_html = f'''
     <div class="calendar-container{slide_class}" style="position: relative;">
+        {nav_buttons}
         {header_html}
         {weekdays_html}
         {calendar_html}
         {holiday_html}
-        {touch_areas}
     </div>
     '''
 
