@@ -495,14 +495,6 @@ def main():
     with col3:
         if st.button("다음 월"):
             update_month(1)
-    
-    # '이전 월' 버튼
-    if st.button("이전 월"):
-        update_month(-1)
-    
-    # '다음 월' 버튼
-    if st.button("다음 월"):
-        update_month(1)
 
     # GitHub에서 스케줄 데이터 로드
     schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
