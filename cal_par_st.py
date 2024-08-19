@@ -316,6 +316,7 @@ def main():
             text-align: center;
             text-decoration: none;
             background-color: #f8f9fa;
+            color: black;
         }
         .calendar-container {
             border: 2px solid #dee2e6;
