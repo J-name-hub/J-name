@@ -309,7 +309,7 @@ def main():
             justify-content: center;
             gap: 10px;
             margin-bottom: 0;
-            padding: 30px;
+            padding: 50px;
         }
         .stButton {
             display: inline-block;
