@@ -609,8 +609,35 @@ def display_calendar(calendar_data, year, month, holidays, slide_direction=''):
     # 슬라이드 방향에 따른 클래스 추가
     slide_class = f' {slide_direction}' if slide_direction else ''
 
+    # 터치 영역 추가
+    touch_areas = '''
+    <div class="touch-area left" onclick="changeMonth(-1)"></div>
+    <div class="touch-area right" onclick="changeMonth(1)"></div>
+    '''
+
     # 전체 달력 HTML 조합
-    full_calendar_html = f'<div class="calendar-container{slide_class}">{header_html}{weekdays_html}{calendar_html}{holiday_html}</div>'
+    full_calendar_html = f'''
+    <div class="calendar-container{slide_class}" style="position: relative;">
+        {header_html}
+        {weekdays_html}
+        {calendar_html}
+        {holiday_html}
+        {touch_areas}
+    </div>
+    '''
+
+    # JavaScript 함수 추가
+    st.markdown('''
+    <script>
+    function changeMonth(delta) {
+        if (delta > 0) {
+            document.querySelector('button:contains("다음 월")').click();
+        } else {
+            document.querySelector('button:contains("이전 월")').click();
+        }
+    }
+    </script>
+    ''', unsafe_allow_html=True)
 
     # HTML을 Streamlit에 표시
     st.markdown(full_calendar_html, unsafe_allow_html=True)
