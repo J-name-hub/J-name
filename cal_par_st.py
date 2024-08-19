@@ -314,6 +314,7 @@ def main():
             display: inline-block;
         }
         .stButton > button {
+            width: 100%;
             max-width: 800px;
             display: inline-flex;
             align-items: center;
