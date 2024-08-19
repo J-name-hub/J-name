@@ -380,18 +380,26 @@ def main():
             border-bottom: 0;
         }
         .calendar-cell {
-            width: 13%;
-            text-align: center;
-            font-size: 18px;
-            position: relative;
+                width: 13%;
+        text-align: center;
+        position: relative;
+        height: 50px;  /* 셀의 전체 높이를 줄임 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
         }
         .calendar-cell:last-child {
             border-right: none;
         }
         .calendar-cell-content {
             border-radius: 5px;
-            padding: 1px;
+            padding: 1px;  /* 패딩을 줄임 */
             transition: background-color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
         }
         .calendar-cell-content.today {
             border: 2px solid #007bff;
@@ -400,14 +408,15 @@ def main():
         .calendar-day {
             font-weight: bold;
             color: #343a40;
+            margin-bottom: 1px;  /* 하단 여백을 줄임 */
+            font-size: 16px;  /* 글자 크기를 조정 */
         }
         .calendar-shift {
-            padding: 1px;
+            padding: 1px 3px;  /* 패딩을 줄임 */
             border-radius: 3px;
-            font-size: 18px;
+            font-size: 14px;  /* 글자 크기를 조정 */
             font-weight: bold;
             color: white;
-            margin-top: 5px;
         }
         .calendar-shift.ju {
             background-color: #f8c291;
