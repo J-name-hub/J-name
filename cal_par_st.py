@@ -306,30 +306,27 @@ def main():
         }
         .button-container {
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
+            align-items: center;
             gap: 10px;
-            margin-bottom: 0;
+            margin-bottom: 20px;
+            flex-wrap: nowrap;
         }
         .stButton {
-            display: inline-block;
+            flex: 1;
         }
         .stButton > button {
             width: 100%;
-            max-width: 800px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            padding: 8px 16px;
-            height: 40px;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
-            background-color: #4F4F4F;  /* 어두운 회색 배경 */
-            color: #FFFFFF;  /* 흰색 글자 */
-            border: 1px solid #6E6E6E;  /* 약간 밝은 회색 테두리 */
-            border-radius: 4px;
-            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        @media (max-width: 768px) {
+            .button-container {
+                flex-direction: row;
+            }
+            .stButton > button {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.875rem;
+            }
         }
         .stButton > button:hover {
             background-color: #6E6E6E;  /* 호버 시 밝은 회색으로 변경 */
@@ -501,19 +498,17 @@ def main():
 
     # 버튼 컨테이너 시작
     st.markdown('<div class="button-container">', unsafe_allow_html=True)
-    
-    # 버튼을 위한 컬럼 생성
-    col1, col2, col3 = st.columns([1,2,1])
 
     # '이전 월' 버튼
-    with col1:
-        if st.button("이전 월"):
-            update_month(-1)
+    if st.button("이전 월"):
+        update_month(-1)
+
+    # 빈 공간
+    st.markdown('<div style="flex: 2;"></div>', unsafe_allow_html=True)
 
     # '다음 월' 버튼
-    with col3:
-        if st.button("다음 월"):
-            update_month(1)
+    if st.button("다음 월"):
+        update_month(1)
 
     # 버튼 컨테이너 종료
     st.markdown('</div>', unsafe_allow_html=True)
