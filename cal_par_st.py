@@ -383,7 +383,7 @@ def main():
             text-align: center;
             padding: 1px;
             font-weight: bold;
-            font-size: 15px;
+            font-size: 18px;
         }
         .calendar-weekdays-cell:last-child {
             border-right: none;
@@ -433,7 +433,7 @@ def main():
             padding: 0px 2px;
             margin: 1px 0;
             border-radius: 3px;
-            font-size: 18px;
+            font-size: 17px;
             font-weight: bold;
             color: white;
             display: inline-block;
