@@ -435,6 +435,7 @@ def main():
             border-radius: 3px;
             font-size: 17px;
             font-weight: bold;
+            color: white;
             display: inline-block;
             min-width: 28px;  /* 최소 폭을 약간 늘림 */
             line-height: 1.2;  /* 줄 간격을 조정 */
@@ -553,7 +554,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 cell_content = f'''
                     <div class="calendar-cell-content {today_class}">
                         <div class="calendar-day" style="color: {day_color};">{day}</div>
-                        <div class="calendar-shift" style="background-color: {shift_background}; color: {shift_color};">{shift_text}</div>
+                        <div class="calendar-shift {shift_class}" style="color: {shift_color};">{shift_text}</div>
                     </div>
                 '''
                 week_data.append(cell_content)
