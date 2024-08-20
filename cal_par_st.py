@@ -401,7 +401,7 @@ def main():
             width: 13%;
             text-align: center;
             position: relative;
-            height: 54px;  /* 셀의 전체 높이를 줄임 */
+            height: 53px;  /* 셀의 전체 높이를 줄임 */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -427,7 +427,7 @@ def main():
             font-weight: bold;
             color: #343a40;
             margin-bottom: 0px;  /* 하단 여백을 줄임 */
-            font-size: 16px;  /* 글자 크기를 조정 */
+            font-size: 17px;  /* 글자 크기를 조정 */
         }
         .calendar-shift {
             padding: 0px 2px;
