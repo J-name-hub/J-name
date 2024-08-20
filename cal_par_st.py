@@ -427,7 +427,7 @@ def main():
             font-weight: bold;
             color: #343a40;
             margin-bottom: 0px;  /* 하단 여백을 줄임 */
-            font-size: 17px;  /* 글자 크기를 조정 */
+            font-size: 16px;  /* 글자 크기를 조정 */
         }
         .calendar-shift {
             padding: 0px 2px;
