@@ -440,19 +440,6 @@ def main():
             min-width: 28px;  /* 최소 폭을 약간 늘림 */
             line-height: 1.2;  /* 줄 간격을 조정 */
         }
-        .calendar-shift.ju {
-            background-color: #f8c291;
-        }
-        .calendar-shift.ya {
-            background-color: #d1d8e0;
-        }
-        .calendar-shift.bi {
-            background-color: #dff9fb;
-            color: #1e3799;
-        }
-        .calendar-shift.ol {
-            background-color: #badc58;
-        }
         .holiday-descriptions {
             margin-top: 10px;
             padding: 5px;
@@ -551,10 +538,13 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 today_class = "today" if current_date == today else ""
 
                 shift_text = shift if shift != '비' else '&nbsp;'
+                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
+                shift_style = f"background-color: {shift_background}; color: {shift_color};" if shift != '비' else f"color: {shift_color};"
+
                 cell_content = f'''
                     <div class="calendar-cell-content {today_class}">
                         <div class="calendar-day" style="color: {day_color};">{day}</div>
-                        <div class="calendar-shift" style="background-color: {shift_background}; color: {shift_color};">{shift_text}</div>
+                        <div class="calendar-shift" style="{shift_style}">{shift_text}</div>
                     </div>
                 '''
                 week_data.append(cell_content)
