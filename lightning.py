@@ -315,93 +315,70 @@ if time_selection == 'All':
     all_data = get_all_lightning_data(selected_date)
 data_load_state.text('데이터 로딩 완료!')
 
-# 1. API 응답 확인
-def debug_get_lightning_data(datetime_str):
-    params = {
-        'serviceKey': API_KEY,
-        'numOfRows': '1000',
-        'pageNo': '1',
-        'lgtType': '1',
-        'dateTime': datetime_str
-    }
-    response = requests.get(API_URL, params=params)
-    st.write(f"API Response Status: {response.status_code}")
-    st.write(f"API Response Content: {response.content[:500]}...")  # 처음 500자만 표시
-    
-    if response.ok:
+import traceback
+
+def comprehensive_debug():
+    try:
+        st.write("디버깅을 시작합니다.")
+        
+        st.write("1. API 키 확인")
+        st.write(f"API_KEY: {API_KEY[:5]}...{API_KEY[-5:]}")  # API 키의 일부만 표시
+        
+        st.write("2. 현재 시간 확인")
+        now = datetime.now(korea_tz)
+        datetime_str = now.strftime("%Y%m%d%H%M")
+        st.write(f"현재 시간: {now}, API 요청 시간 문자열: {datetime_str}")
+        
+        st.write("3. API 요청 시작")
+        params = {
+            'serviceKey': API_KEY,
+            'numOfRows': '1000',
+            'pageNo': '1',
+            'lgtType': '1',
+            'dateTime': datetime_str
+        }
+        response = requests.get(API_URL, params=params)
+        st.write(f"API 응답 상태 코드: {response.status_code}")
+        st.write(f"API 응답 내용 (처음 500자): {response.content[:500]}")
+        
+        st.write("4. XML 파싱")
         root = ET.fromstring(response.content)
         items = root.findall('.//item')
-        st.write(f"Number of items found: {len(items)}")
-        return items
-    else:
-        st.error("API 요청 실패")
-        return []
-
-# 2. 데이터 필터링 확인
-def debug_filter_data(data):
-    filtered = [
-        item for item in data
-        if yeongjong_polygon.contains(Point(float(item.find('wgs84Lon').text), float(item.find('wgs84Lat').text)))
-    ]
-    st.write(f"Total data points: {len(data)}")
-    st.write(f"Filtered data points: {len(filtered)}")
-    return filtered
-
-# 3. 지도 생성 과정 디버깅
-def debug_create_lightning_map(data):
-    m = folium.Map(location=YEONGJONG_CENTER, zoom_start=12)
-    marker_cluster = MarkerCluster().add_to(m)
-
-    folium.Polygon(
-        locations=YEONGJONG_BOUNDARY,
-        color="red",
-        fill=True,
-        fillColor="red",
-        fillOpacity=0.1
-    ).add_to(m)
-
-    for item in data:
-        lat = float(item.find('wgs84Lat').text)
-        lon = float(item.find('wgs84Lon').text)
+        st.write(f"파싱된 항목 수: {len(items)}")
         
-        point = Point(lon, lat)
-        if not yeongjong_polygon.contains(point):
-            continue
-
-        datetime_str = item.find('dateTime').text
-        datetime_obj = datetime.strptime(datetime_str, "%Y%m%d%H%M%S")
-        formatted_time = datetime_obj.strftime('%Y-%m-%d %H:%M:%S')
-
-        popup_text = f"Time: {formatted_time}"
-        folium.Marker(
-            location=(lat, lon),
-            popup=popup_text,
-            icon=folium.Icon(icon="flash", prefix="fa", color="orange")
-        ).add_to(marker_cluster)
-        st.write(f"Marker added: Lat {lat}, Lon {lon}, Time {formatted_time}")
-
-    return m
-
-if st.button("실시간 데이터 불러오기 (디버그)"):
-    now = datetime.now(korea_tz)
-    datetime_str = now.strftime("%Y%m%d%H%M")
+        if len(items) > 0:
+            st.write("5. 첫 번째 항목의 내용:")
+            for elem in items[0]:
+                st.write(f"{elem.tag}: {elem.text}")
+        
+        st.write("6. 데이터 필터링")
+        filtered_data = [
+            item for item in items
+            if yeongjong_polygon.contains(Point(float(item.find('wgs84Lon').text), float(item.find('wgs84Lat').text)))
+        ]
+        st.write(f"필터링 후 항목 수: {len(filtered_data)}")
+        
+        st.write("7. 지도 생성")
+        lightning_map = create_lightning_map(filtered_data)
+        st_folium(lightning_map, width=700, height=500)
+        
+        st.write("8. 차트 생성")
+        lightning_chart = create_lightning_chart(filtered_data)
+        if lightning_chart:
+            st.altair_chart(lightning_chart, use_container_width=True)
+        else:
+            st.warning("차트를 생성할 데이터가 없습니다.")
+        
+        st.write("디버깅이 완료되었습니다.")
     
-    st.write(f"Fetching data for: {datetime_str}")
-    all_data = debug_get_lightning_data(datetime_str)
-    
-    st.write("Filtering data...")
-    filtered_data = debug_filter_data(all_data)
-    
-    st.write("Creating map...")
-    lightning_map = debug_create_lightning_map(filtered_data)
-    st_folium(lightning_map, width=700, height=500)
+    except Exception as e:
+        st.error(f"오류 발생: {str(e)}")
+        st.write("상세 오류 정보:")
+        st.code(traceback.format_exc())
 
-    lightning_chart = create_lightning_chart(filtered_data)
-    if lightning_chart:
-        st.altair_chart(lightning_chart, use_container_width=True)
-    else:
-        st.warning("차트를 생성할 데이터가 없습니다.")
-
+if st.button("종합 디버그 실행"):
+    comprehensive_debug()
+    
 # 버튼 및 동작
 col1, col2, col3 = st.columns(3)
 
