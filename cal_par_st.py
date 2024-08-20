@@ -319,7 +319,7 @@ def main():
             align-items: center;
             justify-content: center;
             font-size: 16px;
-            padding: 8px 16px;
+            padding: 8px 14px;
             height: 40px;
             cursor: pointer;
             text-align: center;
