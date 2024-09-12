@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 from shapely.geometry import Polygon, Point
 import base64
 import json
-1
+
 # Load secrets
 try:
     API_KEY = st.secrets["api"]["API_KEY"]
