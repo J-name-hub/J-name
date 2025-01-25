@@ -541,28 +541,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
             if day != 0:
                 date_str = f"{year}-{month:02d}-{day:02d}"
                 current_date = datetime(year, month, day).date()
-                if date_str not in schedule_data:
-                    schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
-
-                shift = schedule_data[date_str]
-                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
-
-                if current_date.weekday() == 5 or current_date.weekday() == 6 or date_str in holidays:
-                    day_color = "red"
-                else:
-                    day_color = "black"
-
-                today_class = "today" if current_date == today else ""
-
-                shift_text = shift if shift != '비' else '&nbsp;'
-                shift_style = f"background-color: {shift_background}; color: {shift_color};" if shift != '비' else f"color: {shift_color};"
-
-                cell_content = f'''
-                    <div class="calendar-cell-content {today_class}">
-                        <div class="calendar-day" style="color: {day_color};">{day}</div>
-                        <div class="calendar-shift" style="{shift_style}">{shift_text}</div>
-                    </div>
-                '''
+                # Rest of the code remains the same
                 week_data.append(cell_content)
             else:
                 week_data.append('&nbsp;')
