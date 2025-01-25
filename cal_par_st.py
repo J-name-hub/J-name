@@ -207,25 +207,7 @@ def create_holiday_descriptions(holidays, month):
 @st.cache_data
 def generate_calendar(year, month):
     cal = calendar.Calendar(firstweekday=6)
-    month_days = cal.monthdayscalendar(year, month)
-
-    # Add dates from previous and next months
-    prev_month = month - 1 if month > 1 else 12
-    prev_year = year if month > 1 else year - 1
-    next_month = month + 1 if month < 12 else 1
-    next_year = year if month < 12 else year + 1
-
-    prev_month_days = cal.monthdayscalendar(prev_year, prev_month)
-    for week in prev_month_days:
-        if week[-1] != 0:
-            month_days.insert(0, week)
-
-    next_month_days = cal.monthdayscalendar(next_year, next_month)
-    for week in next_month_days:
-        if week[0] != 0:
-            month_days.append(week)
-
-    return month_days
+    return cal.monthdayscalendar(year, month)
 
 # 근무 조 설정
 shift_colors = {
@@ -533,25 +515,6 @@ def update_month(delta):
     st.session_state.month = new_date.month
     st.rerun()
 
-def generate_cell_content(day, shift, current_date, today, holidays):
-    if current_date.weekday() in [5, 6] or str(current_date) in holidays:
-        day_color = "red"
-    else:
-        day_color = "black"
-
-    today_class = "today" if current_date == today else ""
-
-    shift_text = shift if shift != '비' else '&nbsp;'
-    shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
-    shift_style = f"background-color: {shift_background}; color: {shift_color};" if shift != '비' else f"color: {shift_color};"
-
-    return f'''
-        <div class="calendar-cell-content {today_class}">
-            <div class="calendar-day" style="color: {day_color};">{day}</div>
-            <div class="calendar-shift" style="{shift_style}">{shift_text}</div>
-        </div>
-    '''
-
 def create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday):
     calendar_data = []
     for week in month_days:
@@ -560,14 +523,36 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
             if day != 0:
                 date_str = f"{year}-{month:02d}-{day:02d}"
                 current_date = datetime(year, month, day).date()
-                shift = schedule_data.get(date_str, get_shift(current_date, st.session_state.get("team", "A")))
-                cell_content = generate_cell_content(day, shift, current_date, today, holidays)
+                if date_str not in schedule_data:
+                    schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
+
+                shift = schedule_data[date_str]
+                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))  # 교대 근무 배경색
+
+                if current_date.weekday() == 5 or current_date.weekday() == 6 or date_str in holidays:
+                    day_color = "red"
+                else:
+                    day_color = "black"
+
+                # 오늘 날짜 테두리 처리
+                today_class = "today" if current_date == today else ""
+
+                shift_text = shift if shift != '비' else '&nbsp;'
+                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
+                shift_style = f"background-color: {shift_background}; color: {shift_color};" if shift != '비' else f"color: {shift_color};"
+
+                cell_content = f'''
+                    <div class="calendar-cell-content {today_class}">
+                        <div class="calendar-day" style="color: {day_color};">{day}</div>
+                        <div class="calendar-shift" style="{shift_style}">{shift_text}</div>
+                    </div>
+                '''
                 week_data.append(cell_content)
             else:
                 week_data.append('&nbsp;')
         calendar_data.append(week_data)
     return calendar_data
-    
+
 def display_calendar(calendar_data, year, month, holidays):
     # 년월 헤더 생성
     header_html = '<div class="calendar-container"><div class="calendar-header">'
