@@ -207,7 +207,27 @@ def create_holiday_descriptions(holidays, month):
 @st.cache_data
 def generate_calendar(year, month):
     cal = calendar.Calendar(firstweekday=6)
-    return cal.monthdayscalendar(year, month)
+    month_days = cal.monthdayscalendar(year, month)
+
+    # 이전 월과 다음 월의 날짜를 포함하도록 수정
+    prev_month = month - 1 if month > 1 else 12
+    prev_year = year if month > 1 else year - 1
+    next_month = month + 1 if month < 12 else 1
+    next_year = year if month < 12 else year + 1
+
+    # 이전 월 날짜 추가
+    prev_month_days = cal.monthdayscalendar(prev_year, prev_month)
+    for week in prev_month_days:
+        if week[-1] != 0:
+            month_days.insert(0, week)
+
+    # 다음 월 날짜 추가
+    next_month_days = cal.monthdayscalendar(next_year, next_month)
+    for week in next_month_days:
+        if week[0] != 0:
+            month_days.append(week)
+
+    return month_days
 
 # 근무 조 설정
 shift_colors = {
