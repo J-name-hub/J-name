@@ -533,6 +533,25 @@ def update_month(delta):
     st.session_state.month = new_date.month
     st.rerun()
 
+def generate_cell_content(day, shift, current_date, today, holidays):
+    if current_date.weekday() in [5, 6] or str(current_date) in holidays:
+        day_color = "red"
+    else:
+        day_color = "black"
+
+    today_class = "today" if current_date == today else ""
+
+    shift_text = shift if shift != '비' else '&nbsp;'
+    shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
+    shift_style = f"background-color: {shift_background}; color: {shift_color};" if shift != '비' else f"color: {shift_color};"
+
+    return f'''
+        <div class="calendar-cell-content {today_class}">
+            <div class="calendar-day" style="color: {day_color};">{day}</div>
+            <div class="calendar-shift" style="{shift_style}">{shift_text}</div>
+        </div>
+    '''
+
 def create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday):
     calendar_data = []
     for week in month_days:
@@ -541,33 +560,14 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
             if day != 0:
                 date_str = f"{year}-{month:02d}-{day:02d}"
                 current_date = datetime(year, month, day).date()
-                if date_str not in schedule_data:
-                    schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
-
-                shift = schedule_data[date_str]
-                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
-
-                if current_date.weekday() == 5 or current_date.weekday() == 6 or date_str in holidays:
-                    day_color = "red"
-                else:
-                    day_color = "black"
-
-                today_class = "today" if current_date == today else ""
-
-                shift_text = shift if shift != '비' else '&nbsp;'
-                shift_style = f"background-color: {shift_background}; color: {shift_color};" if shift != '비' else f"color: {shift_color};"
-
-                cell_content = f'''
-                    <div class="calendar-cell-content {today_class}">
-                        <div class="calendar-day" style="color: {day_color};">{day}</div>
-                        <div class="calendar-shift" style="{shift_style}">{shift_text}</div>
-                    </div>
-                '''
+                shift = schedule_data.get(date_str, get_shift(current_date, st.session_state.get("team", "A")))
+                cell_content = generate_cell_content(day, shift, current_date, today, holidays)
                 week_data.append(cell_content)
             else:
                 week_data.append('&nbsp;')
         calendar_data.append(week_data)
     return calendar_data
+    
 def display_calendar(calendar_data, year, month, holidays):
     # 년월 헤더 생성
     header_html = '<div class="calendar-container"><div class="calendar-header">'
