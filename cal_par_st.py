@@ -219,9 +219,9 @@ shift_colors = {
 
 shifts = ["주", "야", "비", "비"]
 shift_patterns = {
-    "A": shifts,
+    "C": shifts,
     "B": shifts[-1:] + shifts[:-1],
-    "C": shifts[-2:] + shifts[:-2],
+    "A": shifts[-2:] + shifts[:-2],
     "D": shifts[-3:] + shifts[:-3],
 }
 
