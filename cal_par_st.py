@@ -515,6 +515,9 @@ def update_month(delta):
     st.session_state.month = new_date.month
     st.rerun()
 
+# 특정 날짜에 연분홍색 배경 적용
+highlighted_dates = ["01-27", "03-01", "04-06"]
+
 def create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday):
     calendar_data = []
     for week in month_days:
@@ -522,23 +525,27 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
         for day in week:
             if day != 0:
                 date_str = f"{year}-{month:02d}-{day:02d}"
+                month_day_str = f"{month:02d}-{day:02d}"  # MM-DD 형식
                 current_date = datetime(year, month, day).date()
+
                 if date_str not in schedule_data:
                     schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
 
                 shift = schedule_data[date_str]
-                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))  # 교대 근무 배경색
 
-                if current_date.weekday() == 5 or current_date.weekday() == 6 or date_str in holidays:
-                    day_color = "red"
+                # 특정 날짜 배경색을 연분홍색으로 변경
+                if month_day_str in highlighted_dates:
+                    shift_background, shift_color = ("#FFB6C1", "black")  # 연분홍색 배경
                 else:
-                    day_color = "black"
+                    shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
+
+                # 주말 및 공휴일 색상 지정
+                day_color = "red" if current_date.weekday() in [5, 6] or date_str in holidays else "black"
 
                 # 오늘 날짜 테두리 처리
                 today_class = "today" if current_date == today else ""
 
                 shift_text = shift if shift != '비' else '&nbsp;'
-                shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
                 shift_style = f"background-color: {shift_background}; color: {shift_color};" if shift != '비' else f"color: {shift_color};"
 
                 cell_content = f'''
