@@ -534,10 +534,10 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 shift = schedule_data[date_str]
                 shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
 
-                # 특정 날짜(1/27, 3/1, 4/6) 배경을 연분홍색으로 설정
+                # 날짜 숫자 배경을 연분홍색으로 변경할 조건
                 day_background = "#FFB6C1" if month_day_str in highlighted_dates else "transparent"
 
-                # 주말 및 공휴일은 빨간색 글자로 표시
+                # 주말 및 공휴일 색상 지정
                 day_color = "red" if current_date.weekday() in [5, 6] or date_str in holidays else "black"
 
                 # 오늘 날짜 테두리 처리
@@ -548,9 +548,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
 
                 cell_content = f'''
                     <div class="calendar-cell-content {today_class}">
-                        <div class="calendar-day" style="background-color: {day_background}; color: {day_color}; border-radius: 5px; padding: 3px;">
-                            {day}
-                        </div>
+                        <div class="calendar-day" style="background-color: {day_background}; color: {day_color}; border-radius: 5px; padding: 2px 5px;">{day}</div>
                         <div class="calendar-shift" style="{shift_style}">{shift_text}</div>
                     </div>
                 '''
