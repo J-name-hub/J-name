@@ -549,7 +549,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 cell_content = f'''
                     <div class="calendar-cell-content {today_class}">
                         <div class="calendar-day" style="background-color: {day_background}; color: {day_color}; 
-                        border-radius: 5px; padding: 6px 0px; height: 26px; display: flex; align-items: center; justify-content: center;">
+                        border-radius: 5px; padding: 6px 12px; height: 26px; display: flex; align-items: center; justify-content: center;">
                             {day}
                         </div>
                         <div class="calendar-shift" style="{shift_style}">{shift_text}</div>
