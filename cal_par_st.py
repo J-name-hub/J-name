@@ -14,6 +14,9 @@ GITHUB_REPO = st.secrets["github"]["repo"]
 GITHUB_FILE_PATH = st.secrets["github"]["file_path"]
 GITHUB_TEAM_SETTINGS_PATH = "team_settings.json"
 
+# 스케줄 변경 비밀번호
+SCHEDULE_CHANGE_PASSWORD = st.secrets["security"]["password"]
+
 # 대한민국 공휴일 API 키
 HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
 
@@ -605,7 +608,7 @@ def sidebar_controls(year, month, schedule_data):
         submit_button = st.form_submit_button("설정 저장")
 
         if submit_button:
-            if password_for_settings == st.secrets["security"]["password"]:
+            if password_for_settings == SCHEDULE_CHANGE_PASSWORD:
                 if save_team_settings_to_github(team):
                     st.session_state.team = team
                     st.sidebar.success(f"{team}조로 저장되었습니다.")
@@ -650,7 +653,7 @@ def sidebar_controls(year, month, schedule_data):
                 change_submit_button = st.form_submit_button("스케줄 변경 저장")
 
                 if change_submit_button:
-                    if password == st.secrets["security"]["password"]:
+                    if password == SCHEDULE_CHANGE_PASSWORD:
                         schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
                         change_date_str = change_date.strftime("%Y-%m-%d")
                         schedule_data[change_date_str] = new_shift
