@@ -641,7 +641,8 @@ def sidebar_controls(year, month, schedule_data):
         st.session_state.month = selected_month
         st.rerun()
 
-    if st.sidebar.button("스케줄 변경 활성화"):
+    toggle_label = "스케줄 변경 비활성화" if st.session_state.expander_open else "스케줄 변경 활성화"
+    if st.sidebar.button(toggle_label):
         st.session_state.expander_open = not st.session_state.expander_open
 
     if st.session_state.expander_open:
