@@ -672,5 +672,7 @@ def sidebar_controls(year, month, schedule_data):
     # 근무일수 정보 표시
     display_workdays_info(selected_year, selected_month, st.session_state.team, schedule_data)
 
+    st.sidebar.title("조 순서 : AB>DA>CD>BC")
+
 if __name__ == "__main__":
     main()
