@@ -1,30 +1,22 @@
-# .github/workflows/wake-streamlit.yml
+# .github/workflows/keep-streamlit-alive.yml
 
-name: Wake Streamlit App
+name: Keep Streamlit Alive
 
 on:
   schedule:
-    - cron: '0 */4 * * *'
+    - cron: '0 */4 * * *'  # 매 4시간마다 UTC 기준
   workflow_dispatch:
 
 jobs:
-  wake_app:
+  keep_alive:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/setup-node@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          node-version: '20'
+          python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Keep Streamlit app alive
         run: |
-          npm install puppeteer
-
-      - name: Run puppeteer script
-        run: |
-          node wakeup.js
-
-      - name: Show result
-        run: echo "Wake up sequence completed."
-
-      - name: Debug URL
-        run: curl -I https://testforcal.streamlit.app
+          python keep_alive.py
