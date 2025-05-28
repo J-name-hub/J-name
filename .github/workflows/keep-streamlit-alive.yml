@@ -1,16 +1,30 @@
-# .github/workflows/keep-streamlit-alive.yml
+# .github/workflows/wake-streamlit.yml
 
-name: Keep Streamlit Alive
+name: Wake Streamlit App
 
 on:
   schedule:
-    - cron: '0 */4 * * *'  # 매일 4시간마다 UTC 기준 실행
+    - cron: '0 */4 * * *'
   workflow_dispatch:
 
 jobs:
-  keep_alive:
+  wake_app:
     runs-on: ubuntu-latest
     steps:
-      - name: Curl the Streamlit app
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
         run: |
-          curl -s -o /dev/null -w "%{http_code}\n" https://calendarforpar.streamlit.app
+          npm install puppeteer
+
+      - name: Run puppeteer script
+        run: |
+          node wakeup.js
+
+      - name: Show result
+        run: echo "Wake up sequence completed."
+
+      - name: Debug URL
+        run: curl -I https://testforcal.streamlit.app
