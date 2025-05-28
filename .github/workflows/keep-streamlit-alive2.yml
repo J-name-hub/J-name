@@ -1,0 +1,27 @@
+name: Visit Streamlit as Browser
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'  # 매 4시간마다 실행
+  workflow_dispatch:
+
+jobs:
+  keep_alive:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo (필수 아님, 있어도 OK)
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install Puppeteer
+        run: |
+          npm init -y
+          npm install puppeteer
+
+      - name: Run browser to visit Streamlit
+        run: node visit.js
