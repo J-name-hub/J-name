@@ -24,8 +24,7 @@ const puppeteer = require('puppeteer');
   }
 */
 
-  const buttonTestId = isOwner ? "wakeup-button-owner" : "wakeup-button-viewer";
-  const button = await page.$(`button[data-testid="${buttonTestId}"]`);
+  const button = await page.$('button[data-testid="wakeup-button-viewer"]');
   let clicked = false;
 
   if (button) {
