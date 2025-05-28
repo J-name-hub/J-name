@@ -26,7 +26,7 @@ const puppeteer = require('puppeteer');
   }
 
   // 조금 기다렸다가 종료 (필요 시)
-  await page.waitForTimeout(60000);
+  await new Promise(resolve => setTimeout(resolve, 60000));
 
   await browser.close();
 })();
