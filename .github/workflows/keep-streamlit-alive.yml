@@ -4,7 +4,7 @@ name: Keep Streamlit Alive
 
 on:
   schedule:
-    - cron: '0 */4 * * *'  # 매 4시간마다 UTC 기준
+    - cron: '0 */4 * * *'  # 매 4시간마다
   workflow_dispatch:
 
 jobs:
@@ -12,11 +12,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository ✅ 이 부분 추가
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: Keep Streamlit app alive
-        run: |
-          python keep_alive.py
+      - name: Run keep_alive.py
+        run: python keep_alive.py
