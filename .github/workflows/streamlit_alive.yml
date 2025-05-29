@@ -23,7 +23,7 @@ jobs:
       
       # 2. Node.js 환경 설정
       - name: Setup Node.js environment
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
           node-version: '20'
       
@@ -36,6 +36,3 @@ jobs:
       # 4. Puppeteer 스크립트 실행
       - name: Execute wake-up script
         run: node keep_streamlit_alive.js
-        env:
-          # Puppeteer 최적화를 위한 환경변수
-          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: false
