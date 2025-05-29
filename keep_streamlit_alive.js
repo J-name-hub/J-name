@@ -7,7 +7,7 @@ const puppeteer = require('puppeteer');
   });
 
   const page = await browser.newPage();   // 새 탭 열기
-  await page.goto('https://excelprocess.streamlit.app', { waitUntil: 'networkidle2' });   // 페이지 열기
+  await page.goto('https://calendarforpar.streamlit.app', { waitUntil: 'networkidle2' });   // 페이지 열기
   // console.log('✅ Visited Streamlit app as a browser!');
   
   let clicked = false;
