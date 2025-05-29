@@ -35,4 +35,4 @@ jobs:
       
       # 4. Puppeteer 스크립트 실행
       - name: Execute wake-up script
-        run: node keep_streamlit_alive.js
+        run: node streamlit_keep_alive.js
