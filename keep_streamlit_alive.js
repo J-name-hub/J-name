@@ -7,8 +7,9 @@ const puppeteer = require('puppeteer');
   });
 
   const page = await browser.newPage();   // 새 탭 열기
-  await page.goto('https://mymeal.streamlit.app', { waitUntil: 'networkidle2' });   // 페이지 열기
-
+  await page.goto('https://excelprocess.streamlit.app', { waitUntil: 'networkidle2' });   // 페이지 열기
+  // console.log('✅ Visited Streamlit app as a browser!');
+  
   let clicked = false;
 
   // 버튼 찾기
@@ -30,8 +31,7 @@ const puppeteer = require('puppeteer');
     }
   }
 
-  // 클릭 성공 시 60초 대기, 실패 시 1초 대기
-  await new Promise(resolve => setTimeout(resolve, clicked ? 60000 : 1000));
+
 
   await browser.close();   // 브라우저 종료
 
