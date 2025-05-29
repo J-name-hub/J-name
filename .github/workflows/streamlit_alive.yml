@@ -1,38 +1,20 @@
-# Streamlit 앱을 주기적으로 깨워서 sleeping 상태를 방지하는 워크플로우
-name: Streamlit Keep-Alive
-
-# 워크플로우 실행 조건
+name: Streamlit Alive
 on:
-  # 스케줄 실행: 매시간 정각에 자동 실행
   schedule:
-    - cron: '0 */1 * * *'  # 1시간마다 실행 (분 시 일 월 요일)
-  
-  # 수동 실행: GitHub Actions 탭에서 직접 실행 가능
+    - cron: '0 */1 * '  # 1시간마다 실행
   workflow_dispatch:
-
-# 작업 정의
 jobs:
-  streamlit-wakeup:
-    name: Wake up Streamlit apps
+  click_button:
     runs-on: ubuntu-latest
-    
     steps:
-      # 1. 저장소 코드 체크아웃
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      # 2. Node.js 환경 설정
-      - name: Setup Node.js environment
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
-      
-      # 3. 의존성 설치
-      - name: Install dependencies
+      - name: Install Puppeteer
         run: |
           npm init -y
           npm install puppeteer
-      
-      # 4. Puppeteer 스크립트 실행
-      - name: Execute wake-up script
+      - name: Run Puppeteer Script
         run: node keep_streamlit_alive.js
