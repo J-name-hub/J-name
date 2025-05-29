@@ -31,7 +31,10 @@ const puppeteer = require('puppeteer');
     }
   }
 
-
+  // 클릭 성공 시 60초 대기
+  if (clicked) {
+    await new Promise(resolve => setTimeout(resolve, 60000));
+  }
 
   await browser.close();   // 브라우저 종료
 
