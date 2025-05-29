@@ -1,4 +1,4 @@
-# 경로: streamlit_keep_alive.js
+// 경로: streamlit_keep_alive.js
 const puppeteer = require('puppeteer');
 
 // ========== 설정 상수 ==========
