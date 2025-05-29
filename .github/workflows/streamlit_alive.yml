@@ -2,7 +2,7 @@ name: Streamlit Alive
 
 on:
   schedule:
-    - cron: '0 */1 * * *'  # 매 1시간마다 실행
+    - cron: '0 */1 * * *'  # 1시간마다 실행
   workflow_dispatch:
 
 jobs:
@@ -17,16 +17,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Cache Node modules
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
       - name: Install Puppeteer
-        run: npm install puppeteer
+        run: |
+          npm init -y
+          npm install puppeteer
 
       - name: Run Puppeteer Script
         run: node keep_streamlit_alive.js
