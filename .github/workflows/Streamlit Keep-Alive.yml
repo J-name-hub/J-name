@@ -1,3 +1,4 @@
+# 경로: .github/workflows/Streamlit Keep-Alive.yml
 # Streamlit 앱을 주기적으로 깨워서 sleeping 상태를 방지하는 워크플로우
 name: Streamlit Keep-Alive
 
