@@ -15,7 +15,7 @@
     "trains": [1]
   },
   "A_options": {
-    "type": 1,
+    "type": "ReserveOption.GENERAL_ONLY",
     "pay": false
   }
 }
