@@ -42,13 +42,13 @@ choice = {
     "trains": [st.number_input("선택할 열차 인덱스", min_value=0, max_value=9, value=1)]
 }
 
-options = {
+A_options = {
     "type": st.selectbox("좌석 유형", ["GENERAL_ONLY", "GENERAL_FIRST", "SPECIAL_ONLY", "SPECIAL_FIRST"]),
     "pay": st.checkbox("카드결제")
 }
 
 if st.button("GitHub에 저장"):
-    config = {"rail_type": rail_type, "info": info, "choice": choice, "options": options}
+    config = {"rail_type": rail_type, "info": info, "choice": choice, "A_options": A_options}
 
     # GitHub 저장 처리
     g = Github(GITHUB_TOKEN)  # Streamlit secrets에 저장된 토큰
