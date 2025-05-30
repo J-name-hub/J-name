@@ -7,20 +7,35 @@ from github import Github
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
 
+
+STATIONS = {
+    "SRT": [
+        "수서", "동탄", "평택지제", "경주", "곡성", "공주", "광주송정", "구례구", "김천(구미)",
+        "나주", "남원", "대전", "동대구", "마산", "목포", "밀양", "부산", "서대구",
+        "순천", "여수EXPO", "여천", "오송", "울산(통도사)", "익산", "전주",
+        "정읍", "진영", "진주", "창원", "창원중앙", "천안아산", "포항"
+    ],
+    "KTX": [
+        "서울", "용산", "영등포", "광명", "수원", "천안아산", "오송", "대전", "서대전",
+        "김천구미", "동대구", "경주", "포항", "밀양", "구포", "부산", "울산(통도사)",
+        "마산", "창원중앙", "경산", "논산", "익산", "정읍", "광주송정", "목포",
+        "전주", "순천", "여수EXPO", "청량리", "강릉", "행신", "정동진"
+    ]
+}
 # rail_type 입력
-rail_type = st.selectbox("🚅 열차 종류 선택", ["SRT", "KTX"])
+rail_type = st.selectbox("🚅 열차 종류 선택", ["KTX", "SRT"])
 
 # 사용자 입력
 info = {
-    "departure": st.selectbox("출발역", ["서울", "수서"]),
-    "arrival": st.selectbox("도착역", ["대전", "동대구"]),
+    "departure": st.selectbox("출발역 선택", STATIONS[rail_type]),
+    "arrival": st.selectbox("도착역 선택", STATIONS[rail_type]),
     "date": st.date_input("날짜").strftime("%Y%m%d"),
     "time": f"{st.selectbox('출발 시각', [f'{i:02d}' for i in range(24)])}0000",
     "adult": st.number_input("성인 수", min_value=0, max_value=9, value=1),
     "child": st.number_input("어린이 수", min_value=0, max_value=9),
     "senior": st.number_input("경로 수", min_value=0, max_value=9),
-    "disability1to3": st.number_input("1~3급 장애인", min_value=0, max_value=9),
-    "disability4to6": st.number_input("4~6급 장애인", min_value=0, max_value=9)
+    "disability1to3": 0,
+    "disability4to6": 0
 }
 
 choice = {
