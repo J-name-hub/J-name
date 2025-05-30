@@ -23,11 +23,12 @@ STATIONS = {
     ]
 }
 
-seat_type_display = {
-    "seat_type.GENERAL_FIRST",
-    "seat_type.GENERAL_ONLY",
-    "seat_type.SPECIAL_FIRST",
-    "seat_type.SPECIAL_ONLY"
+# 좌석 유형 (enum 형식을 문자열로 저장)
+seat_type_options = {
+    "일반석 우선": "seat_type.GENERAL_FIRST",
+    "일반석만": "seat_type.GENERAL_ONLY",
+    "특실 우선": "seat_type.SPECIAL_FIRST",
+    "특실만": "seat_type.SPECIAL_ONLY"
 }
 
 # rail_type 입력
@@ -50,8 +51,10 @@ choice = {
     "trains": [st.number_input("선택할 열차 인덱스", min_value=0, max_value=9, value=1)]
 }
 
+# 옵션 선택
+seat_display = st.selectbox("좌석 유형", list(seat_type_options.keys()))
 A_options = {
-    "type": st.selectbox("좌석 유형", seat_type_display[]),
+    "type": seat_type_options[seat_display],
     "pay": st.checkbox("카드결제")
 }
 
