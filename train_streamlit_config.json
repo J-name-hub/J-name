@@ -17,7 +17,7 @@
     ]
   },
   "A_options": {
-    "type": seat_type.GENERAL_FIRST,
+    "type": "seat_type.GENERAL_FIRST",
     "pay": false
   }
 }
