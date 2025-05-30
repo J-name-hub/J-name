@@ -24,10 +24,10 @@ STATIONS = {
 }
 
 seat_type_display = {
-    "일반석_우선": "seat_type.GENERAL_FIRST",
-    "일반석만": "seat_type.GENERAL_ONLY",
-    "특실_우선": "seat_type.SPECIAL_FIRST",
-    "특실만": "seat_type.SPECIAL_ONLY"
+    "seat_type.GENERAL_FIRST",
+    "seat_type.GENERAL_ONLY",
+    "seat_type.SPECIAL_FIRST",
+    "seat_type.SPECIAL_ONLY"
 }
 
 # rail_type 입력
@@ -51,7 +51,7 @@ choice = {
 }
 
 A_options = {
-    "type": str(seat_type_display[st.selectbox("좌석 유형", list(seat_type_display.keys()))].__name__),
+    "type": st.selectbox("좌석 유형", seat_type_display[]),
     "pay": st.checkbox("카드결제")
 }
 
