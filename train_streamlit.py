@@ -51,7 +51,7 @@ choice = {
 }
 
 A_options = {
-    "type": seat_type_display[st.selectbox("좌석 유형", list(seat_type_display.keys()))],
+    "type": str(seat_type_display[st.selectbox("좌석 유형", list(seat_type_display.keys()))].__name__),
     "pay": st.checkbox("카드결제")
 }
 
