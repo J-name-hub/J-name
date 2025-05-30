@@ -98,24 +98,27 @@ A_options = {
     "pay": pay
 }
 
-if st.button("GitHub에 저장"):
-    config = {
-        "rail_type": rail_type,
-        "info": info,
-        "choice": choice,
-        "A_options": A_options
-    }
+# 버튼을 화면 너비 전체로 키우기
+col_btn = st.columns(1)[0]
+with col_btn:
+    if st.button("💾 GitHub에 저장", use_container_width=True):
+        config = {
+            "rail_type": rail_type,
+            "info": info,
+            "choice": choice,
+            "A_options": A_options
+        }
 
-    # GitHub 저장 처리
-    g = Github(GITHUB_TOKEN)
-    repo = g.get_repo(GITHUB_REPO)
-    file_path = "train_streamlit_config.json"
+        # GitHub 저장 처리
+        g = Github(GITHUB_TOKEN)
+        repo = g.get_repo(GITHUB_REPO)
+        file_path = "train_streamlit_config.json"
 
-    content = json.dumps(config, indent=2, ensure_ascii=False)
-    try:
-        contents = repo.get_contents(file_path)
-        repo.update_file(file_path, "update config", content, contents.sha)
-    except:
-        repo.create_file(file_path, "init config", content)
+        content = json.dumps(config, indent=2, ensure_ascii=False)
+        try:
+            contents = repo.get_contents(file_path)
+            repo.update_file(file_path, "update config", content, contents.sha)
+        except:
+            repo.create_file(file_path, "init config", content)
 
-    st.success("✅ GitHub 저장 완료!")
+        st.success("✅ GitHub 저장 완료!")
