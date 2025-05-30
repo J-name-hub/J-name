@@ -39,7 +39,8 @@ seat_type_options = {
     }
 }
 
-st.set_page_config(page_title="가상 티켓 예매", layout="wide")
+st.set_page_config(page_title="기차표 가상 예매", layout="wide")
+st.title("기차표 가상 예매")
 
 # 열차 종류 선택
 rail_type = st.selectbox("🚅 열차 종류 선택", ["KTX", "SRT"])
