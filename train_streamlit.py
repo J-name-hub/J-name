@@ -35,8 +35,7 @@ st.title("기차표 가상 예매")
 today = datetime.now()
 
 # 형식: "5월 31일 토요일"
-formatted_date = today.strftime("%-m월 %-d일 %A")  # 일부 시스템에서는 %-m, %-d 지원 안함
-# 윈도우 호환 (제로 패딩 제거가 안되는 경우 수동 처리)
+formatted_date = today.strftime("%-m월 %-d일 %A")
 formatted_date = f"{today.month}월 {today.day}일 {today.strftime('%A')}"
 
 # 요일 한글로 변환
@@ -55,7 +54,7 @@ formatted_date = f"{today.month}월 {today.day}일 {weekday_kor[today.strftime('
 with st.sidebar:
     st.markdown(
         f"""
-        <div style='text-align: center; font-size: 20px; font-weight: bold; padding: 10px 0;'>
+        <div style='text-align: center; font-size: 25px; font-weight: bold; padding: 10px 0;'>
             오늘은<br>{formatted_date}
         </div>
         """,
