@@ -85,7 +85,7 @@ col3, col4 = st.columns(2)
 with col3:
     date = st.date_input("날짜").strftime("%Y%m%d")
 with col4:
-    time = f"{st.selectbox('출발 시각', [f'{i:02d}' for i in range(24)], index=12)}0000"
+    time = f"{st.selectbox('출발 시각', [f'{i:02d}' for i in range(24)])}0000"
 
 # 성인 / 어린이 / 경로 수 → 같은 줄
 col5, col6, col7 = st.columns(3)
