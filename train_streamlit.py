@@ -53,7 +53,14 @@ formatted_date = f"{today.month}월 {today.day}일 {weekday_kor[today.strftime('
 
 # 사이드바에 표시
 with st.sidebar:
-    st.markdown(f"**{formatted_date}**")
+    st.markdown(
+        f"""
+        <div style='text-align: center; font-size: 20px; font-weight: bold; padding: 10px 0;'>
+            {formatted_date}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # 열차 종류 선택
 rail_type = st.selectbox("🚅 열차 종류 선택", ["KTX", "SRT"])
