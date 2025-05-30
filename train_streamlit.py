@@ -39,41 +39,76 @@ seat_type_options = {
     }
 }
 
-# rail_type 입력
+# 열차 종류 선택
 rail_type = st.selectbox("🚅 열차 종류 선택", ["KTX", "SRT"])
 
-# 사용자 입력
+# 출발역 / 도착역 → 같은 줄
+col1, col2 = st.columns(2)
+with col1:
+    departure = st.selectbox("출발역 선택", STATIONS[rail_type])
+with col2:
+    arrival = st.selectbox("도착역 선택", STATIONS[rail_type])
+
+# 날짜 / 출발 시각 → 같은 줄
+col3, col4 = st.columns(2)
+with col3:
+    date = st.date_input("날짜").strftime("%Y%m%d")
+with col4:
+    time = f"{st.selectbox('출발 시각', [f'{i:02d}' for i in range(24)])}0000"
+
+# 성인 / 어린이 / 경로 수 → 같은 줄
+col5, col6, col7 = st.columns(3)
+with col5:
+    adult = st.number_input("성인 수", min_value=0, max_value=9, value=1)
+with col6:
+    child = st.number_input("어린이 수", min_value=0, max_value=9)
+with col7:
+    senior = st.number_input("경로 수", min_value=0, max_value=9)
+
+# 열차 인덱스 / 좌석 유형 → 같은 줄
+col8, col9 = st.columns(2)
+with col8:
+    selected_train_index = st.number_input("선택할 열차 인덱스", min_value=0, max_value=9, value=1)
+with col9:
+    seat_type_selected = st.selectbox("좌석 유형", list(seat_type_options[rail_type].keys()))
+
+# 카드결제 옵션
+pay = st.checkbox("카드결제")
+
 info = {
-    "departure": st.selectbox("출발역 선택", STATIONS[rail_type]),
-    "arrival": st.selectbox("도착역 선택", STATIONS[rail_type]),
-    "date": st.date_input("날짜").strftime("%Y%m%d"),
-    "time": f"{st.selectbox('출발 시각', [f'{i:02d}' for i in range(24)])}0000",
-    "adult": st.number_input("성인 수", min_value=0, max_value=9, value=1),
-    "child": st.number_input("어린이 수", min_value=0, max_value=9),
-    "senior": st.number_input("경로 수", min_value=0, max_value=9),
+    "departure": departure,
+    "arrival": arrival,
+    "date": date,
+    "time": time,
+    "adult": adult,
+    "child": child,
+    "senior": senior,
     "disability1to3": 0,
     "disability4to6": 0
 }
 
 choice = {
-    "trains": [st.number_input("선택할 열차 인덱스", min_value=0, max_value=9, value=1)]
+    "trains": [selected_train_index]
 }
 
-# 옵션 선택
-seat_type_selected = st.selectbox("좌석 유형", list(seat_type_options[rail_type].keys()))
 seat_type_value = seat_type_options[rail_type][seat_type_selected]
 
 A_options = {
     "type": seat_type_value,
-    "pay": st.checkbox("카드결제")
+    "pay": pay
 }
 
 if st.button("GitHub에 저장"):
-    config = {"rail_type": rail_type, "info": info, "choice": choice, "A_options": A_options}
+    config = {
+        "rail_type": rail_type,
+        "info": info,
+        "choice": choice,
+        "A_options": A_options
+    }
 
     # GitHub 저장 처리
-    g = Github(GITHUB_TOKEN)  # Streamlit secrets에 저장된 토큰
-    repo = g.get_repo(GITHUB_REPO)  # 본인 계정/repo 이름
+    g = Github(GITHUB_TOKEN)
+    repo = g.get_repo(GITHUB_REPO)
     file_path = "train_streamlit_config.json"
 
     content = json.dumps(config, indent=2, ensure_ascii=False)
