@@ -22,6 +22,14 @@ STATIONS = {
         "전주", "순천", "여수EXPO", "청량리", "강릉", "행신", "정동진"
     ]
 }
+
+seat_type_display = {
+    "일반석_우선": seat_type.GENERAL_FIRST,
+    "일반석만": seat_type.GENERAL_ONLY,
+    "특실_우선": seat_type.SPECIAL_FIRST,
+    "특실만": seat_type.SPECIAL_ONLY
+}
+
 # rail_type 입력
 rail_type = st.selectbox("🚅 열차 종류 선택", ["KTX", "SRT"])
 
@@ -43,7 +51,7 @@ choice = {
 }
 
 A_options = {
-    "type": st.selectbox("좌석 유형", ["GENERAL_ONLY", "GENERAL_FIRST", "SPECIAL_ONLY", "SPECIAL_FIRST"]),
+    "type": seat_type_display[st.selectbox("좌석 유형", list(seat_type_display.keys()))],
     "pay": st.checkbox("카드결제")
 }
 
