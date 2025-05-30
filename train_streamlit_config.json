@@ -1,9 +1,10 @@
 {
+  "rail_type": "SRT",
   "info": {
     "departure": "서울",
     "arrival": "대전",
     "date": "20250530",
-    "time": "055900",
+    "time": "000000",
     "adult": 1,
     "child": 0,
     "senior": 0,
