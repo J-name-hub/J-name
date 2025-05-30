@@ -24,20 +24,7 @@ STATIONS = {
 }
 
 # 좌석 유형
-seat_type_options = {
-    "SRT": {
-        "일반석_우선": "SeatType.GENERAL_FIRST",
-        "일반석만": "SeatType.GENERAL_ONLY",
-        "특실_우선": "SeatType.SPECIAL_FIRST",
-        "특실만": "SeatType.SPECIAL_ONLY"
-    },
-    "KTX": {
-        "일반석_우선": "ReserveOption.GENERAL_FIRST",
-        "일반석만": "ReserveOption.GENERAL_ONLY",
-        "특실_우선": "ReserveOption.SPECIAL_FIRST",
-        "특실만": "ReserveOption.SPECIAL_ONLY"
-    }
-}
+seat_type_options = st.secrets["seat_type_options"]
 
 st.set_page_config(page_title="기차표 가상 예매", layout="wide")
 st.title("기차표 가상 예매")
