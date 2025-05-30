@@ -17,6 +17,6 @@
   },
   "options": {
     "type": "GENERAL_ONLY",
-    "pay": true
+    "pay": false
   }
 }
