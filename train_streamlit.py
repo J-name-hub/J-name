@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 import base64
+from datetime import datetime
 from github import Github
 
 # Streamlit 설정
@@ -31,7 +32,9 @@ st.title("기차표 가상 예매")
 
 # 🔧 사이드바 입력
 with st.sidebar:
-    st.header("")
+    st.header("📅 현재 시각")
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    st.markdown(f"**{current_time}**")
 
 # 열차 종류 선택
 rail_type = st.selectbox("🚅 열차 종류 선택", ["KTX", "SRT"])
