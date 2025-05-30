@@ -54,7 +54,7 @@ formatted_date = f"{today.month}월 {today.day}일 {weekday_kor[today.strftime('
 with st.sidebar:
     st.markdown(
         f"""
-        <div style='text-align: center; font-size: 25px; font-weight: bold; padding: 10px 0;'>
+        <div style='text-align: center; font-size: 25px; font-weight: bold; color: blue; padding: 10px 0;'>
             오늘은<br>{formatted_date}
         </div>
         """,
