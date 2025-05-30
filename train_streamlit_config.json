@@ -12,9 +12,7 @@
     "disability4to6": 0
   },
   "choice": {
-    "trains": [
-      1
-    ]
+    "trains": [1]
   },
   "A_options": {
     "type": 1,
