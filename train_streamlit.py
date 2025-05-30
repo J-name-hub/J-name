@@ -25,10 +25,18 @@ STATIONS = {
 
 # 좌석 유형
 seat_type_options = {
-    "일반석_우선": "1",
-    "일반석만": "2",
-    "특실_우선": "3",
-    "특실만": "4"
+    "SRT": {
+        "일반석_우선": "SeatType.GENERAL_FIRST",
+        "일반석만": "SeatType.GENERAL_ONLY",
+        "특실_우선": "SeatType.SPECIAL_FIRST",
+        "특실만": "SeatType.SPECIAL_ONLY"
+    },
+    "KTX": {
+        "일반석_우선": "ReserveOption.GENERAL_FIRST",
+        "일반석만": "ReserveOption.GENERAL_ONLY",
+        "특실_우선": "ReserveOption.SPECIAL_FIRST",
+        "특실만": "ReserveOption.SPECIAL_ONLY"
+    }
 }
 
 # rail_type 입력
@@ -52,8 +60,8 @@ choice = {
 }
 
 # 옵션 선택
-seat_type_selected = st.selectbox("좌석 유형", list(seat_type_options.keys()))
-seat_type_value = seat_type_options[seat_type_selected]
+seat_type_selected = st.selectbox("좌석 유형", list(seat_type_options[rail_type].keys()))
+seat_type_value = seat_type_options[rail_type][seat_type_selected]
 
 A_options = {
     "type": seat_type_value,
