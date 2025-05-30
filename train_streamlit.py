@@ -2,6 +2,7 @@ import streamlit as st
 import json
 import base64
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from github import Github
 
 # Streamlit 설정
@@ -32,7 +33,7 @@ st.title("기차표 가상 예매")
 
 # 🔧 사이드바 입력
 # 현재 날짜 가져오기
-today = datetime.now()
+today = datetime.now(ZoneInfo("Asia/Seoul"))
 
 # 형식: "5월 31일 토요일"
 formatted_date = today.strftime("%-m월 %-d일 %A")
