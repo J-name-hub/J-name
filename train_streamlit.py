@@ -58,7 +58,7 @@ with col7:
 # 열차 인덱스 / 좌석 유형 → 같은 줄
 col8, col9 = st.columns(2)
 with col8:
-    selected_train_index = st.number_input("선택할 열차 인덱스", min_value=0, max_value=9, value=1)
+    selected_train_index = st.number_input("선택할 열차 인덱스", min_value=1, max_value=15)
 with col9:
     seat_type_selected = st.selectbox("좌석 유형", list(seat_type_options[rail_type].keys()))
 
@@ -78,7 +78,7 @@ info = {
 }
 
 choice = {
-    "trains": [selected_train_index]
+    "trains": [int(selected_train_index) - 1]
 }
 
 seat_type_value = seat_type_options[rail_type][seat_type_selected]
