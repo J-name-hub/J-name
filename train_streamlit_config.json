@@ -1,1 +1,23 @@
-
+{
+  "rail_type": "KTX",
+  "info": {
+    "departure": "서울",
+    "arrival": "대전",
+    "date": "20250611",
+    "time": "100000",
+    "adult": 1,
+    "child": 0,
+    "senior": 0,
+    "disability1to3": 0,
+    "disability4to6": 0
+  },
+  "choice": {
+    "trains": [
+      1
+    ]
+  },
+  "A_options": {
+    "type": "ReserveOption.GENERAL_FIRST",
+    "pay": false
+  }
+}
