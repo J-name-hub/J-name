@@ -24,10 +24,10 @@ STATIONS = {
 }
 
 seat_type_display = {
-    "일반석_우선": seat_type.GENERAL_FIRST,
-    "일반석만": seat_type.GENERAL_ONLY,
-    "특실_우선": seat_type.SPECIAL_FIRST,
-    "특실만": seat_type.SPECIAL_ONLY
+    "일반석_우선": "seat_type.GENERAL_FIRST",
+    "일반석만": "seat_type.GENERAL_ONLY",
+    "특실_우선": "seat_type.SPECIAL_FIRST",
+    "특실만": "seat_type.SPECIAL_ONLY"
 }
 
 # rail_type 입력
@@ -64,6 +64,11 @@ if st.button("GitHub에 저장"):
     file_path = "train_streamlit_config.json"
 
     content = json.dumps(config, indent=2, ensure_ascii=False)
+
+    # 🔥 seat_type 앞뒤의 " 제거
+    for v in seat_type_display.values():
+        content = content.replace(f'"{v}"', v)
+        
     try:
         contents = repo.get_contents(file_path)
         repo.update_file(file_path, "update config", content, contents.sha)
