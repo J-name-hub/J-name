@@ -3,10 +3,10 @@ import json
 import base64
 from github import Github
 
-# GitHub 설정
+# Streamlit 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
-
+CHANGE_PASSWORD = st.secrets["security"]["password"]
 
 STATIONS = {
     "SRT": [
@@ -101,27 +101,33 @@ A_options = {
     "pay": pay
 }
 
+# 비밀번호 입력
+password_input = st.text_input("🔐 암호 입력", type="password")
+
 # 버튼을 화면 너비 전체로 키우기
 col_btn = st.columns(1)[0]
 with col_btn:
     if st.button("💾 GitHub에 저장", use_container_width=True):
-        config = {
-            "rail_type": rail_type,
-            "info": info,
-            "choice": choice,
-            "A_options": A_options
-        }
+        if password_input != CHANGE_PASSWORD:
+            st.error("❌ 암호가 일치하지 않습니다.")
+        else:
+            config = {
+                "rail_type": rail_type,
+                "info": info,
+                "choice": choice,
+                "A_options": A_options
+            }
 
-        # GitHub 저장 처리
-        g = Github(GITHUB_TOKEN)
-        repo = g.get_repo(GITHUB_REPO)
-        file_path = "train_streamlit_config.json"
+            # GitHub 저장 처리
+            g = Github(GITHUB_TOKEN)
+            repo = g.get_repo(GITHUB_REPO)
+            file_path = "train_streamlit_config.json"
 
-        content = json.dumps(config, indent=2, ensure_ascii=False)
-        try:
-            contents = repo.get_contents(file_path)
-            repo.update_file(file_path, "update config", content, contents.sha)
-        except:
-            repo.create_file(file_path, "init config", content)
+            content = json.dumps(config, indent=2, ensure_ascii=False)
+            try:
+                contents = repo.get_contents(file_path)
+                repo.update_file(file_path, "update config", content, contents.sha)
+            except:
+                repo.create_file(file_path, "init config", content)
 
-        st.success("✅ GitHub 저장 완료!")
+            st.success("✅ GitHub 저장 완료!")
