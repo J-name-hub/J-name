@@ -17,7 +17,7 @@
     ]
   },
   "A_options": {
-    "type": "1",
+    "type": "ReserveOption.GENERAL_FIRST",
     "pay": false
   }
 }
