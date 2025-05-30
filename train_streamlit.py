@@ -55,14 +55,14 @@ with st.sidebar:
     st.markdown(
         f"""
         <div style='text-align: center; font-size: 25px; font-weight: bold; color: #4da6ff; padding: 10px 0;'>
-            오늘은<br>{formatted_date}
+            오늘은<br>{formatted_date}<br>🚅
         </div>
         """,
         unsafe_allow_html=True
     )
 
 # 열차 종류 선택
-rail_type = st.selectbox("🚅 열차 종류 선택", ["KTX", "SRT"])
+rail_type = st.selectbox("열차 종류 선택", ["KTX", "SRT"])
 
 # 출발역 / 도착역 → 같은 줄
 col1, col2 = st.columns(2)
