@@ -31,10 +31,29 @@ st.set_page_config(page_title="기차표 가상 예매", layout="wide")
 st.title("기차표 가상 예매")
 
 # 🔧 사이드바 입력
+# 현재 날짜 가져오기
+today = datetime.now()
+
+# 형식: "5월 31일 토요일"
+formatted_date = today.strftime("%-m월 %-d일 %A")  # 일부 시스템에서는 %-m, %-d 지원 안함
+# 윈도우 호환 (제로 패딩 제거가 안되는 경우 수동 처리)
+formatted_date = f"{today.month}월 {today.day}일 {today.strftime('%A')}"
+
+# 요일 한글로 변환
+weekday_kor = {
+    'Monday': '월요일',
+    'Tuesday': '화요일',
+    'Wednesday': '수요일',
+    'Thursday': '목요일',
+    'Friday': '금요일',
+    'Saturday': '토요일',
+    'Sunday': '일요일'
+}
+formatted_date = f"{today.month}월 {today.day}일 {weekday_kor[today.strftime('%A')]}"
+
+# 사이드바에 표시
 with st.sidebar:
-    st.header("📅 현재 시각")
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    st.markdown(f"**{current_time}**")
+    st.markdown(f"**{formatted_date}**")
 
 # 열차 종류 선택
 rail_type = st.selectbox("🚅 열차 종류 선택", ["KTX", "SRT"])
