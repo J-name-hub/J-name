@@ -17,7 +17,7 @@
     ]
   },
   "A_options": {
-    "type": 1,
+    "type": "1",
     "pay": false
   }
 }
