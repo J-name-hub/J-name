@@ -7,12 +7,15 @@ from github import Github
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
 
+# rail_type 입력
+rail_type = st.selectbox("🚅 열차 종류 선택", ["SRT", "KTX"])
+
 # 사용자 입력
 info = {
     "departure": st.selectbox("출발역", ["서울", "수서"]),
     "arrival": st.selectbox("도착역", ["대전", "동대구"]),
     "date": st.date_input("날짜").strftime("%Y%m%d"),
-    "time": st.time_input("출발 시간").strftime("%H%M%S"),
+    "time": f"{st.selectbox('출발 시각', [f'{i:02d}' for i in range(24)])}0000",
     "adult": st.number_input("성인 수", min_value=0, max_value=9, value=1),
     "child": st.number_input("어린이 수", min_value=0, max_value=9),
     "senior": st.number_input("경로 수", min_value=0, max_value=9),
@@ -30,7 +33,7 @@ options = {
 }
 
 if st.button("GitHub에 저장"):
-    config = {"info": info, "choice": choice, "options": options}
+    config = {"rail_type": rail_type, "info": info, "choice": choice, "options": options}
 
     # GitHub 저장 처리
     g = Github(GITHUB_TOKEN)  # Streamlit secrets에 저장된 토큰
