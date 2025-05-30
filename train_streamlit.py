@@ -3,6 +3,10 @@ import json
 import base64
 from github import Github
 
+# GitHub 설정
+GITHUB_TOKEN = st.secrets["github"]["token"]
+GITHUB_REPO = st.secrets["github"]["repo"]
+
 # 사용자 입력
 info = {
     "departure": st.selectbox("출발역", ["서울", "수서"]),
@@ -29,8 +33,8 @@ if st.button("GitHub에 저장"):
     config = {"info": info, "choice": choice, "options": options}
 
     # GitHub 저장 처리
-    g = Github(st.secrets["GITHUB_TOKEN"])  # Streamlit secrets에 저장된 토큰
-    repo = g.get_repo("J-name/repo")  # 본인 계정/repo 이름
+    g = Github(GITHUB_TOKEN)  # Streamlit secrets에 저장된 토큰
+    repo = g.get_repo(GITHUB_REPO)  # 본인 계정/repo 이름
     file_path = "train_streamlit_config.json"
 
     content = json.dumps(config, indent=2, ensure_ascii=False)
