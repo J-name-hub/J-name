@@ -56,7 +56,7 @@ with st.sidebar:
     st.markdown(
         f"""
         <div style='text-align: center; font-size: 20px; font-weight: bold; padding: 10px 0;'>
-            {formatted_date}
+            오늘은<br>{formatted_date}
         </div>
         """,
         unsafe_allow_html=True
