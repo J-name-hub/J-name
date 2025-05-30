@@ -18,6 +18,6 @@
   },
   "A_options": {
     "type": "ReserveOption.GENERAL_FIRST",
-    "pay": false
+    "pay": true
   }
 }
