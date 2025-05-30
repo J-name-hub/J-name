@@ -1,8 +1,8 @@
 {
-  "rail_type": "SRT",
+  "rail_type": "KTX",
   "info": {
-    "departure": "수서",
-    "arrival": "동탄",
+    "departure": "서울",
+    "arrival": "천안아산",
     "date": "20250531",
     "time": "110000",
     "adult": 1,
@@ -13,11 +13,11 @@
   },
   "choice": {
     "trains": [
-      0
+      3
     ]
   },
   "A_options": {
-    "type": "SeatType.GENERAL_FIRST",
+    "type": "ReserveOption.GENERAL_FIRST",
     "pay": false
   }
 }
