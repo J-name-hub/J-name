@@ -69,7 +69,15 @@ with st.sidebar:
         """,
         unsafe_allow_html=True
     )
-
+    st.markdown(
+        f"""
+        <div style='text-align: center; font-size: 25px; font-weight: bold; color: #4da6ff; padding: 10px 0;'>
+            <br>지금 만나러 갑니다
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
 # 열차 종류 선택
 rail_type = st.selectbox("열차 종류 선택", ["KTX", "SRT"])
 
