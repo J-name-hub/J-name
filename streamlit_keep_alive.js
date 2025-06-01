@@ -3,10 +3,11 @@ const puppeteer = require('puppeteer');
 
 // ========== 설정 상수 ==========
 const STREAMLIT_URLS = [
-  'https://yeongjongdonakreomap.streamlit.app',
+  'https://calendarforpar.streamlit.app',
   'https://train-config.streamlit.app'
-  // 'https://calendarforpar.streamlit.app'
+  // 
   // 추가 URL이 있으면 여기에 추가
+  // 'https://yeongjongdonakreomap.streamlit.app'
   // 'https://another-app.streamlit.app'
 ];
 const WAIT_TIME = 60000; // 60초 (버튼 클릭 후 앱이 완전히 깨어날 때까지 대기)
