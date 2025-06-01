@@ -5,7 +5,7 @@ const puppeteer = require('puppeteer');
 const STREAMLIT_URLS = [
   'https://calendarforpar.streamlit.app',
   'https://train-config.streamlit.app',
-  'https://yeongjongdonakreomap.streamlit.app/'
+  'https://yeongjongdonakreomap.streamlit.app'
   // 추가 URL이 있으면 여기에 추가
   // 'https://another-app.streamlit.app'
 ];
