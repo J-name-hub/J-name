@@ -3,8 +3,8 @@ const puppeteer = require('puppeteer');
 
 // ========== 설정 상수 ==========
 const STREAMLIT_URLS = [
-  'https://train-config.streamlit.app',
-  'https://yeongjongdonakreomap.streamlit.app'
+  'https://yeongjongdonakreomap.streamlit.app',
+  'https://train-config.streamlit.app'
   // 'https://calendarforpar.streamlit.app'
   // 추가 URL이 있으면 여기에 추가
   // 'https://another-app.streamlit.app'
