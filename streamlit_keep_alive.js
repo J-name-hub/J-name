@@ -63,7 +63,7 @@ async function clickWakeUpButton(page) {
   }
 
   // 2차 시도: 텍스트로 버튼 찾기
-  const allButtons = await page.$('button');
+  const allButtons = await page.$$('button');
   for (const button of allButtons) {
     const text = await page.evaluate(el => el.textContent, button);
     if (text.trim() === WAKEUP_BUTTON_TEXT) {
