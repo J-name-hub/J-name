@@ -22,17 +22,32 @@ HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
 
 # GitHub에서 스케줄 파일 로드
 @st.cache_data(ttl=3600)
-def load_schedule(cache_key=None):
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
+def load_shift_schedule_from_github():
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/shift_schedule.json"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+
     try:
         response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        content = response.json()
-        file_content = base64.b64decode(content['content']).decode('utf-8')
-        return json.loads(file_content), content['sha']
+        if response.status_code == 200:
+            content = response.json()
+            file_content = base64.b64decode(content['content']).decode('utf-8')
+            return json.loads(file_content), content['sha']
+        elif response.status_code == 404:
+            # 파일이 없으면 기본 구조로 생성
+            empty_data = {}
+            encoded_content = base64.b64encode(json.dumps(empty_data).encode()).decode()
+            create_data = {
+                "message": "Create empty shift_schedule.json",
+                "content": encoded_content,
+                "branch": "main"  # 필요시 변경
+            }
+            create_response = requests.put(url, headers=headers, json=create_data)
+            create_response.raise_for_status()
+            return empty_data, None
+        else:
+            response.raise_for_status()
     except requests.RequestException as e:
-        st.error(f"GitHub에서 스케줄 로드 실패: {e}")
+        st.error(f"GitHub에서 shift_schedule.json 로드 실패: {e}")
         return {}, None
 
 # GitHub에 스케줄 파일 저장
@@ -503,7 +518,7 @@ def main():
     except Exception as e:
         st.error(f"공휴일 데이터 로드 중 오류 발생: {e}")
         holidays = {}
-    schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
+    schedule_data, sha = load_shift_schedule_from_github()
 
     if not schedule_data:
         schedule_data = {}
@@ -537,7 +552,7 @@ def main():
     st.markdown('</div>', unsafe_allow_html=True)
 
     # GitHub에서 스케줄 데이터 로드
-    schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
+    schedule_data, sha = load_shift_schedule_from_github()
 
     sidebar_controls(year, month, schedule_data)
 
@@ -725,7 +740,7 @@ def sidebar_controls(year, month, schedule_data):
 
                 if change_submit_button:
                     if password == SCHEDULE_CHANGE_PASSWORD:
-                        schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
+                        schedule_data, sha = load_shift_schedule_from_github()
                         change_date_str = change_date.strftime("%Y-%m-%d")
                         schedule_data[change_date_str] = new_shift
                         if save_schedule(schedule_data, sha):
