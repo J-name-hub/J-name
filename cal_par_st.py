@@ -250,7 +250,7 @@ def get_shift(target_date, team_history, schedule_data):
     return pattern[delta_days % len(pattern)]
 
 # 근무일수 계산 함수
-def calculate_workdays(year, month, team, schedule_data):
+def calculate_workdays(year, month, team_history, schedule_data):
     total_workdays = 0
     cal = generate_calendar(year, month)
     for week in cal:
@@ -267,7 +267,7 @@ def calculate_workdays(year, month, team, schedule_data):
                     total_workdays += 1
     return total_workdays
 
-def calculate_workdays_until_date(year, month, team, schedule_data, end_date):
+def calculate_workdays_until_date(year, month, team_history, schedule_data, end_date):
     total_workdays = 0
     cal = generate_calendar(year, month)
     for week in cal:
@@ -287,8 +287,8 @@ def calculate_workdays_until_date(year, month, team, schedule_data, end_date):
     return total_workdays
 
 # 사이드바에 표시할 근무일수 정보를 업데이트합니다
-def display_workdays_info(year, month, team, schedule_data):
-    total_workdays = calculate_workdays(year, month, team, schedule_data)
+def display_workdays_info(year, month, team_history, schedule_data):
+    total_workdays = calculate_workdays(year, month, team_history, schedule_data)
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
 
     # 현재 월의 첫날과 마지막 날을 구합니다
@@ -477,8 +477,8 @@ def main():
         st.session_state.expander_open = False
 
     # GitHub에서 팀 설정 로드 및 세션 상태 업데이트
-    if "team" not in st.session_state:
-        st.session_state.team = load_team_settings_from_github()
+    if "team_history" not in st.session_state:
+        st.session_state.team_history = load_team_settings_from_github()
 
     year = st.session_state.year
     month = st.session_state.month
@@ -621,7 +621,14 @@ def sidebar_controls(year, month, schedule_data):
     team_history = load_team_settings_from_github()  # 리스트 반환됨
     
     with st.sidebar.form(key='team_settings_form'):
-        team = st.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
+        available_teams = ["A", "B", "C", "D"]
+        default_team = "A"
+        try:
+            default_team = team_history[-1]["team"]  # 가장 최근 조
+        except (KeyError, IndexError, TypeError):
+            default_team = "A"
+
+        team = st.selectbox("조 선택", available_teams, index=available_teams.index(default_team))
         change_start_date = st.date_input("적용 시작일", datetime.today(), key="start_date")
         password_for_settings = st.text_input("암호 입력", type="password", key="settings_password")
         submit_button = st.form_submit_button("설정 저장")
@@ -697,7 +704,7 @@ def sidebar_controls(year, month, schedule_data):
                         st.error("암호가 일치하지 않습니다.")
 
     # 근무일수 정보 표시
-    display_workdays_info(selected_year, selected_month, st.session_state.team, schedule_data)
+    display_workdays_info(selected_year, selected_month, team_history, schedule_data)
 
     st.sidebar.title("조 순서 : AB>DA>CD>BC")
 
