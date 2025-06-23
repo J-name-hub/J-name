@@ -67,23 +67,31 @@ def load_team_settings_from_github():
         response.raise_for_status()
         content = response.json()
         file_content = base64.b64decode(content['content']).decode('utf-8')
+
         try:
             settings = json.loads(file_content)
-            return settings.get("team_history", [{"start_date": "2000-01-03", "team": "A"}])
+            # ✅ team_history가 없으면 기본값 리턴
+            if "team_history" in settings:
+                return settings["team_history"]
+            elif "team" in settings:
+                return [{"start_date": "2000-01-03", "team": settings["team"]}]
+            else:
+                return [{"start_date": "2000-01-03", "team": "A"}]
         except json.JSONDecodeError:
-            st.error("팀 설정 파일의 내용이 유효한 JSON 형식이 아닙니다. 기본값 'A'를 사용합니다.")
-            return "A"
+            st.error("팀 설정 파일이 유효한 JSON이 아닙니다. 기본값 사용.")
+            return [{"start_date": "2000-01-03", "team": "A"}]
+
     except requests.RequestException as e:
         if e.response is not None and e.response.status_code == 404:
             st.warning("팀 설정 파일을 찾을 수 없습니다. 새 파일을 생성합니다.")
-            if save_team_settings_to_github("A"):
-                return "A"
+            if save_team_settings_to_github([{"start_date": "2000-01-03", "team": "A"}]):
+                return [{"start_date": "2000-01-03", "team": "A"}]
             else:
-                st.error("팀 설정 파일 생성에 실패했습니다. 기본값 'A'를 사용합니다.")
-                return "A"
+                st.error("팀 설정 파일 생성 실패. 기본값 사용.")
+                return [{"start_date": "2000-01-03", "team": "A"}]
         else:
             st.error(f"GitHub에서 팀 설정 로드 실패: {e}")
-            return "A"
+            return [{"start_date": "2000-01-03", "team": "A"}]
 
 # GitHub에 팀설정 파일 저장
 def save_team_settings_to_github(team_history):
@@ -94,17 +102,11 @@ def save_team_settings_to_github(team_history):
     }
 
     try:
-        # 현재 파일 내용 확인
         response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            current_content = response.json()
-            sha = current_content['sha']
-        else:
-            sha = None
+        sha = response.json()['sha'] if response.status_code == 200 else None
 
-        # 새 내용 생성 및 인코딩
-        new_content = json.dumps({"team_history": team_history}, indent=2)
-        encoded_content = base64.b64encode(new_content.encode()).decode()
+        content_dict = {"team_history": team_history}
+        encoded_content = base64.b64encode(json.dumps(content_dict, indent=2).encode()).decode()
 
         data = {
             "message": "Update team settings",
