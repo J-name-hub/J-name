@@ -45,13 +45,13 @@ def check_alarm_conditions(shift_data, alarm_schedule, now, today_str):
     # 주간 알림
     if today_shift in ("주", "올"):
         for item in alarm_schedule.get("weekday", []):
-            if item.get("shift") == "주" and is_time_near(item["time"], now):
+            if is_time_near(item["time"], now):
                 messages.append(item["message"])
 
     # 야간 알림
     if today_shift in ("야", "올"):
         for item in alarm_schedule.get("night", []):
-            if item.get("shift") == "야" and is_time_near(item["time"], now):
+            if is_time_near(item["time"], now):
                 messages.append(item["message"])
 
     return messages
