@@ -636,23 +636,6 @@ def sidebar_controls(year, month, schedule_data):
     st.sidebar.title("근무 조 설정")
     with st.sidebar.form(key='team_settings_form'):
         team = st.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
-        password_for_settings = st.text_input("암호 입력", type="password", key="settings_password")
-        submit_button = st.form_submit_button("설정 저장")
-
-        if submit_button:
-            if password_for_settings == SCHEDULE_CHANGE_PASSWORD:
-                if save_team_settings_to_github(team):
-                    st.session_state.team = team
-                    st.sidebar.success(f"{team}조로 저장되었습니다.")
-                    st.rerun()
-                else:
-                    st.sidebar.error("조 설정 저장에 실패했습니다.")
-            else:
-                st.sidebar.error("암호가 일치하지 않습니다.")
-
-    st.sidebar.title("근무 조 설정")
-    with st.sidebar.form(key='team_settings_form'):
-        team = st.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
         start_date = st.date_input("적용 시작일 선택")
         password_for_settings = st.text_input("암호 입력", type="password", key="settings_password")
         submit_button = st.form_submit_button("설정 저장")
