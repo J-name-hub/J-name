@@ -302,7 +302,7 @@ def display_workdays_info(year, month, team_history, schedule_data):
     elif first_date > today:  # 미래 월
         remaining_workdays = total_workdays
     else:  # 현재 월
-        workdays_until_today = calculate_workdays_until_date(year, month, team, schedule_data, today)
+        workdays_until_today = calculate_workdays_until_date(year, month, team_history, schedule_data, today)
         remaining_workdays = total_workdays - workdays_until_today
 
     st.sidebar.title(f"**월 근무일수 : {total_workdays}일**")
