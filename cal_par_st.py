@@ -674,40 +674,5 @@ def sidebar_controls(year, month, schedule_data):
 
     st.sidebar.title("조 순서 : AB>DA>CD>BC")
 
-if st.text_input("접근 암호를 입력하세요", type="password") == SCHEDULE_CHANGE_PASSWORD:
-    st.success("접근 허용됨")
-
-    st.subheader("주간 알림 설정")
-    weekday_time = st.time_input("주간 알림 시간", value=datetime.strptime("08:00", "%H:%M").time())
-    weekday_msg = st.text_input("주간 알림 메시지", value="🟡 주간 근무 시작! 좋은 하루 되세요.")
-
-    st.subheader("야간 알림 설정")
-    night_time = st.time_input("야간 알림 시간", value=datetime.strptime("20:00", "%H:%M").time())
-    night_msg = st.text_input("야간 알림 메시지", value="⚫ 야간 근무 시작! 안전 유의하세요.")
-
-    st.subheader("특정일 알림 설정")
-    custom_dates = st.date_input("알림 날짜 선택", [])
-    custom_time = st.time_input("특정일 알림 시간", value=datetime.strptime("09:00", "%H:%M").time())
-    custom_msg = st.text_input("특정일 알림 메시지", value="📌 일정 알림")
-
-    # 저장 버튼
-    if st.button("알림 저장"):
-        alarm_data = {
-            "weekday": {
-                "time": weekday_time.strftime("%H:%M"),
-                "message": weekday_msg
-            },
-            "night": {
-                "time": night_time.strftime("%H:%M"),
-                "message": night_msg
-            },
-            "custom": [
-                {"date": d.strftime("%Y-%m-%d"), "time": custom_time.strftime("%H:%M"), "message": custom_msg}
-                for d in custom_dates
-            ]
-        }
-        save_alarm_schedule(alarm_data)  # GitHub에 저장
-        st.success("알림 설정이 저장되었습니다.")
-
 if __name__ == "__main__":
     main()
