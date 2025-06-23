@@ -513,7 +513,8 @@ def main():
     yesterday = today - timedelta(days=1)
 
     month_days = generate_calendar(year, month)
-    calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
+    team_history = [{"start_date": "2000-01-01", "team": st.session_state.team}]  # 기본값 설정
+    calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday, team_history)
     display_calendar(calendar_data, year, month, holidays)
 
     # 버튼 컨테이너 시작
@@ -549,7 +550,7 @@ def update_month(delta):
 # 특정 날짜에 연분홍색 배경 적용
 highlighted_dates = ["01-27", "03-01", "04-06"]
 
-def create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday):
+def create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday, team_history):
     calendar_data = []
     for week in month_days:
         week_data = []
@@ -560,7 +561,10 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 current_date = datetime(year, month, day).date()
 
                 if date_str not in schedule_data:
-                    schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
+                    team_history = st.session_state.get("team_history", [{"start_date": "2000-01-01", "team": st.session_state.team}])
+                    manual_schedule = schedule_data
+                    schedule_data[date_str] = get_shift(current_date, team_history, manual_schedule)
+
 
                 shift = schedule_data[date_str]
                 shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
