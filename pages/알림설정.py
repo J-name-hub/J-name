@@ -114,19 +114,19 @@ if st.button("➕ 특정일 알림 추가"):
     })
     st.session_state.rerun_needed = True
 
-# ✅ 삭제 처리
-if st.session_state.get("delete_key"):
-    section, index = st.session_state.delete_key
+# 삭제 처리
+if st.session_state.get("alarm_delete_key"):
+    section, index = st.session_state.alarm_delete_key
     if section == "weekday" and index < len(weekday_alarms):
         weekday_alarms.pop(index)
     elif section == "night" and index < len(night_alarms):
         night_alarms.pop(index)
     elif section == "custom" and index < len(custom_alarms):
         custom_alarms.pop(index)
-    st.session_state.delete_key = None
-    st.session_state.rerun_needed = True
+    st.session_state.alarm_delete_key = None
+    st.session_state.alarm_rerun_needed = True
 
-# ✅ 저장 후 rerun 요청
+# 저장 버튼
 if st.button("💾 전체 저장"):
     to_save = {
         "weekday": [{"time": a["time"].strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
@@ -137,11 +137,11 @@ if st.button("💾 전체 저장"):
         st.success("✔ GitHub에 저장되었습니다.")
     else:
         st.error("❌ 저장 실패")
-    st.session_state.rerun_needed = True  # 저장 성공 후에도 rerun 필요
+    st.session_state.alarm_rerun_needed = True
 
-# ✅ 맨 마지막 줄 (렌더링 완료 후 rerun만 실행)
-if st.session_state.get("rerun_needed", False):
-    st.session_state.rerun_needed = False
+# 가장 마지막에만 rerun 실행
+if st.session_state.get("alarm_rerun_needed"):
+    st.session_state.alarm_rerun_needed = False
     st.experimental_rerun()
 
 
