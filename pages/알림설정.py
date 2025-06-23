@@ -74,7 +74,7 @@ for i, alarm in enumerate(weekday_alarms):
 
 if st.button("➕ 주간 알림 추가"):
     weekday_alarms.append({"time": "08:00", "message": ""})
-    st.session_state.rerun_needed = True
+    st.session_state.alarm_rerun_needed = True
 
 # ✅ 야간 알림
 st.subheader("🌙 야간 알림")
@@ -90,7 +90,7 @@ for i, alarm in enumerate(night_alarms):
 
 if st.button("➕ 야간 알림 추가"):
     night_alarms.append({"time": "20:00", "message": ""})
-    st.session_state.rerun_needed = True
+    st.session_state.alarm_rerun_needed = True
 
 # ✅ 특정일 알림
 st.subheader("📅 특정일 알림")
@@ -112,7 +112,7 @@ if st.button("➕ 특정일 알림 추가"):
         "time": "09:00",
         "message": ""
     })
-    st.session_state.rerun_needed = True
+    st.session_state.alarm_rerun_needed = True
 
 # 삭제 처리
 if st.session_state.get("alarm_delete_key"):
