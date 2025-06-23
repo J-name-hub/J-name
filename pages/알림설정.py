@@ -87,9 +87,9 @@ with st.form("add_weekday_alarm"):
             "message": new_wd_msg
         })
         to_save = {
-            "weekday": weekday_alarms,
-            "night": night_alarms,
-            "custom": custom_alarms
+            "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
+            "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
+            "custom": [{"date": a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
         }
         if save_alarm_schedule(to_save, sha):
             st.success("✔ 저장되었습니다.")
