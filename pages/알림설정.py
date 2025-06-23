@@ -48,11 +48,6 @@ if not st.session_state.auth_alarm:
     else:
         st.stop()
 
-# 폼 외부
-if st.session_state.get("alarm_updated"):
-    st.session_state["alarm_updated"] = False
-    st.experimental_rerun()
-
 # GitHub 데이터 불러오기
 data, sha = load_alarm_schedule()
 weekday_alarms = data.get("weekday", [])
@@ -143,7 +138,8 @@ if st.session_state.get("delete_key"):
     st.session_state.delete_key = None
     st.session_state.rerun_needed = True
 
-# ✅ 안전한 rerun
-if st.session_state.get("rerun_needed"):
+# ✅ 안전한 rerun 처리 (맨 마지막!)
+if st.session_state.get("rerun_needed") or st.session_state.get("alarm_updated"):
     st.session_state.rerun_needed = False
+    st.session_state.alarm_updated = False
     st.experimental_rerun()
