@@ -121,7 +121,7 @@ def load_team_settings_from_github():
             return "A"
 
 # GitHub에 팀설정 파일 저장
-def save_team_settings_to_github(team):
+def save_team_settings_to_github(team, start_date):
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_TEAM_SETTINGS_PATH}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
@@ -129,7 +129,7 @@ def save_team_settings_to_github(team):
     }
 
     try:
-        # 기존 내용 확인
+        # 기존 파일 로드
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             content = response.json()
@@ -141,22 +141,20 @@ def save_team_settings_to_github(team):
             sha = None
             team_history = []
 
-        # 오늘 날짜로 새 기록 추가
-        today_str = datetime.now().strftime("%Y-%m-%d")
+        # 새 팀 기록 추가
         team_history.append({
-            "start_date": today_str,
+            "start_date": start_date.strftime("%Y-%m-%d"),
             "team": team
         })
 
-        # 날짜 순 정렬
+        # 날짜 기준으로 정렬
         team_history.sort(key=lambda x: x["start_date"])
 
-        # 새 내용 인코딩
         new_content = json.dumps({"team_history": team_history}, ensure_ascii=False)
         encoded_content = base64.b64encode(new_content.encode()).decode()
 
         data = {
-            "message": f"Update team settings with new entry: {team} from {today_str}",
+            "message": f"Update team settings with new entry: {team} from {start_date.strftime('%Y-%m-%d')}",
             "content": encoded_content,
             "sha": sha
         }
@@ -168,6 +166,21 @@ def save_team_settings_to_github(team):
     except requests.RequestException as e:
         st.error(f"GitHub에 팀 설정 저장 실패: {e}")
         return False
+
+def load_team_history_from_github():
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_TEAM_SETTINGS_PATH}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            content = response.json()
+            file_content = base64.b64decode(content['content']).decode('utf-8')
+            data = json.loads(file_content)
+            return data.get("team_history", [])
+        else:
+            return [{"start_date": "2000-01-01", "team": "A"}]
+    except:
+        return [{"start_date": "2000-01-01", "team": "A"}]
 
 # 공휴일 정보 로드
 @st.cache_data(ttl=86400)
@@ -307,12 +320,12 @@ def calculate_workdays(year, month, team, schedule_data):
                 if date_str in schedule_data:
                     shift = schedule_data[date_str]
                 else:
-                    shift = get_shift(current_date, team)
+                    shift = get_shift(current_date, team_history, schedule_data)
                 if shift in ["주", "야", "올"]:  # 근무일 계산
                     total_workdays += 1
     return total_workdays
 
-def calculate_workdays_until_date(year, month, team, schedule_data, end_date):
+def calculate_workdays_until_date(year, month, team_history, schedule_data, end_date):
     total_workdays = 0
     cal = generate_calendar(year, month)
     for week in cal:
@@ -326,14 +339,14 @@ def calculate_workdays_until_date(year, month, team, schedule_data, end_date):
                 if date_str in schedule_data:
                     shift = schedule_data[date_str]
                 else:
-                    shift = get_shift(current_date, team)
+                    shift = get_shift(current_date, team_history, schedule_data)
                 if shift in ["주", "야", "올"]:  # 근무일 계산
                     total_workdays += 1
     return total_workdays
 
 # 사이드바에 표시할 근무일수 정보를 업데이트합니다
-def display_workdays_info(year, month, team, schedule_data):
-    total_workdays = calculate_workdays(year, month, team, schedule_data)
+def display_workdays_info(year, month, team_history, schedule_data):
+    total_workdays = calculate_workdays(year, month, team_history, schedule_data)
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
 
     # 현재 월의 첫날과 마지막 날을 구합니다
@@ -347,7 +360,7 @@ def display_workdays_info(year, month, team, schedule_data):
     elif first_date > today:  # 미래 월
         remaining_workdays = total_workdays
     else:  # 현재 월
-        workdays_until_today = calculate_workdays_until_date(year, month, team, schedule_data, today)
+        workdays_until_today = calculate_workdays_until_date(year, month, team_history, schedule_data, today)
         remaining_workdays = total_workdays - workdays_until_today
 
     st.sidebar.title(f"**월 근무일수 : {total_workdays}일**")
@@ -543,7 +556,7 @@ def main():
     yesterday = today - timedelta(days=1)
 
     month_days = generate_calendar(year, month)
-    team_history = [{"start_date": "2000-01-01", "team": st.session_state.team}]  # 기본값 설정
+    team_history = load_team_history_from_github()
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday, team_history)
     display_calendar(calendar_data, year, month, holidays)
 
@@ -769,7 +782,8 @@ def sidebar_controls(year, month, schedule_data):
                         st.error("암호가 일치하지 않습니다.")
 
     # 근무일수 정보 표시
-    display_workdays_info(selected_year, selected_month, st.session_state.team, schedule_data)
+    team_history = load_team_history_from_github()
+    display_workdays_info(year, month, team_history, schedule_data)
 
     st.sidebar.title("조 순서 : AB>DA>CD>BC")
 
