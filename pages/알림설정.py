@@ -142,6 +142,6 @@ if st.button("💾 전체 저장"):
 # 가장 마지막에만 rerun 실행
 if st.session_state.get("alarm_rerun_needed"):
     st.session_state.alarm_rerun_needed = False
-    st.experimental_rerun()
+    st.rerun()
 
 
