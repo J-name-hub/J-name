@@ -72,9 +72,18 @@ for i, alarm in enumerate(weekday_alarms):
         if st.button("삭제", key=f"wd_del_{i}"):
             st.session_state.delete_key = ("weekday", i)
 
-if st.button("➕ 주간 알림 추가"):
-    weekday_alarms.append({"time": "08:00", "message": ""})
-    st.session_state.alarm_rerun_needed = True
+# 🔸 주간 알림 입력 폼 (새 항목 추가용)
+st.markdown("#### ➕ 새 주간 알림 추가")
+with st.form("add_weekday_alarm"):
+    new_wd_time = st.time_input("시간 선택", value=datetime.strptime("08:00", "%H:%M").time())
+    new_wd_msg = st.text_input("알림 메시지")
+    submitted = st.form_submit_button("➕ 추가")
+    if submitted:
+        weekday_alarms.append({
+            "time": new_wd_time.strftime("%H:%M"),
+            "message": new_wd_msg
+        })
+        st.session_state.alarm_rerun_needed = True
 
 # ✅ 야간 알림
 st.subheader("🌙 야간 알림")
@@ -88,9 +97,17 @@ for i, alarm in enumerate(night_alarms):
         if st.button("삭제", key=f"nt_del_{i}"):
             st.session_state.delete_key = ("night", i)
 
-if st.button("➕ 야간 알림 추가"):
-    night_alarms.append({"time": "20:00", "message": ""})
-    st.session_state.alarm_rerun_needed = True
+st.markdown("#### ➕ 새 야간 알림 추가")
+with st.form("add_night_alarm"):
+    new_nt_time = st.time_input("시간 선택", value=datetime.strptime("20:00", "%H:%M").time())
+    new_nt_msg = st.text_input("알림 메시지")
+    submitted = st.form_submit_button("➕ 추가")
+    if submitted:
+        night_alarms.append({
+            "time": new_nt_time.strftime("%H:%M"),
+            "message": new_nt_msg
+        })
+        st.session_state.alarm_rerun_needed = True
 
 # ✅ 특정일 알림
 st.subheader("📅 특정일 알림")
@@ -106,13 +123,19 @@ for i, alarm in enumerate(custom_alarms):
         if st.button("삭제", key=f"cs_del_{i}"):
             st.session_state.delete_key = ("custom", i)
 
-if st.button("➕ 특정일 알림 추가"):
-    custom_alarms.append({
-        "date": datetime.today().strftime("%Y-%m-%d"),
-        "time": "09:00",
-        "message": ""
-    })
-    st.session_state.alarm_rerun_needed = True
+st.markdown("#### ➕ 새 특정일 알림 추가")
+with st.form("add_custom_alarm"):
+    new_cs_date = st.date_input("날짜 선택", value=datetime.today())
+    new_cs_time = st.time_input("시간 선택", value=datetime.strptime("09:00", "%H:%M").time())
+    new_cs_msg = st.text_input("알림 메시지")
+    submitted = st.form_submit_button("➕ 추가")
+    if submitted:
+        custom_alarms.append({
+            "date": new_cs_date.strftime("%Y-%m-%d"),
+            "time": new_cs_time.strftime("%H:%M"),
+            "message": new_cs_msg
+        })
+        st.session_state.alarm_rerun_needed = True
 
 # 삭제 처리
 if st.session_state.get("alarm_delete_key"):
