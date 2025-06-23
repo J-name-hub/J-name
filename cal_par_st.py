@@ -22,32 +22,17 @@ HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
 
 # GitHub에서 스케줄 파일 로드
 @st.cache_data(ttl=3600)
-def load_shift_schedule_from_github():
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/shift_schedule.json"
+def load_schedule(cache_key=None):
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-
     try:
         response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            content = response.json()
-            file_content = base64.b64decode(content['content']).decode('utf-8')
-            return json.loads(file_content), content['sha']
-        elif response.status_code == 404:
-            # 파일이 없으면 기본 구조로 생성
-            empty_data = {}
-            encoded_content = base64.b64encode(json.dumps(empty_data).encode()).decode()
-            create_data = {
-                "message": "Create empty shift_schedule.json",
-                "content": encoded_content,
-                "branch": "main"  # 필요시 변경
-            }
-            create_response = requests.put(url, headers=headers, json=create_data)
-            create_response.raise_for_status()
-            return empty_data, None
-        else:
-            response.raise_for_status()
+        response.raise_for_status()
+        content = response.json()
+        file_content = base64.b64decode(content['content']).decode('utf-8')
+        return json.loads(file_content), content['sha']
     except requests.RequestException as e:
-        st.error(f"GitHub에서 shift_schedule.json 로드 실패: {e}")
+        st.error(f"GitHub에서 스케줄 로드 실패: {e}")
         return {}, None
 
 # GitHub에 스케줄 파일 저장
@@ -84,44 +69,24 @@ def load_team_settings_from_github():
         file_content = base64.b64decode(content['content']).decode('utf-8')
         try:
             settings = json.loads(file_content)
-            team_history = settings.get("team_history")
-            if not team_history:
-                return "A"
-            # 가장 최근 시작일 기준으로 team 반환
-            today = datetime.now().date()
-            applicable = [entry for entry in team_history if datetime.strptime(entry["start_date"], "%Y-%m-%d").date() <= today]
-            if applicable:
-                return sorted(applicable, key=lambda x: x["start_date"])[-1]["team"]
-            return "A"
+            return settings.get("team_history", [{"start_date": "2000-01-03", "team": "A"}])
         except json.JSONDecodeError:
             st.error("팀 설정 파일의 내용이 유효한 JSON 형식이 아닙니다. 기본값 'A'를 사용합니다.")
             return "A"
-
     except requests.RequestException as e:
         if e.response is not None and e.response.status_code == 404:
-            st.warning("팀 설정 파일을 찾을 수 없습니다. 기본값으로 새로 생성합니다.")
-            initial_data = {
-                "team_history": [
-                    {"start_date": "2000-01-01", "team": "A"}
-                ]
-            }
-            encoded_content = base64.b64encode(json.dumps(initial_data).encode()).decode()
-            create_data = {
-                "message": "Initialize team_settings with default A team",
-                "content": encoded_content
-            }
-            create_response = requests.put(url, headers=headers, json=create_data)
-            if create_response.status_code in [200, 201]:
+            st.warning("팀 설정 파일을 찾을 수 없습니다. 새 파일을 생성합니다.")
+            if save_team_settings_to_github("A"):
                 return "A"
             else:
-                st.error("팀 설정 초기 생성에 실패했습니다. 기본값 'A' 사용")
+                st.error("팀 설정 파일 생성에 실패했습니다. 기본값 'A'를 사용합니다.")
                 return "A"
         else:
             st.error(f"GitHub에서 팀 설정 로드 실패: {e}")
             return "A"
 
 # GitHub에 팀설정 파일 저장
-def save_team_settings_to_github(team, start_date):
+def save_team_settings_to_github(team_history):
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_TEAM_SETTINGS_PATH}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
@@ -129,58 +94,40 @@ def save_team_settings_to_github(team, start_date):
     }
 
     try:
-        # 기존 파일 로드
+        # 현재 파일 내용 확인
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
-            content = response.json()
-            sha = content['sha']
-            decoded_content = base64.b64decode(content['content']).decode('utf-8')
-            current_data = json.loads(decoded_content)
-            team_history = current_data.get("team_history", [])
+            current_content = response.json()
+            sha = current_content['sha']
         else:
             sha = None
-            team_history = []
 
-        # 새 팀 기록 추가
-        team_history.append({
-            "start_date": start_date.strftime("%Y-%m-%d"),
-            "team": team
-        })
-
-        # 날짜 기준으로 정렬
-        team_history.sort(key=lambda x: x["start_date"])
-
-        new_content = json.dumps({"team_history": team_history}, ensure_ascii=False)
+        # 새 내용 생성 및 인코딩
+        new_content = json.dumps({"team_history": team_history}, indent=2)
         encoded_content = base64.b64encode(new_content.encode()).decode()
 
         data = {
-            "message": f"Update team settings with new entry: {team} from {start_date.strftime('%Y-%m-%d')}",
+            "message": "Update team settings",
             "content": encoded_content,
             "sha": sha
         }
 
-        save_response = requests.put(url, headers=headers, json=data)
-        save_response.raise_for_status()
+        response = requests.put(url, headers=headers, json=data)
+        response.raise_for_status()
         return True
-
     except requests.RequestException as e:
         st.error(f"GitHub에 팀 설정 저장 실패: {e}")
         return False
 
-def load_team_history_from_github():
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_TEAM_SETTINGS_PATH}"
-    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    try:
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            content = response.json()
-            file_content = base64.b64decode(content['content']).decode('utf-8')
-            data = json.loads(file_content)
-            return data.get("team_history", [])
+def get_team_for_date(target_date, team_history):
+    sorted_history = sorted(team_history, key=lambda x: x["start_date"])
+    current_team = sorted_history[0]["team"]
+    for record in sorted_history:
+        if target_date >= datetime.strptime(record["start_date"], "%Y-%m-%d").date():
+            current_team = record["team"]
         else:
-            return [{"start_date": "2000-01-01", "team": "A"}]
-    except:
-        return [{"start_date": "2000-01-01", "team": "A"}]
+            break
+    return current_team
 
 # 공휴일 정보 로드
 @st.cache_data(ttl=86400)
@@ -292,22 +239,16 @@ shift_patterns = {
 }
 
 # 날짜에 해당하는 근무 조를 얻는 함수
-def get_shift(target_date, team_history, manual_schedule):
-    date_str = target_date.strftime("%Y-%m-%d")
-
-    if date_str in manual_schedule:
-        return manual_schedule[date_str]
-
-    applicable = [entry for entry in team_history if datetime.strptime(entry["start_date"], "%Y-%m-%d").date() <= target_date]
-    team = sorted(applicable, key=lambda x: x["start_date"])[-1]["team"] if applicable else "A"
-
+@st.cache_data
+def get_shift(target_date, team_history, schedule_data):
+    team = get_team_for_date(target_date, team_history)
     base_date = datetime(2000, 1, 3).date()
     delta_days = (target_date - base_date).days
     pattern = shift_patterns[team]
     return pattern[delta_days % len(pattern)]
 
 # 근무일수 계산 함수
-def calculate_workdays(year, month, team_history, schedule_data):
+def calculate_workdays(year, month, team, schedule_data):
     total_workdays = 0
     cal = generate_calendar(year, month)
     for week in cal:
@@ -324,7 +265,7 @@ def calculate_workdays(year, month, team_history, schedule_data):
                     total_workdays += 1
     return total_workdays
 
-def calculate_workdays_until_date(year, month, team_history, schedule_data, end_date):
+def calculate_workdays_until_date(year, month, team, schedule_data, end_date):
     total_workdays = 0
     cal = generate_calendar(year, month)
     for week in cal:
@@ -344,8 +285,8 @@ def calculate_workdays_until_date(year, month, team_history, schedule_data, end_
     return total_workdays
 
 # 사이드바에 표시할 근무일수 정보를 업데이트합니다
-def display_workdays_info(year, month, team_history, schedule_data):
-    total_workdays = calculate_workdays(year, month, team_history, schedule_data)
+def display_workdays_info(year, month, team, schedule_data):
+    total_workdays = calculate_workdays(year, month, team, schedule_data)
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
 
     # 현재 월의 첫날과 마지막 날을 구합니다
@@ -359,7 +300,7 @@ def display_workdays_info(year, month, team_history, schedule_data):
     elif first_date > today:  # 미래 월
         remaining_workdays = total_workdays
     else:  # 현재 월
-        workdays_until_today = calculate_workdays_until_date(year, month, team_history, schedule_data, today)
+        workdays_until_today = calculate_workdays_until_date(year, month, team, schedule_data, today)
         remaining_workdays = total_workdays - workdays_until_today
 
     st.sidebar.title(f"**월 근무일수 : {total_workdays}일**")
@@ -545,7 +486,7 @@ def main():
     except Exception as e:
         st.error(f"공휴일 데이터 로드 중 오류 발생: {e}")
         holidays = {}
-    schedule_data, sha = load_shift_schedule_from_github()
+    schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
 
     if not schedule_data:
         schedule_data = {}
@@ -555,8 +496,7 @@ def main():
     yesterday = today - timedelta(days=1)
 
     month_days = generate_calendar(year, month)
-    team_history = load_team_history_from_github()
-    calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday, team_history)
+    calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data, year, month, holidays)
 
     # 버튼 컨테이너 시작
@@ -579,7 +519,7 @@ def main():
     st.markdown('</div>', unsafe_allow_html=True)
 
     # GitHub에서 스케줄 데이터 로드
-    schedule_data, sha = load_shift_schedule_from_github()
+    schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
 
     sidebar_controls(year, month, schedule_data)
 
@@ -592,7 +532,7 @@ def update_month(delta):
 # 특정 날짜에 연분홍색 배경 적용
 highlighted_dates = ["01-27", "03-01", "04-06"]
 
-def create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday, team_history):
+def create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday):
     calendar_data = []
     for week in month_days:
         week_data = []
@@ -603,10 +543,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 current_date = datetime(year, month, day).date()
 
                 if date_str not in schedule_data:
-                    team_history = st.session_state.get("team_history", [{"start_date": "2000-01-01", "team": st.session_state.team}])
-                    manual_schedule = schedule_data
-                    schedule_data[date_str] = get_shift(current_date, team_history, manual_schedule)
-
+                    schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
 
                 shift = schedule_data[date_str]
                 shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
@@ -676,53 +613,29 @@ def display_calendar(calendar_data, year, month, holidays):
 
 def sidebar_controls(year, month, schedule_data):
     st.sidebar.title("근무 조 설정")
+
+    # team_history 로드
+    team_history = load_team_settings_from_github()  # 리스트 반환됨
+    
     with st.sidebar.form(key='team_settings_form'):
         team = st.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
-        start_date = st.date_input("적용 시작일 선택")
+        change_start_date = st.date_input("적용 시작일", datetime.today(), key="start_date")
         password_for_settings = st.text_input("암호 입력", type="password", key="settings_password")
         submit_button = st.form_submit_button("설정 저장")
 
         if submit_button:
             if password_for_settings == SCHEDULE_CHANGE_PASSWORD:
-                # 기존 team_history 불러오기
-                url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/team_settings.json"
-                headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-                response = requests.get(url, headers=headers)
-
-                if response.status_code == 200:
-                    content = response.json()
-                    current_sha = content['sha']
-                    decoded_content = base64.b64decode(content['content']).decode('utf-8')
-                    current_data = json.loads(decoded_content)
-                    team_history = current_data.get("team_history", [])
-                else:
-                    current_sha = None
-                    team_history = []
-
-                # 새 기록 추가
-                team_history.append({
-                    "start_date": start_date.strftime("%Y-%m-%d"),
+                new_entry = {
+                    "start_date": change_start_date.strftime("%Y-%m-%d"),
                     "team": team
-                })
-                # 날짜 순 정렬
-                team_history.sort(key=lambda x: x['start_date'])
-
-                # 저장
-                new_content = json.dumps({"team_history": team_history}, ensure_ascii=False)
-                encoded_content = base64.b64encode(new_content.encode()).decode()
-
-                data = {
-                    "message": f"Update team settings with new entry: {team} from {start_date}",
-                    "content": encoded_content,
-                    "sha": current_sha
                 }
+                team_history.append(new_entry)
+                # 중복 방지 및 정렬
+                team_history = sorted({(t['start_date'], t['team']) for t in team_history})
+                team_history = [{"start_date": d, "team": t} for d, t in team_history]
 
-                save_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/team_settings.json"
-                save_response = requests.put(save_url, headers=headers, json=data)
-
-                if save_response.status_code in [200, 201]:
-                    st.session_state.team = team
-                    st.sidebar.success(f"{start_date}부터 {team}조로 저장되었습니다.")
+                if save_team_settings_to_github(team_history):
+                    st.sidebar.success(f"{change_start_date.strftime('%Y-%m-%d')}부터 {team}조로 저장되었습니다.")
                     st.rerun()
                 else:
                     st.sidebar.error("조 설정 저장에 실패했습니다.")
@@ -767,7 +680,7 @@ def sidebar_controls(year, month, schedule_data):
 
                 if change_submit_button:
                     if password == SCHEDULE_CHANGE_PASSWORD:
-                        schedule_data, sha = load_shift_schedule_from_github()
+                        schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
                         change_date_str = change_date.strftime("%Y-%m-%d")
                         schedule_data[change_date_str] = new_shift
                         if save_schedule(schedule_data, sha):
@@ -781,8 +694,7 @@ def sidebar_controls(year, month, schedule_data):
                         st.error("암호가 일치하지 않습니다.")
 
     # 근무일수 정보 표시
-    team_history = load_team_history_from_github()
-    display_workdays_info(year, month, team_history, schedule_data)
+    display_workdays_info(selected_year, selected_month, st.session_state.team, schedule_data)
 
     st.sidebar.title("조 순서 : AB>DA>CD>BC")
 
