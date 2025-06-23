@@ -73,7 +73,19 @@ for i, alarm in enumerate(weekday_alarms):
         alarm["message"] = st.text_input(f"주간메시지{i}", value=alarm["message"], key=f"wd_msg_{i}")
     with col3:
         if st.button("삭제", key=f"wd_del_{i}"):
-            st.session_state.delete_key = ("weekday", i)
+            weekday_alarms.pop(i)
+
+            to_save = {
+                "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
+                "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
+                "custom": [{"date": a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
+            }
+
+            if save_alarm_schedule(to_save, sha):
+                st.success("✔ 삭제 후 저장 완료")
+            else:
+                st.error("❌ 삭제 저장 실패")
+            st.rerun()
 
 # 🔸 주간 알림 입력 폼 (새 항목 추가용)
 st.markdown("#### ➕ 새 주간 알림 추가")
