@@ -307,7 +307,7 @@ def get_shift(target_date, team_history, manual_schedule):
     return pattern[delta_days % len(pattern)]
 
 # 근무일수 계산 함수
-def calculate_workdays(year, month, team, schedule_data):
+def calculate_workdays(year, month, team_history, schedule_data):
     total_workdays = 0
     cal = generate_calendar(year, month)
     for week in cal:
