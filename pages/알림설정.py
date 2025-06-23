@@ -138,8 +138,9 @@ if st.session_state.get("delete_key"):
     st.session_state.delete_key = None
     st.session_state.rerun_needed = True
 
-# ✅ 안전한 rerun 처리 (맨 마지막!)
-if st.session_state.get("rerun_needed") or st.session_state.get("alarm_updated"):
+# ✅ 안전한 rerun (맨 마지막에 위치해야 함)
+if st.session_state.get("rerun_needed", False) or st.session_state.get("alarm_updated", False):
     st.session_state.rerun_needed = False
     st.session_state.alarm_updated = False
-    st.experimental_rerun()
+    st.stop()  # ← 여기를 st.experimental_rerun() 대신 st.stop() 으로 바꿔서 중단 후 다음 실행에서 다시 실행되게끔 함
+
