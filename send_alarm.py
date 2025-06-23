@@ -3,10 +3,12 @@ import requests
 from datetime import datetime, timedelta
 import os
 
+# JSON 파일 로드
 def load_json(path):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
+# 텔레그램 메시지 전송
 def send_telegram_message(text):
     token = os.environ["TELEGRAM_BOT_TOKEN"]
     chat_id = os.environ["TELEGRAM_CHAT_ID"]
@@ -14,7 +16,7 @@ def send_telegram_message(text):
     data = {"chat_id": chat_id, "text": text}
     requests.post(url, data=data)
 
-# ±1분 허용
+# 시간 근접 여부 확인 (±60초)
 def is_time_near(target_time_str, now, seconds=60):
     try:
         target = datetime.strptime(target_time_str, "%H:%M").replace(
@@ -25,32 +27,44 @@ def is_time_near(target_time_str, now, seconds=60):
     except:
         return False
 
-def check_alarm_conditions(schedule, now, today_str):
+# 알람 조건 확인
+def check_alarm_conditions(shift_data, alarm_schedule, now, today_str):
     messages = []
 
+    # 1. custom 알림 (날짜 기반)
+    for custom in alarm_schedule.get("custom", []):
+        if custom.get("date") == today_str and is_time_near(custom["time"], now):
+            messages.append(custom["message"])
+
+    # 2. 근무조 기반 알림
+    today_shift = shift_data.get(today_str)  # 예: "주", "야", "올", "비"
+
+    if not today_shift or today_shift == "비":
+        return messages  # 비근무일 또는 정보 없음
+
     # 주간 알림
-    for item in schedule.get("weekday", []):
-        if is_time_near(item["time"], now):
-            messages.append(item["message"])
+    if today_shift in ("주", "올"):
+        for item in alarm_schedule.get("weekday", []):
+            if item.get("shift") == "주" and is_time_near(item["time"], now):
+                messages.append(item["message"])
 
     # 야간 알림
-    for item in schedule.get("night", []):
-        if is_time_near(item["time"], now):
-            messages.append(item["message"])
-
-    # 특정일 알림
-    for custom in schedule.get("custom", []):
-        if custom["date"] == today_str and is_time_near(custom["time"], now):
-            messages.append(custom["message"])
+    if today_shift in ("야", "올"):
+        for item in alarm_schedule.get("night", []):
+            if item.get("shift") == "야" and is_time_near(item["time"], now):
+                messages.append(item["message"])
 
     return messages
 
+# 메인 함수
 def main():
-    now = datetime.utcnow() + timedelta(hours=9)
+    now = datetime.utcnow() + timedelta(hours=9)  # 한국 시간 기준
     today_str = now.strftime("%Y-%m-%d")
 
-    schedule = load_json("alarm_schedule.json")
-    messages = check_alarm_conditions(schedule, now, today_str)
+    alarm_schedule = load_json("alarm_schedule.json")
+    shift_schedule = load_json("shift_schedule.json")
+
+    messages = check_alarm_conditions(shift_schedule, alarm_schedule, now, today_str)
 
     for msg in messages:
         send_telegram_message(msg)
