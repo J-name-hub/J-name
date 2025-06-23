@@ -292,7 +292,6 @@ shift_patterns = {
 }
 
 # 날짜에 해당하는 근무 조를 얻는 함수
-@st.cache_data
 def get_shift(target_date, team_history, manual_schedule):
     date_str = target_date.strftime("%Y-%m-%d")
 
