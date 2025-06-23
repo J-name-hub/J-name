@@ -36,6 +36,9 @@ def save_alarm_schedule(data, sha=None):
     response = requests.put(url, headers=headers, json=payload)
     return response.status_code in [200, 201]
 
+def parse_time_str(t):
+    return t if hasattr(t, "strftime") else datetime.strptime(t, "%H:%M").time()
+
 # 🔐 암호 인증
 if "auth_alarm" not in st.session_state:
     st.session_state.auth_alarm = False
@@ -138,26 +141,27 @@ with st.form("add_custom_alarm"):
         st.session_state.alarm_rerun_needed = True
 
 # 삭제 처리
-if st.session_state.get("alarm_delete_key"):
-    section, index = st.session_state.alarm_delete_key
+if st.session_state.get("delete_key"):
+    section, index = st.session_state.delete_key
     if section == "weekday" and index < len(weekday_alarms):
         weekday_alarms.pop(index)
     elif section == "night" and index < len(night_alarms):
         night_alarms.pop(index)
     elif section == "custom" and index < len(custom_alarms):
         custom_alarms.pop(index)
-    st.session_state.alarm_delete_key = None
+    st.session_state.delete_key = None
     st.session_state.alarm_rerun_needed = True
 
 # 저장 버튼
 if st.button("💾 전체 저장"):
     to_save = {
-        "weekday": [{"time": a["time"].strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
-        "night": [{"time": a["time"].strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
-        "custom": [{"date": a["date"].strftime("%Y-%m-%d"), "time": a["time"].strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
+        "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
+        "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
+        "custom": [{"date": a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
     }
     if save_alarm_schedule(to_save, sha):
         st.success("✔ GitHub에 저장되었습니다.")
+        data, sha = load_alarm_schedule()  # 저장 후 다시 불러오기
     else:
         st.error("❌ 저장 실패")
     st.session_state.alarm_rerun_needed = True
