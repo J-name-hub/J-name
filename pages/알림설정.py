@@ -44,9 +44,13 @@ if not st.session_state.auth:
     pw = st.text_input("암호 입력", type="password")
     if pw == PASSWORD:
         st.session_state.auth = True
-        st.experimental_rerun()
+        st.session_state["alarm_updated"] = True  # rerun 플래그 설정
     else:
         st.stop()
+
+if st.session_state.get("alarm_updated"):
+    st.session_state["alarm_updated"] = False
+    st.experimental_rerun()
 
 # 알림 데이터 불러오기
 data, sha = load_alarm_schedule()
