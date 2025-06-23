@@ -533,6 +533,7 @@ def update_month(delta):
 highlighted_dates = ["01-27", "03-01", "04-06"]
 
 def create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday):
+    team_history = load_team_settings_from_github()
     calendar_data = []
     for week in month_days:
         week_data = []
@@ -543,7 +544,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 current_date = datetime(year, month, day).date()
 
                 if date_str not in schedule_data:
-                    schedule_data[date_str] = get_shift(current_date, st.session_state.get("team", "A"))
+                    schedule_data[date_str] = get_shift(current_date, team_history, schedule_data)
 
                 shift = schedule_data[date_str]
                 shift_background, shift_color = shift_colors.get(shift, ("white", "black"))
