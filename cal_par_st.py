@@ -129,27 +129,42 @@ def save_team_settings_to_github(team):
     }
 
     try:
-        # 현재 파일 내용 확인
+        # 기존 내용 확인
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
-            current_content = response.json()
-            sha = current_content['sha']
+            content = response.json()
+            sha = content['sha']
+            decoded_content = base64.b64decode(content['content']).decode('utf-8')
+            current_data = json.loads(decoded_content)
+            team_history = current_data.get("team_history", [])
         else:
             sha = None
+            team_history = []
 
-        # 새 내용 생성 및 인코딩
-        new_content = json.dumps({"team": team})
+        # 오늘 날짜로 새 기록 추가
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        team_history.append({
+            "start_date": today_str,
+            "team": team
+        })
+
+        # 날짜 순 정렬
+        team_history.sort(key=lambda x: x["start_date"])
+
+        # 새 내용 인코딩
+        new_content = json.dumps({"team_history": team_history}, ensure_ascii=False)
         encoded_content = base64.b64encode(new_content.encode()).decode()
 
         data = {
-            "message": "Update team settings",
+            "message": f"Update team settings with new entry: {team} from {today_str}",
             "content": encoded_content,
             "sha": sha
         }
 
-        response = requests.put(url, headers=headers, json=data)
-        response.raise_for_status()
+        save_response = requests.put(url, headers=headers, json=data)
+        save_response.raise_for_status()
         return True
+
     except requests.RequestException as e:
         st.error(f"GitHub에 팀 설정 저장 실패: {e}")
         return False
