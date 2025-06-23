@@ -69,17 +69,37 @@ def load_team_settings_from_github():
         file_content = base64.b64decode(content['content']).decode('utf-8')
         try:
             settings = json.loads(file_content)
-            return settings.get("team", "A")
+            team_history = settings.get("team_history")
+            if not team_history:
+                return "A"
+            # 가장 최근 시작일 기준으로 team 반환
+            today = datetime.now().date()
+            applicable = [entry for entry in team_history if datetime.strptime(entry["start_date"], "%Y-%m-%d").date() <= today]
+            if applicable:
+                return sorted(applicable, key=lambda x: x["start_date"])[-1]["team"]
+            return "A"
         except json.JSONDecodeError:
             st.error("팀 설정 파일의 내용이 유효한 JSON 형식이 아닙니다. 기본값 'A'를 사용합니다.")
             return "A"
+
     except requests.RequestException as e:
         if e.response is not None and e.response.status_code == 404:
-            st.warning("팀 설정 파일을 찾을 수 없습니다. 새 파일을 생성합니다.")
-            if save_team_settings_to_github("A"):
+            st.warning("팀 설정 파일을 찾을 수 없습니다. 기본값으로 새로 생성합니다.")
+            initial_data = {
+                "team_history": [
+                    {"start_date": "2000-01-01", "team": "A"}
+                ]
+            }
+            encoded_content = base64.b64encode(json.dumps(initial_data).encode()).decode()
+            create_data = {
+                "message": "Initialize team_settings with default A team",
+                "content": encoded_content
+            }
+            create_response = requests.put(url, headers=headers, json=create_data)
+            if create_response.status_code in [200, 201]:
                 return "A"
             else:
-                st.error("팀 설정 파일 생성에 실패했습니다. 기본값 'A'를 사용합니다.")
+                st.error("팀 설정 초기 생성에 실패했습니다. 기본값 'A' 사용")
                 return "A"
         else:
             st.error(f"GitHub에서 팀 설정 로드 실패: {e}")
@@ -230,7 +250,15 @@ shift_patterns = {
 
 # 날짜에 해당하는 근무 조를 얻는 함수
 @st.cache_data
-def get_shift(target_date, team):
+def get_shift(target_date, team_history, manual_schedule):
+    date_str = target_date.strftime("%Y-%m-%d")
+
+    if date_str in manual_schedule:
+        return manual_schedule[date_str]
+
+    applicable = [entry for entry in team_history if datetime.strptime(entry["start_date"], "%Y-%m-%d").date() <= target_date]
+    team = sorted(applicable, key=lambda x: x["start_date"])[-1]["team"] if applicable else "A"
+
     base_date = datetime(2000, 1, 3).date()
     delta_days = (target_date - base_date).days
     pattern = shift_patterns[team]
@@ -612,6 +640,60 @@ def sidebar_controls(year, month, schedule_data):
                 if save_team_settings_to_github(team):
                     st.session_state.team = team
                     st.sidebar.success(f"{team}조로 저장되었습니다.")
+                    st.rerun()
+                else:
+                    st.sidebar.error("조 설정 저장에 실패했습니다.")
+            else:
+                st.sidebar.error("암호가 일치하지 않습니다.")
+
+    st.sidebar.title("근무 조 설정")
+    with st.sidebar.form(key='team_settings_form'):
+        team = st.selectbox("조 선택", ["A", "B", "C", "D"], index=["A", "B", "C", "D"].index(st.session_state.team))
+        start_date = st.date_input("적용 시작일 선택")
+        password_for_settings = st.text_input("암호 입력", type="password", key="settings_password")
+        submit_button = st.form_submit_button("설정 저장")
+
+        if submit_button:
+            if password_for_settings == SCHEDULE_CHANGE_PASSWORD:
+                # 기존 team_history 불러오기
+                url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/team_settings.json"
+                headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+                response = requests.get(url, headers=headers)
+
+                if response.status_code == 200:
+                    content = response.json()
+                    current_sha = content['sha']
+                    decoded_content = base64.b64decode(content['content']).decode('utf-8')
+                    current_data = json.loads(decoded_content)
+                    team_history = current_data.get("team_history", [])
+                else:
+                    current_sha = None
+                    team_history = []
+
+                # 새 기록 추가
+                team_history.append({
+                    "start_date": start_date.strftime("%Y-%m-%d"),
+                    "team": team
+                })
+                # 날짜 순 정렬
+                team_history.sort(key=lambda x: x['start_date'])
+
+                # 저장
+                new_content = json.dumps({"team_history": team_history}, ensure_ascii=False)
+                encoded_content = base64.b64encode(new_content.encode()).decode()
+
+                data = {
+                    "message": f"Update team settings with new entry: {team} from {start_date}",
+                    "content": encoded_content,
+                    "sha": current_sha
+                }
+
+                save_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/team_settings.json"
+                save_response = requests.put(save_url, headers=headers, json=data)
+
+                if save_response.status_code in [200, 201]:
+                    st.session_state.team = team
+                    st.sidebar.success(f"{start_date}부터 {team}조로 저장되었습니다.")
                     st.rerun()
                 else:
                     st.sidebar.error("조 설정 저장에 실패했습니다.")
