@@ -86,7 +86,16 @@ with st.form("add_weekday_alarm"):
             "time": new_wd_time.strftime("%H:%M"),
             "message": new_wd_msg
         })
-        st.session_state.alarm_rerun_needed = True
+        to_save = {
+            "weekday": weekday_alarms,
+            "night": night_alarms,
+            "custom": custom_alarms
+        }
+        if save_alarm_schedule(to_save, sha):
+            st.success("✔ 저장되었습니다.")
+        else:
+            st.error("❌ 저장 실패")
+        st.rerun()  # 저장 후 UI 새로고침
 
 # ✅ 야간 알림
 st.subheader("🌙 야간 알림")
