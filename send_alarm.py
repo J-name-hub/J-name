@@ -46,7 +46,7 @@ def check_alarm_conditions(schedule, now, today_str):
     return messages
 
 def main():
-    now = datetime.now()
+    now = datetime.utcnow() + timedelta(hours=9)
     today_str = now.strftime("%Y-%m-%d")
 
     schedule = load_json("alarm_schedule.json")
