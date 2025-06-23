@@ -1,5 +1,10 @@
 {
-  "weekday": [],
+  "weekday": [
+    {
+      "time": "08:00",
+      "message": "일어나"
+    }
+  ],
   "night": [],
   "custom": []
 }
