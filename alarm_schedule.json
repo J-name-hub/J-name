@@ -1,5 +1,10 @@
 {
-  "weekday": [],
+  "weekday": [
+    {
+      "time": "21:15",
+      "message": "test"
+    }
+  ],
   "night": [],
   "custom": []
 }
