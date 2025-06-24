@@ -58,28 +58,29 @@ night_alarms = data.get("night", [])
 custom_alarms = data.get("custom", [])
 
 # ✅ 주간 알림
-st.subheader("🟡 주간 알림")
-for i, alarm in enumerate(weekday_alarms):
-    col1, col2, col3 = st.columns([2, 5, 1])
-    with col1:
-        alarm["time"] = st.time_input(f"주간시간{i}", value=datetime.strptime(alarm["time"], "%H:%M").time(), key=f"wd_time_{i}")
-    with col2:
-        alarm["message"] = st.text_input(f"주간메시지{i}", value=alarm["message"], key=f"wd_msg_{i}")
-    with col3:
-        if st.button("삭제", key=f"wd_del_{i}"):
-            weekday_alarms.pop(i)
+with st.container():
+    st.subheader("🟡 주간 알림")
+    for i, alarm in enumerate(weekday_alarms):
+        col1, col2, col3 = st.columns([2, 5, 1])
+        with col1:
+            alarm["time"] = st.time_input(f"주간시간{i}", value=datetime.strptime(alarm["time"], "%H:%M").time(), key=f"wd_time_{i}")
+        with col2:
+            alarm["message"] = st.text_input(f"주간메시지{i}", value=alarm["message"], key=f"wd_msg_{i}")
+        with col3:
+            if st.button("삭제", key=f"wd_del_{i}"):
+                weekday_alarms.pop(i)
 
-            to_save = {
-                "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
-                "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
-                "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
-            }
+                to_save = {
+                    "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
+                    "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
+                    "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
+                }
 
-            if save_alarm_schedule(to_save, sha):
-                st.success("✔ 삭제 후 저장 완료")
-            else:
-                st.error("❌ 삭제 저장 실패")
-            st.rerun()
+                if save_alarm_schedule(to_save, sha):
+                    st.success("✔ 삭제 후 저장 완료")
+                else:
+                    st.error("❌ 삭제 저장 실패")
+                st.rerun()
 
 # ✅ 야간 알림
 st.subheader("🌙 야간 알림")
