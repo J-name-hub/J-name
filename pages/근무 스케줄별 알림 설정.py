@@ -62,14 +62,22 @@ custom_alarms = data.get("custom", [])
 st.subheader("🟡 주간 알림")
 gap = "&nbsp;" * 55  # 55칸 정도 띄우기
 with st.expander(f"⏰{gap}💬", expanded=True):
+    st.markdown(
+    """
+    <details open>
+      <summary style="font-size:24px; font-weight:bold;">🟡 주간 알림</summary>
+    </details>
+    """,
+    unsafe_allow_html=True
+)
     for i, alarm in enumerate(weekday_alarms):
         col1, col2, col3 = st.columns([2, 5, 1])
         with col1:
             # alarm["time"] = st.time_input(f"주간시간{i}", value=datetime.strptime(alarm["time"], "%H:%M").time(), key=f"wd_time_{i}")
-            st.markdown(f"**{alarm['time']}**")
+            st.markdown(f"⏰ **{alarm['time']}**")
         with col2:
             # alarm["message"] = st.text_input(f"주간메시지{i}", value=alarm["message"], key=f"wd_msg_{i}")
-            st.markdown(f"**{alarm['message']}**")
+            st.markdown(f"💬 **{alarm['message']}**")
         with col3:
             if st.button("삭제", key=f"wd_del_{i}"):
                 weekday_alarms.pop(i)
