@@ -8,6 +8,11 @@ import pytz
 from dateutil.relativedelta import relativedelta
 import base64
 
+st.set_page_config(
+    page_title="123",
+    page_icon="⏰"
+)
+
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
