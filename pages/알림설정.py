@@ -87,28 +87,6 @@ for i, alarm in enumerate(weekday_alarms):
                 st.error("❌ 삭제 저장 실패")
             st.rerun()
 
-# 🔸 주간 알림 입력 폼 (새 항목 추가용)
-st.markdown("#### ➕ 새 주간 알림 추가")
-with st.form("add_weekday_alarm"):
-    new_wd_time = st.time_input("시간 선택", value=datetime.strptime("08:00", "%H:%M").time())
-    new_wd_msg = st.text_input("알림 메시지")
-    submitted = st.form_submit_button("➕ 추가")
-    if submitted:
-        weekday_alarms.append({
-            "time": new_wd_time.strftime("%H:%M"),
-            "message": new_wd_msg
-        })
-        to_save = {
-            "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
-            "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
-            "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
-        }
-        if save_alarm_schedule(to_save, sha):
-            st.success("✔ 저장되었습니다.")
-        else:
-            st.error("❌ 저장 실패")
-        st.rerun()  # 저장 후 UI 새로고침
-
 # ✅ 야간 알림
 st.subheader("🌙 야간 알림")
 for i, alarm in enumerate(night_alarms):
@@ -132,27 +110,6 @@ for i, alarm in enumerate(night_alarms):
             else:
                 st.error("❌ 삭제 저장 실패")
             st.rerun()
-
-st.markdown("#### ➕ 새 야간 알림 추가")
-with st.form("add_night_alarm"):
-    new_nt_time = st.time_input("시간 선택", value=datetime.strptime("08:00", "%H:%M").time())
-    new_nt_msg = st.text_input("알림 메시지")
-    submitted = st.form_submit_button("➕ 추가")
-    if submitted:
-        night_alarms.append({
-            "time": new_nt_time.strftime("%H:%M"),
-            "message": new_nt_msg
-        })
-        to_save = {
-            "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
-            "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
-            "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
-        }
-        if save_alarm_schedule(to_save, sha):
-            st.success("✔ 저장되었습니다.")
-        else:
-            st.error("❌ 저장 실패")
-        st.rerun()  # 저장 후 UI 새로고침
 
 # ✅ 특정일 알림
 st.subheader("📅 특정일 알림")
@@ -180,17 +137,17 @@ for i, alarm in enumerate(custom_alarms):
                 st.error("❌ 삭제 저장 실패")
             st.rerun()
 
-st.markdown("#### ➕ 새 특정일 알림 추가")
-with st.form("add_custom_alarm"):
-    new_cs_date = st.date_input("날짜 선택", value=datetime.today())
-    new_cs_time = st.time_input("시간 선택", value=datetime.strptime("08:00", "%H:%M").time())
-    new_cs_msg = st.text_input("알림 메시지")
+
+# 🔸 주간 알림 입력 폼 (새 항목 추가용)
+st.markdown("#### ➕ 새 주간 알림 추가")
+with st.form("add_weekday_alarm"):
+    new_wd_time = st.time_input("시간 선택", value=datetime.strptime("08:00", "%H:%M").time())
+    new_wd_msg = st.text_input("알림 메시지")
     submitted = st.form_submit_button("➕ 추가")
     if submitted:
-        custom_alarms.append({
-            "date": new_cs_date.strftime("%Y-%m-%d"),
-            "time": new_cs_time.strftime("%H:%M"),
-            "message": new_cs_msg
+        weekday_alarms.append({
+            "time": new_wd_time.strftime("%H:%M"),
+            "message": new_wd_msg
         })
         to_save = {
             "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
@@ -202,6 +159,69 @@ with st.form("add_custom_alarm"):
         else:
             st.error("❌ 저장 실패")
         st.rerun()  # 저장 후 UI 새로고침
+
+
+
+st.markdown("#### ➕ 새 야간 알림 추가")
+with st.form("add_night_alarm"):
+    new_nt_time = st.time_input("시간 선택", value=datetime.strptime("08:00", "%H:%M").time())
+    new_nt_msg = st.text_input("알림 메시지")
+    submitted = st.form_submit_button("➕ 추가")
+    if submitted:
+        night_alarms.append({
+            "time": new_nt_time.strftime("%H:%M"),
+            "message": new_nt_msg
+        })
+        to_save = {
+            "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
+            "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
+            "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
+        }
+        if save_alarm_schedule(to_save, sha):
+            st.success("✔ 저장되었습니다.")
+        else:
+            st.error("❌ 저장 실패")
+        st.rerun()  # 저장 후 UI 새로고침
+
+
+alarm_type = st.selectbox("알림 유형 선택", ["주간", "야간", "특정일"])
+
+if alarm_type == "특정일":
+    new_date = st.date_input("날짜 선택", value=datetime.today())
+else:
+    new_date = None  # 주간/야간은 날짜 없음
+
+new_time = st.time_input("시간 선택", value=datetime.strptime("08:00", "%H:%M").time())
+new_msg = st.text_input("알림 메시지")
+
+if st.button("➕ 추가"):
+    if alarm_type == "주간":
+        weekday_alarms.append({
+            "time": new_time.strftime("%H:%M"),
+            "message": new_msg
+        })
+    elif alarm_type == "야간":
+        night_alarms.append({
+            "time": new_time.strftime("%H:%M"),
+            "message": new_msg
+        })
+    elif alarm_type == "특정일":
+        custom_alarms.append({
+            "date": new_date.strftime("%Y-%m-%d"),
+            "time": new_time.strftime("%H:%M"),
+            "message": new_msg
+        })
+
+    to_save = {
+        "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
+        "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
+        "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
+    }
+    if save_alarm_schedule(to_save, sha):
+        st.success("✔ 저장되었습니다.")
+    else:
+        st.error("❌ 저장 실패")
+    st.rerun()  # 저장 후 UI 새로고침
 
 # 가장 마지막에만 rerun 실행
 if st.session_state.get("alarm_rerun_needed"):
