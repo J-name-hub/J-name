@@ -60,7 +60,8 @@ custom_alarms = data.get("custom", [])
 
 # ✅ 주간 알림
 st.subheader("🟡 주간 알림")
-with st.expander("⏰&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💬", expanded=True):
+gap = "&nbsp;" * 35  # 35칸 정도 띄우기
+with st.expander(f"⏰{gap}💬", expanded=True):
     for i, alarm in enumerate(weekday_alarms):
         col1, col2, col3 = st.columns([2, 5, 1])
         with col1:
@@ -87,58 +88,62 @@ with st.expander("⏰&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💬", expanded=T
 
 # ✅ 야간 알림
 st.subheader("🌙 야간 알림")
-for i, alarm in enumerate(night_alarms):
-    col1, col2, col3 = st.columns([2, 5, 1])
-    with col1:
-        # alarm["time"] = st.time_input(f"야간시간{i}", value=datetime.strptime(alarm["time"], "%H:%M").time(), key=f"nt_time_{i}")
-        st.markdown(f"⏰  **{alarm['time']}**")
-    with col2:
-        # alarm["message"] = st.text_input(f"야간메시지{i}", value=alarm["message"], key=f"nt_msg_{i}")
-        st.markdown(f"💬  **{alarm['message']}**")
-    with col3:
-        if st.button("삭제", key=f"nt_del_{i}"):
-            night_alarms.pop(i)
-
-            to_save = {
-                "weekday": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms], key=lambda x: x["time"]),
-                "night": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms], key=lambda x: x["time"]),
-                "custom": sorted([{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms], key=lambda x: (x["date"], x["time"])                )
-            }
-
-            if save_alarm_schedule(to_save, sha):
-                st.success("✔ 삭제 후 저장 완료")
-            else:
-                st.error("❌ 삭제 저장 실패")
-            st.rerun()
+gap = "&nbsp;" * 35  # 35칸 정도 띄우기
+with st.expander(f"⏰{gap}💬", expanded=True):
+    for i, alarm in enumerate(night_alarms):
+        col1, col2, col3 = st.columns([2, 5, 1])
+        with col1:
+            # alarm["time"] = st.time_input(f"야간시간{i}", value=datetime.strptime(alarm["time"], "%H:%M").time(), key=f"nt_time_{i}")
+            st.markdown(f"**{alarm['time']}**")
+        with col2:
+            # alarm["message"] = st.text_input(f"야간메시지{i}", value=alarm["message"], key=f"nt_msg_{i}")
+            st.markdown(f"**{alarm['message']}**")
+        with col3:
+            if st.button("삭제", key=f"nt_del_{i}"):
+                night_alarms.pop(i)
+    
+                to_save = {
+                    "weekday": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms], key=lambda x: x["time"]),
+                    "night": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms], key=lambda x: x["time"]),
+                    "custom": sorted([{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms], key=lambda x: (x["date"], x["time"])                )
+                }
+    
+                if save_alarm_schedule(to_save, sha):
+                    st.success("✔ 삭제 후 저장 완료")
+                else:
+                    st.error("❌ 삭제 저장 실패")
+                st.rerun()
 
 # ✅ 특정일 알림
 st.subheader("📅 특정일 알림")
-for i, alarm in enumerate(custom_alarms):
-    col1, col2, col3, col4 = st.columns([2, 2, 4, 1])
-    with col1:
-        # alarm["date"] = st.date_input(f"날짜{i}", value=datetime.strptime(alarm["date"], "%Y-%m-%d").date(), key=f"cs_date_{i}")
-        st.markdown(f"🎯  **{alarm['date']}**")
-    with col2:
-        # alarm["time"] = st.time_input(f"시간{i}", value=datetime.strptime(alarm["time"], "%H:%M").time(), key=f"cs_time_{i}")
-        st.markdown(f"⏰  **{alarm['time']}**")
-    with col3:
-        # alarm["message"] = st.text_input(f"메시지{i}", value=alarm["message"], key=f"cs_msg_{i}")
-        st.markdown(f"💬  **{alarm['message']}**")
-    with col4:
-        if st.button("삭제", key=f"cs_del_{i}"):
-            custom_alarms.pop(i)
-
-            to_save = {
-                "weekday": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms], key=lambda x: x["time"]),
-                "night": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms], key=lambda x: x["time"]),
-                "custom": sorted([{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms], key=lambda x: (x["date"], x["time"])                )
-            }
-
-            if save_alarm_schedule(to_save, sha):
-                st.success("✔ 삭제 후 저장 완료")
-            else:
-                st.error("❌ 삭제 저장 실패")
-            st.rerun()
+gap = "&nbsp;" * 20  # 20칸 정도 띄우기
+with st.expander(f"🎯{gap}⏰{gap}💬", expanded=True):
+    for i, alarm in enumerate(custom_alarms):
+        col1, col2, col3, col4 = st.columns([2, 2, 4, 1])
+        with col1:
+            # alarm["date"] = st.date_input(f"날짜{i}", value=datetime.strptime(alarm["date"], "%Y-%m-%d").date(), key=f"cs_date_{i}")
+            st.markdown(f"**{alarm['date']}**")
+        with col2:
+            # alarm["time"] = st.time_input(f"시간{i}", value=datetime.strptime(alarm["time"], "%H:%M").time(), key=f"cs_time_{i}")
+            st.markdown(f"**{alarm['time']}**")
+        with col3:
+            # alarm["message"] = st.text_input(f"메시지{i}", value=alarm["message"], key=f"cs_msg_{i}")
+            st.markdown(f"**{alarm['message']}**")
+        with col4:
+            if st.button("삭제", key=f"cs_del_{i}"):
+                custom_alarms.pop(i)
+    
+                to_save = {
+                    "weekday": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms], key=lambda x: x["time"]),
+                    "night": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms], key=lambda x: x["time"]),
+                    "custom": sorted([{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms], key=lambda x: (x["date"], x["time"])                )
+                }
+    
+                if save_alarm_schedule(to_save, sha):
+                    st.success("✔ 삭제 후 저장 완료")
+                else:
+                    st.error("❌ 삭제 저장 실패")
+                st.rerun()
 
 st.divider()
 
