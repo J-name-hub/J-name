@@ -639,13 +639,18 @@ def sidebar_controls(year, month, schedule_data):
                     "start_date": change_start_date.strftime("%Y-%m-%d"),
                     "team": team
                 }
-                team_history.append(new_entry)
-                # 중복 방지 및 정렬
-                team_history = sorted({(t['start_date'], t['team']) for t in team_history})
-                team_history = [{"start_date": d, "team": t} for d, t in team_history]
 
+                # ✅ ① 기존 team_history를 딕셔너리로 변환하여 같은 날짜 덮어쓰기
+                team_history_dict = {entry["start_date"]: entry["team"] for entry in team_history}
+                team_history_dict[new_entry["start_date"]] = new_entry["team"]
+
+                # ✅ ② 다시 리스트로 변환 + 날짜 오름차순 정렬
+                team_history = [{"start_date": k, "team": v} for k, v in sorted(team_history_dict.items())]
+
+                # ✅ ③ 저장
                 if save_team_settings_to_github(team_history):
-                    st.sidebar.success(f"{change_start_date.strftime('%Y-%m-%d')}부터 {team}조로 저장되었습니다.")
+                    st.sidebar.success(f"{new_entry['start_date']}부터 {team}조로 저장되었습니다.")
+                    st.session_state.team_history = team_history  # 세션 갱신
                     st.rerun()
                 else:
                     st.sidebar.error("조 설정 저장에 실패했습니다.")
