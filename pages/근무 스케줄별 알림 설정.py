@@ -60,31 +60,30 @@ custom_alarms = data.get("custom", [])
 
 # ✅ 주간 알림
 st.subheader("🟡 주간 알림")
-if not weekday_alarms:
-    st.info("등록된 주간 알림이 없습니다.")
-else:
+with st.expander(f"", expanded=True):
     for i, alarm in enumerate(weekday_alarms):
-        with st.container():
-            col1, col2, col3 = st.columns([2, 6, 1])
-            with col1:
-                st.markdown(f"⏰ **{alarm['time']}**")
-            with col2:
-                st.markdown(f"💬 {alarm['message']}")
-            with col3:
-                if st.button("❌", key=f"del_wd_{i}"):
-                    weekday_alarms.pop(i)
-                    to_save = {
+        col1, col2, col3 = st.columns([2, 5, 1])
+        with col1:
+            # alarm["time"] = st.time_input(f"주간시간{i}", value=datetime.strptime(alarm["time"], "%H:%M").time(), key=f"wd_time_{i}")
+            st.markdown(f"⏰ **{alarm['time']}**")
+        with col2:
+            # alarm["message"] = st.text_input(f"주간메시지{i}", value=alarm["message"], key=f"wd_msg_{i}")
+            st.markdown(f"💬 **{alarm['message']}**")
+        with col3:
+            if st.button("삭제", key=f"wd_del_{i}"):
+                weekday_alarms.pop(i)
+
+                to_save = {
                     "weekday": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms], key=lambda x: x["time"]),
                     "night": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms], key=lambda x: x["time"]),
                     "custom": sorted([{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms], key=lambda x: (x["date"], x["time"])                )
-                    }
-                    if save_alarm_schedule(to_save, sha):
-                        st.success("✔ 삭제 완료")
-                    else:
-                        st.error("❌ 삭제 실패")
-                    st.rerun()
+                }
 
-
+                if save_alarm_schedule(to_save, sha):
+                    st.success("✔ 삭제 후 저장 완료")
+                else:
+                    st.error("❌ 삭제 저장 실패")
+                st.rerun()
 
 # ✅ 야간 알림
 st.subheader("🌙 야간 알림")
