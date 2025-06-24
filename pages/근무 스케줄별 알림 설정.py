@@ -60,7 +60,7 @@ custom_alarms = data.get("custom", [])
 
 # ✅ 주간 알림
 st.subheader("🟡 주간 알림")
-with st.expander("⏰         💬", expanded=True):
+with st.expander("⏰&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💬", expanded=True):
     for i, alarm in enumerate(weekday_alarms):
         col1, col2, col3 = st.columns([2, 5, 1])
         with col1:
