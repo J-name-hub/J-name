@@ -137,6 +137,7 @@ for i, alarm in enumerate(custom_alarms):
                 st.error("❌ 삭제 저장 실패")
             st.rerun()
 
+st.divider()
 
 # 🔸 알림 입력 폼 (새 항목 추가용)
 st.markdown("#### ➕ 새 알림 추가")
