@@ -115,7 +115,7 @@ with st.expander(f"⏰{gap}💬", expanded=True):
 
 # ✅ 특정일 알림
 st.subheader("📅 특정일 알림")
-gap1 = "&nbsp;" * 48  # 48칸 정도 띄우기
+gap1 = "&nbsp;" * 47  # 47칸 정도 띄우기
 gap2 = "&nbsp;" * 48  # 48칸 정도 띄우기
 with st.expander(f"🎯{gap1}⏰{gap2}💬", expanded=True):
     for i, alarm in enumerate(custom_alarms):
