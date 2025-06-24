@@ -4,6 +4,8 @@ import base64
 import requests
 from datetime import datetime
 
+st.set_page_config(page_title="DataFrame Demo", page_icon="📊")
+
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
