@@ -67,17 +67,6 @@ tab1, tab2, tab3 = st.tabs(["🟡 주간", "🌙 야간", "📅 특정일"])
 with tab1:
     # 주간 알림 처리
     st.subheader("🟡 주간 알림")
-with tab2:
-    # 야간 알림 처리
-    st.subheader("🟡 주간 알림")
-with tab3:
-    # 특정일 알림 처리
-    st.subheader("🟡 주간 알림")
-
-col1, col2 = st.columns([5, 3])
-with col1:
-    # ✅ 주간 알림
-    st.subheader("🟡 주간 알림")
     with st.expander(f"", expanded=True):
         for i, alarm in enumerate(weekday_alarms):
             col1, col2, col3 = st.columns([2, 5, 1])
@@ -102,6 +91,13 @@ with col1:
                     else:
                         st.error("❌ 삭제 저장 실패")
                     st.rerun()
+
+with tab2:
+    # 야간 알림 처리
+    st.subheader("🟡 주간 알림")
+with tab3:
+    # 특정일 알림 처리
+    st.subheader("🟡 주간 알림")
 
 col1, col2 = st.columns([5, 3])
 with col1:
