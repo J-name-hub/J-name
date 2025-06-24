@@ -62,7 +62,7 @@ weekday_alarms = data.get("weekday", [])
 night_alarms = data.get("night", [])
 custom_alarms = data.get("custom", [])
 
-col1, col2 = st.columns([7, 1])
+col1, col2 = st.columns([5, 3])
 with col1:
     # ✅ 주간 알림
     st.subheader("🟡 주간 알림")
@@ -91,7 +91,7 @@ with col1:
                         st.error("❌ 삭제 저장 실패")
                     st.rerun()
 
-col1, col2 = st.columns([7, 1])
+col1, col2 = st.columns([5, 3])
 with col1:
     # ✅ 야간 알림
     st.subheader("🌙 야간 알림")
@@ -120,7 +120,7 @@ with col1:
                         st.error("❌ 삭제 저장 실패")
                     st.rerun()
                     
-col1, col2 = st.columns([7, 1])
+col1, col2 = st.columns([5, 3])
 with col1:
     # ✅ 특정일 알림
     st.subheader("📅 특정일 알림")
@@ -154,7 +154,7 @@ with col1:
 
 st.divider()
 
-col1, col2 = st.columns([7, 1])
+col1, col2 = st.columns([5, 3])
 with col1:
     # 🔸 알림 입력 폼 (새 항목 추가용)
     with st.expander("#### ➕ 새 알림 추가", expanded=False):
