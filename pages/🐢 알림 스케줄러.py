@@ -68,6 +68,47 @@ with col1:
 
 with tab1:
     # 주간 알림 처리
+    st.markdown(
+        """
+        <div style="
+            border: 2px solid #4da6ff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        ">
+        """,
+        unsafe_allow_html=True
+    )
+    with st.expander(f"", expanded=True):
+        for i, alarm in enumerate(weekday_alarms):
+            col1, col2, col3 = st.columns([2, 5, 1])
+            with col1:
+                # alarm["time"] = st.time_input(f"주간시간{i}", value=datetime.strptime(alarm["time"], "%H:%M").time(), key=f"wd_time_{i}")
+                st.markdown(f"⏰ **{alarm['time']}**")
+            with col2:
+                # alarm["message"] = st.text_input(f"주간메시지{i}", value=alarm["message"], key=f"wd_msg_{i}")
+                st.markdown(f"💬 **{alarm['message']}**")
+            with col3:
+                if st.button("삭제", key=f"wd_del_{i}"):
+                    weekday_alarms.pop(i)
+            
+                    to_save = {
+                        "weekday": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms], key=lambda x: x["time"]),
+                        "night": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms], key=lambda x: x["time"]),
+                        "custom": sorted([{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms], key=lambda x: (x["date"], x["time"])                )
+                    }
+            
+                    if save_alarm_schedule(to_save, sha):
+                        st.success("✔ 삭제 후 저장 완료")
+                    else:
+                        st.error("❌ 삭제 저장 실패")
+                    st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)  # ✅ div 닫기
+
+"""
+with tab1:
+    # 주간 알림 처리
     with st.expander("", expanded=True):
         # ✅ 상단 고정 헤더
         st.markdown(
@@ -102,6 +143,7 @@ with tab1:
                         else:
                             st.error("❌ 삭제 저장 실패")
                         st.rerun()
+"""
 
 with tab2:
     # 야간 알림 처리
