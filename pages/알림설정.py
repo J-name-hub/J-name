@@ -78,7 +78,7 @@ for i, alarm in enumerate(weekday_alarms):
             to_save = {
                 "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
                 "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
-                "custom": [{"date": a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
+                "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
             }
 
             if save_alarm_schedule(to_save, sha):
@@ -101,7 +101,7 @@ with st.form("add_weekday_alarm"):
         to_save = {
             "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
             "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
-            "custom": [{"date": a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
+            "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
         }
         if save_alarm_schedule(to_save, sha):
             st.success("✔ 저장되었습니다.")
@@ -124,7 +124,7 @@ for i, alarm in enumerate(night_alarms):
             to_save = {
                 "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
                 "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
-                "custom": [{"date": a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
+                "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
             }
 
             if save_alarm_schedule(to_save, sha):
@@ -146,7 +146,7 @@ with st.form("add_night_alarm"):
         to_save = {
             "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
             "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
-            "custom": [{"date": a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
+            "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
         }
         if save_alarm_schedule(to_save, sha):
             st.success("✔ 저장되었습니다.")
@@ -171,7 +171,7 @@ for i, alarm in enumerate(custom_alarms):
             to_save = {
                 "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
                 "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
-                "custom": [{"date": a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
+                "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
             }
 
             if save_alarm_schedule(to_save, sha):
@@ -195,7 +195,7 @@ with st.form("add_custom_alarm"):
         to_save = {
             "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
             "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
-            "custom": [{"date": a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
+            "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
         }
         if save_alarm_schedule(to_save, sha):
             st.success("✔ 저장되었습니다.")
