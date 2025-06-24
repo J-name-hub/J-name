@@ -57,7 +57,7 @@ weekday_alarms = data.get("weekday", [])
 night_alarms = data.get("night", [])
 custom_alarms = data.get("custom", [])
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3 = st.columns([3, 3, 3])
 
 # ✅ 주간 알림
 with col1:
