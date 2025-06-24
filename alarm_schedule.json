@@ -1,11 +1,5 @@
 {
   "weekday": [],
   "night": [],
-  "custom": [
-    {
-      "date": "2025-06-25",
-      "time": "00:49",
-      "message": "1234"
-    }
-  ]
+  "custom": []
 }
