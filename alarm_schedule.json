@@ -5,6 +5,11 @@
       "message": "test1"
     }
   ],
-  "night": [],
+  "night": [
+    {
+      "time": "08:15",
+      "message": "tetqwtqewt"
+    }
+  ],
   "custom": []
 }
