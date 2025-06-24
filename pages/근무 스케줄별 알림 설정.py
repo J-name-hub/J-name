@@ -72,9 +72,9 @@ for i, alarm in enumerate(weekday_alarms):
             weekday_alarms.pop(i)
 
             to_save = {
-                "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
-                "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
-                "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
+                "weekday": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms], key=lambda x: x["time"]),
+                "night": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms], key=lambda x: x["time"]),
+                "custom": sorted([{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms], key=lambda x: (x["date"], x["time"])                )
             }
 
             if save_alarm_schedule(to_save, sha):
@@ -96,9 +96,9 @@ for i, alarm in enumerate(night_alarms):
             night_alarms.pop(i)
 
             to_save = {
-                "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
-                "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
-                "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
+                "weekday": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms], key=lambda x: x["time"]),
+                "night": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms], key=lambda x: x["time"]),
+                "custom": sorted([{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms], key=lambda x: (x["date"], x["time"])                )
             }
 
             if save_alarm_schedule(to_save, sha):
@@ -122,9 +122,9 @@ for i, alarm in enumerate(custom_alarms):
             custom_alarms.pop(i)
 
             to_save = {
-                "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
-                "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
-                "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
+                "weekday": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms], key=lambda x: x["time"]),
+                "night": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms], key=lambda x: x["time"]),
+                "custom": sorted([{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms], key=lambda x: (x["date"], x["time"])                )
             }
 
             if save_alarm_schedule(to_save, sha):
@@ -166,11 +166,10 @@ with col1:
                     "time": new_time.strftime("%H:%M"),
                     "message": new_msg
                 })
-
             to_save = {
-                "weekday": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms],
-                "night": [{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms],
-                "custom": [{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms]
+                "weekday": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms], key=lambda x: x["time"]),
+                "night": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_alarms], key=lambda x: x["time"]),
+                "custom": sorted([{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms], key=lambda x: (x["date"], x["time"])                )
             }
             if save_alarm_schedule(to_save, sha):
                 st.success("✔ 저장되었습니다.")
