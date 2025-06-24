@@ -23,12 +23,9 @@ def get_team_for_date(target_date, team_history):
 # 기본 근무조 계산 + 수동 변경조 반영
 def get_shift_for_date(target_date, team_history, shift_schedule):
     date_str = target_date.strftime("%Y-%m-%d")
-
-    # 1. 수동 변경된 근무조가 있는 경우 우선
     if date_str in shift_schedule:
         return shift_schedule[date_str]
 
-    # 2. 기본 근무조 계산
     team = get_team_for_date(target_date, team_history)
     base_date = datetime(2000, 1, 3).date()
     delta_days = (target_date - base_date).days
@@ -48,11 +45,21 @@ def load_json(path):
 
 # 텔레그램 메시지 전송
 def send_telegram_message(text):
-    token = os.environ["TELEGRAM_BOT_TOKEN"]
-    chat_id = os.environ["TELEGRAM_CHAT_ID"]
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+
+    if not token or not chat_id:
+        print("❌ 환경변수가 설정되지 않았습니다. 메시지 전송 취소")
+        return
+
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     data = {"chat_id": chat_id, "text": text}
-    requests.post(url, data=data)
+    response = requests.post(url, data=data)
+
+    if response.ok:
+        print(f"✅ 메시지 전송 성공: {text}")
+    else:
+        print(f"❌ 메시지 전송 실패: {response.status_code} - {response.text}")
 
 # 시간 근접 여부 확인 (±60초)
 def is_time_near(target_time_str, now, seconds=60):
@@ -62,19 +69,18 @@ def is_time_near(target_time_str, now, seconds=60):
         )
         delta = abs((now - target).total_seconds())
         return delta <= seconds
-    except:
+    except Exception as e:
+        print(f"⛔ 시간 파싱 오류: {e}")
         return False
 
 # 알람 조건 확인
 def check_alarm_conditions(now, today_str, shift_schedule, team_history, alarm_schedule):
     messages = []
 
-    # 1. 날짜 지정 알람 (custom)
     for custom in alarm_schedule.get("custom", []):
         if custom.get("date") == today_str and is_time_near(custom["time"], now):
             messages.append(custom["message"])
 
-    # 2. 근무조 판단
     today_shift = get_shift_for_date(now.date(), team_history, shift_schedule)
 
     if today_shift in ("주", "올"):
@@ -98,7 +104,7 @@ def main():
     shift_schedule = load_json("shift_schedule.json")
     team_history = load_team_history("team_settings.json")
 
-    # ✅ 근무조 테스트용 출력
+    # ✅ 근무조 확인 로그
     today_shift = get_shift_for_date(now.date(), team_history, shift_schedule)
     print(f"📌 오늘 날짜: {today_str}")
     print(f"📌 오늘 근무조: {today_shift}")
@@ -107,6 +113,9 @@ def main():
 
     for msg in messages:
         send_telegram_message(msg)
+
+    # ✅ 강제 테스트 메시지 전송 (원할 경우 주석 제거)
+    # send_telegram_message("🔔 테스트 메시지입니다. (알림 테스트용)")
 
 if __name__ == "__main__":
     main()
