@@ -44,7 +44,7 @@ if "auth_alarm" not in st.session_state:
     st.session_state.auth_alarm = False
 
 if not st.session_state.auth_alarm:
-    pw = st.text_input("🐢 암호를 입력하세요", type="password")
+    pw = st.text_input("암호를 입력하세요", type="password")
     
     if pw:  # 입력이 실제로 있는 경우에만 비교
         if pw == PASSWORD:
