@@ -60,7 +60,7 @@ custom_alarms = data.get("custom", [])
 
 # ✅ 주간 알림
 st.subheader("🟡 주간 알림")
-gap = "&nbsp;" * 50  # 50칸 정도 띄우기
+gap = "&nbsp;" * 55  # 55칸 정도 띄우기
 with st.expander(f"⏰{gap}💬", expanded=True):
     for i, alarm in enumerate(weekday_alarms):
         col1, col2, col3 = st.columns([2, 5, 1])
@@ -115,8 +115,8 @@ with st.expander(f"⏰{gap}💬", expanded=True):
 
 # ✅ 특정일 알림
 st.subheader("📅 특정일 알림")
-gap1 = "&nbsp;" * 45  # 45칸 정도 띄우기
-gap2 = "&nbsp;" * 60  # 60칸 정도 띄우기
+gap1 = "&nbsp;" * 50  # 50칸 정도 띄우기
+gap2 = "&nbsp;" * 50  # 50칸 정도 띄우기
 with st.expander(f"🎯{gap1}⏰{gap2}💬", expanded=True):
     for i, alarm in enumerate(custom_alarms):
         col1, col2, col3, col4 = st.columns([2, 2, 4, 1])
