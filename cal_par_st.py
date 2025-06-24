@@ -8,14 +8,6 @@ import pytz
 from dateutil.relativedelta import relativedelta
 import base64
 
-# ✅ 페이지 설정
-st.set_page_config(
-    page_title="근무 알림 메인",   # 탭에 표시될 제목
-    page_icon="📅",               # 탭 아이콘 (이모지 가능)
-    layout="wide",                # wide | centered
-    initial_sidebar_state="expanded"  # expanded | collapsed
-)
-
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
