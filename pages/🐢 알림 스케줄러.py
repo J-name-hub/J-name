@@ -62,6 +62,18 @@ weekday_alarms = data.get("weekday", [])
 night_alarms = data.get("night", [])
 custom_alarms = data.get("custom", [])
 
+tab1, tab2, tab3 = st.tabs(["🟡 주간", "🌙 야간", "📅 특정일"])
+
+with tab1:
+    # 주간 알림 처리
+    st.subheader("🟡 주간 알림")
+with tab2:
+    # 야간 알림 처리
+    st.subheader("🟡 주간 알림")
+with tab3:
+    # 특정일 알림 처리
+    st.subheader("🟡 주간 알림")
+
 col1, col2 = st.columns([5, 3])
 with col1:
     # ✅ 주간 알림
