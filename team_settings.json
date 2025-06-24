@@ -5,7 +5,15 @@
       "team": "A"
     },
     {
-      "start_date": "2025-06-25",
+      "start_date": "2024-04-25",
+      "team": "D"
+    },
+    {
+      "start_date": "2025-01-01",
+      "team": "C"
+    },
+    {
+      "start_date": "2025-06-17",
       "team": "B"
     }
   ]
