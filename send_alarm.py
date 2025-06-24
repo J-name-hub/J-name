@@ -79,19 +79,19 @@ def check_alarm_conditions(now, today_str, shift_schedule, team_history, alarm_s
 
     for custom in alarm_schedule.get("custom", []):
         if custom.get("date") == today_str and is_time_near(custom["time"], now):
-            messages.append(custom["message"])
+            messages.append((custom["time"], custom["message"]))
 
     today_shift = get_shift_for_date(now.date(), team_history, shift_schedule)
 
     if today_shift in ("주", "올"):
         for item in alarm_schedule.get("weekday", []):
             if is_time_near(item["time"], now):
-                messages.append(item["message"])
+                messages.append((item["time"], item["message"]))
 
     if today_shift in ("야", "올"):
         for item in alarm_schedule.get("night", []):
             if is_time_near(item["time"], now):
-                messages.append(item["message"])
+                messages.append((item["time"], item["message"]))
 
     return messages
 
@@ -111,8 +111,9 @@ def main():
 
     messages = check_alarm_conditions(now, today_str, shift_schedule, team_history, alarm_schedule)
 
-    for msg in messages:
-        send_telegram_message(msg)
+    for alarm_time, msg in messages:
+        formatted = f"({alarm_time}) {msg}"
+        send_telegram_message(formatted)
 
     # ✅ 강제 테스트 메시지 전송 (원할 경우 주석 제거)
     # send_telegram_message("🔔 테스트 메시지입니다. (알림 테스트용)")
