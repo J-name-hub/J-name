@@ -60,16 +60,7 @@ custom_alarms = data.get("custom", [])
 
 # ✅ 주간 알림
 st.subheader("🟡 주간 알림")
-gap = "&nbsp;" * 55  # 55칸 정도 띄우기
-with st.expander(f"⏰{gap}💬", expanded=True):
-    st.markdown(
-    """
-    <details open>
-      <summary style="font-size:24px; font-weight:bold;">🟡 주간 알림</summary>
-    </details>
-    """,
-    unsafe_allow_html=True
-)
+with st.expander(f"🟡 주간 알림", expanded=True):
     for i, alarm in enumerate(weekday_alarms):
         col1, col2, col3 = st.columns([2, 5, 1])
         with col1:
