@@ -45,11 +45,15 @@ if "auth_alarm" not in st.session_state:
 
 if not st.session_state.auth_alarm:
     pw = st.text_input("🐢 암호를 입력하세요", type="password")
-    if pw == PASSWORD:
-        st.session_state.auth_alarm = True
-        st.session_state["alarm_updated"] = True  # rerun 플래그 설정
+    
+    if pw:  # 입력이 실제로 있는 경우에만 비교
+        if pw == PASSWORD:
+            st.session_state.auth_alarm = True
+            st.session_state["alarm_updated"] = True  # rerun 플래그 설정
+        else:
+            st.error("❌ 암호가 일치하지 않습니다.")
+            st.stop()
     else:
-        st.error("❌ 암호가 일치하지 않습니다.")
         st.stop()
 
 # GitHub 데이터 불러오기
