@@ -4,7 +4,12 @@ import base64
 import requests
 from datetime import datetime
 
-st.set_page_config(page_title="DataFrame Demo", page_icon="📊")
+st.set_page_config(
+    page_title="📣 알림 스케줄러",
+    page_icon="🕰️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
