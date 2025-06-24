@@ -68,6 +68,18 @@ with col1:
 
 with tab1:
     # 주간 알림 처리
+    st.markdown(
+        """
+        <div style="
+            border: 2px solid #4da6ff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        ">
+        """,
+        unsafe_allow_html=True
+    )
     with st.expander(f"", expanded=True):
         for i, alarm in enumerate(weekday_alarms):
             col1, col2, col3 = st.columns([2, 5, 1])
@@ -92,6 +104,7 @@ with tab1:
                     else:
                         st.error("❌ 삭제 저장 실패")
                     st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)  # ✅ div 닫기
 
 """
 with tab1:
