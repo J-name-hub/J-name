@@ -152,7 +152,9 @@ with col1:
                         st.error("❌ 삭제 저장 실패")
                     st.rerun()
 
-st.divider()
+col1, col2 = st.columns([5, 3])
+with col1:
+    st.divider()
 
 col1, col2 = st.columns([5, 3])
 with col1:
