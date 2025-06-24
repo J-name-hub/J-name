@@ -98,6 +98,11 @@ def main():
     shift_schedule = load_json("shift_schedule.json")
     team_history = load_team_history("team_settings.json")
 
+    # ✅ 근무조 테스트용 출력
+    today_shift = get_shift_for_date(now.date(), team_history, shift_schedule)
+    print(f"📌 오늘 날짜: {today_str}")
+    print(f"📌 오늘 근무조: {today_shift}")
+
     messages = check_alarm_conditions(now, today_str, shift_schedule, team_history, alarm_schedule)
 
     for msg in messages:
