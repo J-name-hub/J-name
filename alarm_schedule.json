@@ -1,14 +1,9 @@
 {
   "weekday": [
     {
-      "time": "21:43",
-      "message": "test"
-    },
-    {
       "time": "09:48",
       "message": "test1"
-    }
-    ,
+    },
     {
       "time": "09:48",
       "message": "test2"
