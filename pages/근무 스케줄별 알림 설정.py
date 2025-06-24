@@ -57,12 +57,6 @@ weekday_alarms = data.get("weekday", [])
 night_alarms = data.get("night", [])
 custom_alarms = data.get("custom", [])
 
-# 삭제 요청 임시 저장
-if "delete_key" not in st.session_state:
-    st.session_state.delete_key = None
-
-st.title("🔔 근무 스케줄별 알림 설정")
-
 # ✅ 주간 알림
 st.subheader("🟡 주간 알림")
 for i, alarm in enumerate(weekday_alarms):
