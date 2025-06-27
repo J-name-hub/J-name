@@ -27,7 +27,15 @@
       ]
     }
   ],
-  "night_today": [],
+  "night_today": [
+    {
+      "time": "22:45",
+      "message": "KT 판문국 전화",
+      "days": [
+        "월"
+      ]
+    }
+  ],
   "night_next": [
     {
       "time": "08:15",
