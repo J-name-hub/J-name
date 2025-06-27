@@ -192,7 +192,7 @@ with col1:
         
 
             # 전체 선택 / 해제 버튼
-            cols = st.columns([1, 3, 1])  # 왼쪽 여백 1, 가운데 2, 오른쪽 여백 1
+            cols = st.columns([1, 1, 1])  # 왼쪽 여백 1, 가운데 1, 오른쪽 여백 1
 
             with cols[1]:  # 가운데 열
                 col_a, col_b = st.columns([1, 1])  # 버튼을 나란히 배치
