@@ -77,11 +77,17 @@ def is_time_near(target_time_str, now, seconds=60):
 def check_alarm_conditions(now, today_str, shift_schedule, team_history, alarm_schedule):
     messages = []
 
+    # 1. 특정일(custom) 알람
     for custom in alarm_schedule.get("custom", []):
         if custom.get("date") == today_str and is_time_near(custom["time"], now):
             messages.append((custom["time"], "📅", custom["message"]))
 
+    # 2. 오늘 근무조 확인
     today_shift = get_shift_for_date(now.date(), team_history, shift_schedule)
+
+    # 3. 전날 근무조 확인 (야간 익일 고려)
+    yesterday = now.date() - timedelta(days=1)
+    yesterday_shift = get_shift_for_date(yesterday, team_history, shift_schedule)
 
     if today_shift in ("주", "올"):
         for item in alarm_schedule.get("weekday", []):
@@ -89,7 +95,12 @@ def check_alarm_conditions(now, today_str, shift_schedule, team_history, alarm_s
                 messages.append((item["time"], "🟡", item["message"]))
 
     if today_shift in ("야", "올"):
-        for item in alarm_schedule.get("night", []):
+        for item in alarm_schedule.get("night_today", []):
+            if is_time_near(item["time"], now):
+                messages.append((item["time"], "🌙", item["message"]))
+
+    if yesterday_shift in ("야", "올"):
+        for item in alarm_schedule.get("night_next", []):
             if is_time_near(item["time"], now):
                 messages.append((item["time"], "🌙", item["message"]))
 
