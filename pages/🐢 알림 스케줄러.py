@@ -41,9 +41,9 @@ def parse_time_str(t):
 
 def build_save_data():
     return {
-        "weekday": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in weekday_alarms], key=lambda x: x["time"]),
-        "night_today": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_today_alarms], key=lambda x: x["time"]),
-        "night_next": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in night_next_alarms], key=lambda x: x["time"]),
+        "weekday": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"], "days": a.get("days", [])} for a in weekday_alarms], key=lambda x: x["time"]),
+        "night_today": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"], "days": a.get("days", [])} for a in night_today_alarms], key=lambda x: x["time"]),
+        "night_next": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"], "days": a.get("days", [])} for a in night_next_alarms], key=lambda x: x["time"]),
         "custom": sorted([{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms], key=lambda x: (x["date"], x["time"]))
     }
 
@@ -79,7 +79,7 @@ with tab1:
     # 주간 알림 처리
     with st.expander(f"", expanded=True):
         for i, alarm in enumerate(weekday_alarms):
-            col1, col2, col3 = st.columns([2, 5, 1])
+            col1, col2, col3, col4 = st.columns([2, 5, 5, 1])
             with col1:
                 # alarm["time"] = st.time_input(f"주간시간{i}", value=datetime.strptime(alarm["time"], "%H:%M").time(), key=f"wd_time_{i}")
                 st.markdown(f"⏰ **{alarm['time']}**")
@@ -87,6 +87,8 @@ with tab1:
                 # alarm["message"] = st.text_input(f"주간메시지{i}", value=alarm["message"], key=f"wd_msg_{i}")
                 st.markdown(f"💬 **{alarm['message']}**")
             with col3:
+                st.markdown(f"📅 **{', '.join(alarm.get('days', []))}**")
+            with col4:
                 if st.button("삭제", key=f"wd_del_{i}"):
                     weekday_alarms.pop(i)
             
@@ -100,12 +102,14 @@ with tab2:
     # 야간(당일) 알림 처리
     with st.expander("🌙 야간(당일)", expanded=True):
         for i, alarm in enumerate(night_today_alarms):
-            col1, col2, col3 = st.columns([2, 5, 1])
+            col1, col2, col3, col4 = st.columns([2, 5, 5, 1])
             with col1:
                 st.markdown(f"⏰ **{alarm['time']}**")
             with col2:
                 st.markdown(f"💬 **{alarm['message']}**")
             with col3:
+                st.markdown(f"📅 **{', '.join(alarm.get('days', []))}**")
+            with col4:
                 if st.button("삭제", key=f"nt_today_del_{i}"):
                     night_today_alarms.pop(i)
             
@@ -118,12 +122,14 @@ with tab2:
     # 야간(익일) 알림 처리
     with st.expander("🌙 야간(익일)", expanded=True):
         for i, alarm in enumerate(night_next_alarms):
-            col1, col2, col3 = st.columns([2, 5, 1])
+            col1, col2, col3, col4 = st.columns([2, 5, 5, 1])
             with col1:
                 st.markdown(f"⏰ **{alarm['time']}**")
             with col2:
                 st.markdown(f"💬 **{alarm['message']}**")
             with col3:
+                st.markdown(f"📅 **{', '.join(alarm.get('days', []))}**")
+            with col4:
                 if st.button("삭제", key=f"nt_next_del_{i}"):
                     night_next_alarms.pop(i)
             
@@ -174,22 +180,26 @@ with col1:
 
         new_time = st.time_input("시간 선택", value=datetime.strptime("08:00", "%H:%M").time())
         new_msg = st.text_input("알림 메시지")
+        new_days = st.multiselect("반복 요일 선택", ["월", "화", "수", "목", "금", "토", "일"])
 
         if st.button("➕ 추가"):
             if alarm_type == "주간":
                 weekday_alarms.append({
                     "time": new_time.strftime("%H:%M"),
-                    "message": new_msg
+                    "message": new_msg,
+                    "days": new_days
                 })
             elif alarm_type == "야간(당일)":
                 night_today_alarms.append({
                     "time": new_time.strftime("%H:%M"),
-                    "message": new_msg
+                    "message": new_msg,
+                    "days": new_days
                 })
             elif alarm_type == "야간(익일)":
                 night_next_alarms.append({
                     "time": new_time.strftime("%H:%M"),
-                    "message": new_msg
+                    "message": new_msg,
+                    "days": new_days
                 })
             elif alarm_type == "특정일":
                 custom_alarms.append({
