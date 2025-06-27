@@ -190,14 +190,18 @@ with col1:
             WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"]
             key_prefix = alarm_type.replace("(", "_").replace(")", "_")
         
+
             # 전체 선택 / 해제 버튼
-            col_a, col_b = st.columns([1, 1])  # 버튼을 나란히 배치
-            if col_a.button("✅ 전체 선택", key=f"{key_prefix}_select_all"):
-                for day in WEEKDAYS:
-                    st.session_state[f"{key_prefix}_{day}"] = True
-            if col_b.button("🚫 전체 해제", key=f"{key_prefix}_deselect_all"):
-                for day in WEEKDAYS:
-                    st.session_state[f"{key_prefix}_{day}"] = False
+            cols = st.columns([1, 3, 1])  # 왼쪽 여백 1, 가운데 2, 오른쪽 여백 1
+
+            with cols[1]:  # 가운데 열
+                col_a, col_b = st.columns([1, 1])  # 버튼을 나란히 배치
+                if col_a.button("✅ 전체 선택", key=f"{key_prefix}_select_all"):
+                    for day in WEEKDAYS:
+                        st.session_state[f"{key_prefix}_{day}"] = True
+                if col_b.button("🚫 전체 해제", key=f"{key_prefix}_deselect_all"):
+                    for day in WEEKDAYS:
+                        st.session_state[f"{key_prefix}_{day}"] = False
         
             # 요일 체크박스 나열
             new_days = []
