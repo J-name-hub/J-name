@@ -76,7 +76,7 @@ night_today_alarms = data.get("night_today", [])
 night_next_alarms = data.get("night_next", [])
 custom_alarms = data.get("custom", [])
 
-col1, col2 = st.columns([5, 3])
+col1, col2 = st.columns([5, 2])
 with col1:
     tab1, tab2, tab3 = st.tabs(["🟡 주간", "🌙 야간", "📅 특정일"])
 
@@ -168,11 +168,11 @@ with tab3:
                         st.error("❌ 삭제 저장 실패")
                     st.rerun()
 
-col1, col2 = st.columns([5, 3])
+col1, col2 = st.columns([5, 2])
 with col1:
     st.divider()
 
-col1, col2 = st.columns([5, 3])
+col1, col2 = st.columns([5, 2])
 with col1:
     # 🔸 알림 입력 폼 (새 항목 추가용)
     with st.expander("#### ➕ 새 알림 추가", expanded=False):
@@ -190,19 +190,20 @@ with col1:
             WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"]
             key_prefix = alarm_type.replace("(", "_").replace(")", "_")
         
-            # 전체 선택 토글
-            if f"{key_prefix}_all_days" not in st.session_state:
-                st.session_state[f"{key_prefix}_all_days"] = False
-        
-            toggle_all = st.checkbox("전체 선택", value=st.session_state[f"{key_prefix}_all_days"], key=f"{key_prefix}_toggle")
+            # 전체 선택 / 해제 버튼
+            col_a, col_b = st.columns(2)
+            if col_a.button("✅ 전체 선택", key=f"{key_prefix}_select_all"):
+                for day in WEEKDAYS:
+                    st.session_state[f"{key_prefix}_{day}"] = True
+            if col_b.button("🚫 전체 해제", key=f"{key_prefix}_deselect_all"):
+                for day in WEEKDAYS:
+                    st.session_state[f"{key_prefix}_{day}"] = False
         
             # 요일 체크박스 나열
             new_days = []
             cols = st.columns(7)
             for i, day in enumerate(WEEKDAYS):
                 state_key = f"{key_prefix}_{day}"
-                if toggle_all:
-                    st.session_state[state_key] = True
                 checked = cols[i].checkbox(day, value=st.session_state.get(state_key, False), key=state_key)
                 if checked:
                     new_days.append(day)
