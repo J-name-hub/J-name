@@ -39,11 +39,16 @@ def save_alarm_schedule(data, sha=None):
 def parse_time_str(t):
     return t if hasattr(t, "strftime") else datetime.strptime(t, "%H:%M").time()
 
+WEEKDAY_ORDER = ["월", "화", "수", "목", "금", "토", "일"]
+
+def sort_days(days):
+    return sorted(days, key=lambda d: WEEKDAY_ORDER.index(d))
+
 def build_save_data():
     return {
-        "weekday": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"], "days": a.get("days", [])} for a in weekday_alarms], key=lambda x: x["time"]),
-        "night_today": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"], "days": a.get("days", [])} for a in night_today_alarms], key=lambda x: x["time"]),
-        "night_next": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"], "days": a.get("days", [])} for a in night_next_alarms], key=lambda x: x["time"]),
+        "weekday": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"], "days": sort_days(a.get("days", []))} for a in weekday_alarms], key=lambda x: x["time"]),
+        "night_today": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"], "days": sort_days(a.get("days", []))} for a in night_today_alarms], key=lambda x: x["time"]),
+        "night_next": sorted([{"time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"], "days": sort_days(a.get("days", []))} for a in night_next_alarms], key=lambda x: x["time"]),
         "custom": sorted([{"date": a["date"] if isinstance(a["date"], str) else a["date"].strftime("%Y-%m-%d"), "time": parse_time_str(a["time"]).strftime("%H:%M"), "message": a["message"]} for a in custom_alarms], key=lambda x: (x["date"], x["time"]))
     }
 
@@ -176,6 +181,10 @@ with col1:
         if alarm_type == "특정일":
             new_date = st.date_input("날짜 선택", value=datetime.today())
         else:
+            WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"]
+            select_all = st.checkbox("전체 선택", key="select_all_days")
+            default_days = WEEKDAYS if select_all else []
+            new_days = st.multiselect("반복 요일 선택", WEEKDAYS, default=default_days, key="selected_days")
             new_date = None  # 주간/야간은 날짜 없음
 
         new_time = st.time_input("시간 선택", value=datetime.strptime("08:00", "%H:%M").time())
@@ -187,19 +196,19 @@ with col1:
                 weekday_alarms.append({
                     "time": new_time.strftime("%H:%M"),
                     "message": new_msg,
-                    "days": new_days
+                    "days": sort_days(new_days)
                 })
             elif alarm_type == "야간(당일)":
                 night_today_alarms.append({
                     "time": new_time.strftime("%H:%M"),
                     "message": new_msg,
-                    "days": new_days
+                    "days": sort_days(new_days)
                 })
             elif alarm_type == "야간(익일)":
                 night_next_alarms.append({
                     "time": new_time.strftime("%H:%M"),
                     "message": new_msg,
-                    "days": new_days
+                    "days": sort_days(new_days)
                 })
             elif alarm_type == "특정일":
                 custom_alarms.append({
