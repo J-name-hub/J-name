@@ -28,6 +28,20 @@
     }
   ],
   "night_today": [],
-  "night_next": [],
+  "night_next": [
+    {
+      "time": "08:15",
+      "message": "CMMS 입력",
+      "days": [
+        "월",
+        "화",
+        "수",
+        "목",
+        "금",
+        "토",
+        "일"
+      ]
+    }
+  ],
   "custom": []
 }
