@@ -189,9 +189,23 @@ with col1:
         if alarm_type in ["주간", "야간(당일)", "야간(익일)"]:
             WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"]
             key_prefix = alarm_type.replace("(", "_").replace(")", "_")
-            select_all = st.checkbox("전체 선택", key=f"{key_prefix}_select_all_days")
-            default_days = WEEKDAYS if select_all else []
-            new_days = st.multiselect("반복 요일 선택", WEEKDAYS, default=default_days, key=f"{key_prefix}_selected_days")
+        
+            # 전체 선택 토글
+            if f"{key_prefix}_all_days" not in st.session_state:
+                st.session_state[f"{key_prefix}_all_days"] = False
+        
+            toggle_all = st.checkbox("전체 선택", value=st.session_state[f"{key_prefix}_all_days"], key=f"{key_prefix}_toggle")
+        
+            # 요일 체크박스 나열
+            new_days = []
+            cols = st.columns(7)
+            for i, day in enumerate(WEEKDAYS):
+                state_key = f"{key_prefix}_{day}"
+                if toggle_all:
+                    st.session_state[state_key] = True
+                checked = cols[i].checkbox(day, value=st.session_state.get(state_key, False), key=state_key)
+                if checked:
+                    new_days.append(day)
         else:
             new_days = []
 
