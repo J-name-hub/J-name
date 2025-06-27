@@ -77,6 +77,12 @@ def is_time_near(target_time_str, now, seconds=60):
         print(f"⛔ 시간 파싱 오류: {e}")
         return False
 
+# 요일 필터링
+def check_day_match(days_list, now):
+    weekday_kor = ["월", "화", "수", "목", "금", "토", "일"]
+    today_kor = weekday_kor[now.weekday()]
+    return not days_list or today_kor in days_list
+
 # 알람 조건 확인
 def check_alarm_conditions(now, today_str, shift_schedule, team_history, alarm_schedule):
     messages = []
@@ -95,17 +101,17 @@ def check_alarm_conditions(now, today_str, shift_schedule, team_history, alarm_s
 
     if today_shift in ("주", "올"):
         for item in alarm_schedule.get("weekday", []):
-            if is_time_near(item["time"], now):
+            if is_time_near(item["time"], now) and check_day_match(item.get("days", []), now):
                 messages.append((item["time"], "🟡", item["message"]))
 
     if today_shift in ("야", "올"):
         for item in alarm_schedule.get("night_today", []):
-            if is_time_near(item["time"], now):
+            if is_time_near(item["time"], now) and check_day_match(item.get("days", []), now):
                 messages.append((item["time"], "🌙", item["message"]))
 
     if yesterday_shift in ("야", "올"):
         for item in alarm_schedule.get("night_next", []):
-            if is_time_near(item["time"], now):
+            if is_time_near(item["time"], now) and check_day_match(item.get("days", []), now):
                 messages.append((item["time"], "🌙", item["message"]))
 
     return messages
