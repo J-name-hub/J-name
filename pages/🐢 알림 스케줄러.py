@@ -84,7 +84,7 @@ with tab1:
     # 주간 알림 처리
     with st.expander(f"", expanded=True):
         for i, alarm in enumerate(weekday_alarms):
-            col1, col2, col3, col4 = st.columns([2, 5, 5, 1])
+            col1, col2, col3, col4 = st.columns([2, 5, 4, 1])
             with col1:
                 # alarm["time"] = st.time_input(f"주간시간{i}", value=datetime.strptime(alarm["time"], "%H:%M").time(), key=f"wd_time_{i}")
                 st.markdown(f"⏰ **{alarm['time']}**")
@@ -107,7 +107,7 @@ with tab2:
     # 야간(당일) 알림 처리
     with st.expander("🌙 야간(당일)", expanded=True):
         for i, alarm in enumerate(night_today_alarms):
-            col1, col2, col3, col4 = st.columns([2, 5, 5, 1])
+            col1, col2, col3, col4 = st.columns([2, 5, 4, 1])
             with col1:
                 st.markdown(f"⏰ **{alarm['time']}**")
             with col2:
@@ -127,7 +127,7 @@ with tab2:
     # 야간(익일) 알림 처리
     with st.expander("🌙 야간(익일)", expanded=True):
         for i, alarm in enumerate(night_next_alarms):
-            col1, col2, col3, col4 = st.columns([2, 5, 5, 1])
+            col1, col2, col3, col4 = st.columns([2, 5, 4, 1])
             with col1:
                 st.markdown(f"⏰ **{alarm['time']}**")
             with col2:
