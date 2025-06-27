@@ -73,7 +73,7 @@ custom_alarms = data.get("custom", [])
 
 col1, col2 = st.columns([5, 3])
 with col1:
-    tab1, tab2, tab3, tab4 = st.tabs(["🟡 주간", "🌙 야간", "📅 특정일"])
+    tab1, tab2, tab3 = st.tabs(["🟡 주간", "🌙 야간", "📅 특정일"])
 
 with tab1:
     # 주간 알림 처리
