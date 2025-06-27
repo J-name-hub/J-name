@@ -40,8 +40,12 @@ def get_shift_for_date(target_date, team_history, shift_schedule):
 
 # JSON 파일 로드
 def load_json(path):
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"⚠️ JSON 로드 실패 ({path}): {e}")
+        return {}
 
 # 텔레그램 메시지 전송
 def send_telegram_message(text):
