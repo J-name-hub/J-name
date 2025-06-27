@@ -181,15 +181,19 @@ with col1:
         if alarm_type == "특정일":
             new_date = st.date_input("날짜 선택", value=datetime.today())
         else:
-            WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"]
-            select_all = st.checkbox("전체 선택", key="select_all_days")
-            default_days = WEEKDAYS if select_all else []
-            new_days = st.multiselect("반복 요일 선택", WEEKDAYS, default=default_days, key="selected_days")
             new_date = None  # 주간/야간은 날짜 없음
 
         new_time = st.time_input("시간 선택", value=datetime.strptime("08:00", "%H:%M").time())
         new_msg = st.text_input("알림 메시지")
-        new_days = st.multiselect("반복 요일 선택", ["월", "화", "수", "목", "금", "토", "일"])
+
+        if alarm_type in ["주간", "야간(당일)", "야간(익일)"]:
+            WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"]
+            key_prefix = alarm_type.replace("(", "_").replace(")", "_")
+            select_all = st.checkbox("전체 선택", key=f"{key_prefix}_select_all_days")
+            default_days = WEEKDAYS if select_all else []
+            new_days = st.multiselect("반복 요일 선택", WEEKDAYS, default=default_days, key=f"{key_prefix}_selected_days")
+        else:
+            new_days = []
 
         if st.button("➕ 추가"):
             if alarm_type == "주간":
