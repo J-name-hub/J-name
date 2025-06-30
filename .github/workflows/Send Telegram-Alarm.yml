@@ -2,7 +2,7 @@ name: Send Telegram Alarm
 
 on:
   schedule:
-    - cron: '*/15 * * * *'  # 매 15분마다 실행
+    - cron: '*/5 * * * *'  # 매 5분마다 실행
   workflow_dispatch:  # 수동 실행도 가능하게
 
 jobs:
