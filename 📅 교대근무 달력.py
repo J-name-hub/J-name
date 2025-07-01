@@ -8,13 +8,6 @@ import pytz
 from dateutil.relativedelta import relativedelta
 import base64
 
-# ✅ 페이지 설정
-st.set_page_config(
-    page_title="교대근무 달력",   # 탭에 표시될 제목
-    page_icon="📅",               # 탭 아이콘 (이모지 가능)
-    initial_sidebar_state="collapsed"
-)
-
 # GitHub 설정
 GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
@@ -316,7 +309,6 @@ def display_workdays_info(year, month, team_history, schedule_data):
     st.sidebar.write(f"**(오늘제외 남은일수  {remaining_workdays}일)**")
 
 def main():
-    st.set_page_config(page_title="교대근무 달력", layout="wide")
 
     # ✅ 세션 상태 기본값 설정 - 쿼리 처리 전에 먼저 실행되어야 함!
     if "year" not in st.session_state or "month" not in st.session_state:
@@ -336,6 +328,9 @@ def main():
         update_month(1)
         st.experimental_set_query_params()
         st.rerun()
+
+    # ✅ 페이지 설정
+    st.set_page_config(page_title="교대근무 달력", page_icon="📅", layout="wide", initial_sidebar_state="collapsed")
 
     # CSS 스타일 추가
     st.markdown("""
