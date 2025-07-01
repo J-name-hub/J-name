@@ -318,6 +318,12 @@ def display_workdays_info(year, month, team_history, schedule_data):
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
+    # URL query나 폼 제출 검사
+    if "prev" in st.experimental_get_query_params():
+        update_month(-1)
+    elif "next" in st.experimental_get_query_params():
+        update_month(1)
+
     # CSS 스타일 추가
     st.markdown("""
         <style>
