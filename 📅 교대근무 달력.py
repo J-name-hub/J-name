@@ -627,10 +627,10 @@ def sidebar_controls(year, month, schedule_data):
     team_history = load_team_settings_from_github()  # 리스트 반환됨
 
     # 🔹 1. 현재 조 표시
-    st.sidebar.markdown(f"### 현재 조: **{team_history[-1]['team'] if team_history else 'A'}조**")
+    st.sidebar.title(f"현재: {team_history[-1]['team'] if team_history else 'A'}조")
 
     # 🔹 2. 근무 조 설정
-    with st.sidebar.expander("근무 조 설정", expanded=False):
+    with st.sidebar.expander("조 설정", expanded=False):
         with st.form(key='team_settings_form'):
             available_teams = ["A", "B", "C", "D"]
             default_team = "A"
@@ -697,6 +697,8 @@ def sidebar_controls(year, month, schedule_data):
                         st.error("암호가 일치하지 않습니다.")
                         
     # 🔹 4. 달력 이동
+    st.sidebar.title("달력 이동")
+    
     months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
 
     desired_months = []
@@ -706,7 +708,7 @@ def sidebar_controls(year, month, schedule_data):
         desired_months.append((new_date.year, new_date.month))
 
     selected_year_month = st.sidebar.selectbox(
-        "달력 이동", 
+        "", 
         options=desired_months,
         format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
         index=5
@@ -722,7 +724,8 @@ def sidebar_controls(year, month, schedule_data):
     display_workdays_info(selected_year, selected_month, team_history, schedule_data)
 
     # 🔹 6. 조 순서 안내
-    st.sidebar.markdown("### 조 순서: AB → DA → CD → BC")
+    st.sidebar.title("조 순서: AB → DA → CD → BC")
+    # st.sidebar.markdown("### 조 순서: AB → DA → CD → BC")
 
 if __name__ == "__main__":
     main()
