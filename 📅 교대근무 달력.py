@@ -318,11 +318,18 @@ def display_workdays_info(year, month, team_history, schedule_data):
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
-    # URL query나 폼 제출 검사
-    if "prev" in st.experimental_get_query_params():
+    # 📍 URL 쿼리에서 이동 요청 처리
+    query_params = st.experimental_get_query_params()
+    move = query_params.get("move", [None])[0]
+    
+    if move == "prev":
         update_month(-1)
-    elif "next" in st.experimental_get_query_params():
+        st.experimental_set_query_params()  # 파라미터 초기화
+        st.rerun()
+    elif move == "next":
         update_month(1)
+        st.experimental_set_query_params()
+        st.rerun()
 
     # CSS 스타일 추가
     st.markdown("""
@@ -518,20 +525,23 @@ def main():
     st.markdown("""
     <div class="calendar-container" style="margin-top: 10px;">
         <div style="display: flex; justify-content: space-between;">
-            <form action="" method="post">
-                <button name="prev" type="submit"
-                    style="background-color: #4f4f4f; color: white; border: none;
-                    padding: 10px 20px; border-radius: 4px; font-size: 16px; cursor: pointer;">
-                    ← 이전 월
-                </button>
-            </form>
-            <form action="" method="post">
-                <button name="next" type="submit"
-                    style="background-color: #4f4f4f; color: white; border: none;
-                    padding: 10px 20px; border-radius: 4px; font-size: 16px; cursor: pointer;">
-                    다음 월 →
-                </button>
-            </form>
+            <a href="?move=prev" style="
+                background-color: #4f4f4f;
+                color: white;
+                text-decoration: none;
+                padding: 10px 20px;
+                border-radius: 4px;
+                font-size: 16px;
+            ">← 이전 월</a>
+    
+            <a href="?move=next" style="
+                background-color: #4f4f4f;
+                color: white;
+                text-decoration: none;
+                padding: 10px 20px;
+                border-radius: 4px;
+                font-size: 16px;
+            ">다음 월 →</a>
         </div>
     </div>
     """, unsafe_allow_html=True)
