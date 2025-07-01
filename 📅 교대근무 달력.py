@@ -508,32 +508,15 @@ def main():
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data, year, month, holidays)
 
-    # 🔄 연도/월 이동용 하단 UI
+    col_left, col_right = st.columns([1, 1])
 
-    prev_month = st.session_state.month
+    with col_left:
+        if st.button("← 이전 월"):
+            update_month(-1)
     
-    selected_month = st.select_slider(
-    "월 선택",
-    options=list(range(1, 13)),
-    value=st.session_state.month,
-    format_func=lambda x: f"{x}월",
-    key="month_slider_footer"
-    )
-    st.session_state.month = selected_month
-
-    # 값이 바뀐 경우 rerun
-    if selected_month != prev_month:
-        st.session_state.month = selected_month
-        st.rerun()
-
-    col1, col2, col3 = st.columns([1, 5, 1])
-    with col1:
-        if st.button("◀", key="prev_year_footer"):
-            st.session_state.year -= 1
-    with col3:
-        if st.button("▶", key="next_year_footer"):
-            st.session_state.year += 1
-
+    with col_right:
+        if st.button("다음 월 →"):
+            update_month(1)
 
     # GitHub에서 스케줄 데이터 로드
     schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
