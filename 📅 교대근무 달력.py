@@ -314,7 +314,7 @@ def main():
     st.set_page_config(page_title="교대근무 달력", page_icon="📅", layout="wide", initial_sidebar_state="collapsed")
 
     # ✅ GET 파라미터로 '이전 월', '다음 월' 버튼 처리
-    query_params = st.experimental_get_query_params()
+    query_params = st.query_params
     move_param = query_params.get("move", [None])[0]
     if move_param == "prev":
         update_month(-1)
