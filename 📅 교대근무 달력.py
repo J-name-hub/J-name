@@ -508,55 +508,28 @@ def main():
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data, year, month, holidays)
 
-    # 🔹 연도와 월 세션 초기화
-    if "year" not in st.session_state:
-        st.session_state.year = datetime.now().year
-    if "month" not in st.session_state:
-        st.session_state.month = datetime.now().month
+    # 🔄 연도/월 이동용 하단 UI
+
     
-    months_kor = {
-        1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월",
-        7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"
-    }
-    
-    st.sidebar.title("달력 이동")
-    
-    # 🔹 좌: 작년 / 중: 월 슬라이더 / 우: 내년
-    col1, col2, col3 = st.sidebar.columns([1, 5, 1])
-    
+    selected_month = st.select_slider(
+        "월 선택",
+        options=list(range(1, 13)),
+        value=st.session_state.month,
+        format_func=lambda x: f"{x}월",
+        key="month_slider_footer"
+    )
+    st.session_state.month = selected_month
+
+    col1, col2, col3 = st.columns([1, 5, 1])
+        
     with col1:
-        if st.button("◀", key="prev_year"):
+        if st.button("◀", key="prev_year_footer"):
             st.session_state.year -= 1
     
     with col3:
-        if st.button("▶", key="next_year"):
+        if st.button("▶", key="next_year_footer"):
             st.session_state.year += 1
-    
-    with col2:
-        selected_month = st.select_slider(
-            "월 선택", options=list(range(1, 13)), value=st.session_state.month,
-            format_func=lambda x: months_kor[x], key="month_slider"
-        )
-        st.session_state.month = selected_month
-    
-    # 버튼 컨테이너 시작
-    st.markdown('<div class="button-container">', unsafe_allow_html=True)
-    
-    # 버튼을 위한 컬럼 생성
-    col1, col2, col3 = st.columns([3,5,3])
 
-    # '이전 월' 버튼
-    with col1:
-        if st.button("이전 월"):
-            update_month(-1)
-
-    # '다음 월' 버튼
-    with col3:
-        if st.button("다음 월"):
-            update_month(1)
-
-    # 버튼 컨테이너 종료
-    st.markdown('</div>', unsafe_allow_html=True)
 
     # GitHub에서 스케줄 데이터 로드
     schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
