@@ -511,20 +511,18 @@ def main():
     # 버튼 컨테이너 시작
     st.markdown('<div class="button-container">', unsafe_allow_html=True)
 
-    coll1, coll2, coll3 = st.columns([1, 3, 1])
-    with coll2:
-        # 버튼을 위한 컬럼 생성
-        col1, col2, col3 = st.columns([3,5,3])
+    # 버튼을 위한 컬럼 생성
+    col1, col2, col3 = st.columns([3,5,3])
     
-        # '이전 월' 버튼
-        with col1:
-            if st.button("이전 월"):
-                update_month(-1)
+    # '이전 월' 버튼
+    with col1:
+        if st.button("이전 월"):
+            update_month(-1)
     
-        # '다음 월' 버튼
-        with col3:
-            if st.button("다음 월"):
-                update_month(1)
+    # '다음 월' 버튼
+    with col3:
+        if st.button("다음 월"):
+            update_month(1)
 
     # 버튼 컨테이너 종료
     st.markdown('</div>', unsafe_allow_html=True)
@@ -675,31 +673,29 @@ def sidebar_controls(year, month, schedule_data):
         st.rerun()
 
     if st.session_state.expander_open:
-        coll1, coll2, coll3 = st.columns([1, 3, 1])
-        with coll2:
-            with st.expander("스케줄 변경", expanded=True):
-                with st.form(key='schedule_change_form'):
-                    change_date = st.date_input("변경할 날짜", datetime(st.session_state.year, st.session_state.month, 1), key="change_date")
-                    new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
-                    password = st.text_input("암호 입력", type="password", key="password")
-                    col1, col2, col3 = st.columns([1, 2, 1])
-                    with col3:
-                        change_submit_button = st.form_submit_button("스케줄 변경 저장")
+        with st.expander("스케줄 변경", expanded=True):
+            with st.form(key='schedule_change_form'):
+                change_date = st.date_input("변경할 날짜", datetime(st.session_state.year, st.session_state.month, 1), key="change_date")
+                new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
+                password = st.text_input("암호 입력", type="password", key="password")
+                col1, col2, col3 = st.columns([1, 2, 1])
+                with col3:
+                    change_submit_button = st.form_submit_button("스케줄 변경 저장")
     
-                    if change_submit_button:
-                        if password == SCHEDULE_CHANGE_PASSWORD:
-                            schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
-                            change_date_str = change_date.strftime("%Y-%m-%d")
-                            schedule_data[change_date_str] = new_shift
-                            if save_schedule(schedule_data, sha):
-                                st.success("스케줄이 저장되었습니다.")
-                                # 캐시 키를 변경하여 새로운 데이터를 로드하도록 함
-                                st.session_state.cache_key = datetime.now().strftime("%Y%m%d%H%M%S")
-                            else:
-                                st.error("스케줄 저장에 실패했습니다.")
-                            st.rerun()
+                if change_submit_button:
+                    if password == SCHEDULE_CHANGE_PASSWORD:
+                        schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
+                        change_date_str = change_date.strftime("%Y-%m-%d")
+                        schedule_data[change_date_str] = new_shift
+                        if save_schedule(schedule_data, sha):
+                            st.success("스케줄이 저장되었습니다.")
+                            # 캐시 키를 변경하여 새로운 데이터를 로드하도록 함
+                            st.session_state.cache_key = datetime.now().strftime("%Y%m%d%H%M%S")
                         else:
-                            st.error("암호가 일치하지 않습니다.")
+                            st.error("스케줄 저장에 실패했습니다.")
+                        st.rerun()
+                    else:
+                        st.error("암호가 일치하지 않습니다.")
 
     # 🔹 3. 근무일수 정보 표시
     display_workdays_info(st.session_state.year, st.session_state.month, team_history, schedule_data)
