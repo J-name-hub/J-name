@@ -508,22 +508,27 @@ def main():
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data, year, month, holidays)
 
-    # 캘린더 버튼을 calendar-container 안에 넣기 위해 HTML 컨테이너 시작
-    st.markdown('<div class="calendar-container">', unsafe_allow_html=True)
-    
-    # 좌우 정렬 버튼을 위해 columns 생성
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        if st.button("← 이전 월", use_container_width=True):
-            update_month(-1)
-    
-    with col2:
-        if st.button("다음 월 →", use_container_width=True):
-            update_month(1)
-    
-    # HTML 컨테이너 닫기
-    st.markdown('</div>', unsafe_allow_html=True)
+    # 달력 너비 안에 좌우 정렬된 버튼 추가
+    st.markdown("""
+    <div class="calendar-container" style="margin-top: 10px;">
+        <div style="display: flex; justify-content: space-between;">
+            <form action="" method="post">
+                <button name="prev" type="submit"
+                    style="background-color: #4f4f4f; color: white; border: none;
+                    padding: 10px 20px; border-radius: 4px; font-size: 16px; cursor: pointer;">
+                    ← 이전 월
+                </button>
+            </form>
+            <form action="" method="post">
+                <button name="next" type="submit"
+                    style="background-color: #4f4f4f; color: white; border: none;
+                    padding: 10px 20px; border-radius: 4px; font-size: 16px; cursor: pointer;">
+                    다음 월 →
+                </button>
+            </form>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     # GitHub에서 스케줄 데이터 로드
     schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
