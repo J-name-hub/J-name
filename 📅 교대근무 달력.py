@@ -625,7 +625,11 @@ def sidebar_controls(year, month, schedule_data):
 
     # team_history 로드
     team_history = load_team_settings_from_github()  # 리스트 반환됨
-    
+
+    # 🔹 1. 현재 조 표시
+    st.sidebar.markdown(f"### 현재 조: **{team_history[-1]['team'] if team_history else 'A'}조**")
+
+    # 🔹 2. 근무 조 설정
     with st.sidebar.expander("근무 조 설정", expanded=False):
         with st.form(key='team_settings_form'):
             available_teams = ["A", "B", "C", "D"]
@@ -661,28 +665,8 @@ def sidebar_controls(year, month, schedule_data):
                 else:
                     st.sidebar.error("암호가 일치하지 않습니다.")
 
+    # 🔹 3. 스케줄 변경
     st.sidebar.title("스케줄 변경")
-
-    months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
-
-    desired_months = []
-    current_date = datetime(st.session_state.year, st.session_state.month, 1)
-    for i in range(-5, 6):
-        new_date = current_date + relativedelta(months=i)
-        desired_months.append((new_date.year, new_date.month))
-
-    selected_year_month = st.sidebar.selectbox(
-        "달력 이동", 
-        options=desired_months,
-        format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
-        index=5
-    )
-
-    selected_year, selected_month = selected_year_month
-    if selected_year != st.session_state.year or selected_month != st.session_state.month:
-        st.session_state.year = selected_year
-        st.session_state.month = selected_month
-        st.rerun()
 
     toggle_label = "스케줄 변경 비활성화" if st.session_state.expander_open else "스케줄 변경 활성화"
     if st.sidebar.button(toggle_label):
@@ -711,11 +695,34 @@ def sidebar_controls(year, month, schedule_data):
                         st.rerun()
                     else:
                         st.error("암호가 일치하지 않습니다.")
+                        
+    # 🔹 4. 달력 이동
+    months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
 
-    # 근무일수 정보 표시
+    desired_months = []
+    current_date = datetime(st.session_state.year, st.session_state.month, 1)
+    for i in range(-5, 6):
+        new_date = current_date + relativedelta(months=i)
+        desired_months.append((new_date.year, new_date.month))
+
+    selected_year_month = st.sidebar.selectbox(
+        "달력 이동", 
+        options=desired_months,
+        format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
+        index=5
+    )
+
+    selected_year, selected_month = selected_year_month
+    if selected_year != st.session_state.year or selected_month != st.session_state.month:
+        st.session_state.year = selected_year
+        st.session_state.month = selected_month
+        st.rerun()
+
+    # 🔹 5. 근무일수 정보 표시
     display_workdays_info(selected_year, selected_month, team_history, schedule_data)
 
-    st.sidebar.title("조 순서 : AB>DA>CD>BC")
+    # 🔹 6. 조 순서 안내
+    st.sidebar.markdown("### 조 순서: AB → DA → CD → BC")
 
 if __name__ == "__main__":
     main()
