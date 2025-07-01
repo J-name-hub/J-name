@@ -665,9 +665,6 @@ def sidebar_controls(year, month, schedule_data):
                 else:
                     st.sidebar.error("암호가 일치하지 않습니다.")
 
-    # 🔹 3. 스케줄 변경
-    st.sidebar.title("스케줄 변경")
-
     toggle_label = "스케줄 변경 비활성화" if st.session_state.expander_open else "스케줄 변경 활성화"
     if st.sidebar.button(toggle_label):
         st.session_state.expander_open = not st.session_state.expander_open
@@ -696,7 +693,7 @@ def sidebar_controls(year, month, schedule_data):
                     else:
                         st.error("암호가 일치하지 않습니다.")
                         
-    # 🔹 4. 달력 이동
+    # 🔹 3. 달력 이동
     st.sidebar.title("달력 이동")
     
     months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
@@ -720,10 +717,10 @@ def sidebar_controls(year, month, schedule_data):
         st.session_state.month = selected_month
         st.rerun()
 
-    # 🔹 5. 근무일수 정보 표시
+    # 🔹 4. 근무일수 정보 표시
     display_workdays_info(selected_year, selected_month, team_history, schedule_data)
 
-    # 🔹 6. 조 순서 안내
+    # 🔹 5. 조 순서 안내
     st.sidebar.title("조 순서: AB → DA → CD → BC")
     # st.sidebar.markdown("### 조 순서: AB → DA → CD → BC")
 
