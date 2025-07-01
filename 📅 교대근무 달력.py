@@ -511,8 +511,8 @@ def main():
     # 버튼 컨테이너 시작
     st.markdown('<div class="button-container">', unsafe_allow_html=True)
 
-    coll1, coll2 = st.columns([5, 2])
-    with coll1:
+    coll1, coll2, coll3 = st.columns([1, 3, 1])
+    with coll2:
         # 버튼을 위한 컬럼 생성
         col1, col2, col3 = st.columns([3,5,3])
     
