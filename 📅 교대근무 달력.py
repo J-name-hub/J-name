@@ -708,6 +708,7 @@ def sidebar_controls(year, month, schedule_data):
     st.sidebar.title("🔁 AB → DA → CD → BC")
 
     # 🔹 5. 달력 이동
+    st.sidebar.title("📆 달력 이동")
     months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
 
     desired_months = []
@@ -717,7 +718,7 @@ def sidebar_controls(year, month, schedule_data):
         desired_months.append((new_date.year, new_date.month))
 
     selected_year_month = st.sidebar.selectbox(
-        "달력 이동", 
+        "", 
         options=desired_months,
         format_func=lambda x: f"{x[0]}년 {months[x[1]]}",
         index=5
