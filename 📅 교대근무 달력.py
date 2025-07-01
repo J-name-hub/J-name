@@ -12,6 +12,7 @@ import base64
 st.set_page_config(
     page_title="교대근무 달력",   # 탭에 표시될 제목
     page_icon="📅",               # 탭 아이콘 (이모지 가능)
+    layout="wide",
     initial_sidebar_state="collapsed"
 )
 
