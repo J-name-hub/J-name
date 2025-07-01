@@ -513,11 +513,11 @@ def main():
     prev_month = st.session_state.month
     
     selected_month = st.select_slider(
-        "월 선택",
-        options=list(range(1, 13)),
-        value=st.session_state.month,
-        format_func=lambda x: f"{x}월",
-        key="month_slider_footer"
+    "월 선택",
+    options=list(range(1, 13)),
+    value=st.session_state.month,
+    format_func=lambda x: f"{x}월",
+    key="month_slider_footer"
     )
     st.session_state.month = selected_month
 
