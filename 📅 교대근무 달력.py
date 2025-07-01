@@ -508,21 +508,18 @@ def main():
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data, year, month, holidays)
 
-    # 달력과 같은 폭(800px) 내에 버튼을 정렬하기 위해 calendar-container 열기
-    st.markdown('<div class="calendar-container">', unsafe_allow_html=True)
+    with st.container():
+        st.markdown('<div style="max-width: 800px; margin: 0 auto;">', unsafe_allow_html=True)
     
-    # 좌우로 버튼 배치
-    col1, col2, col3 = st.columns([1, 2, 1])
+        col1, col2, col3 = st.columns([3,5,3])
+        with col1:
+            if st.button("← 이전 월"):
+                update_month(-1)
+        with col3:
+            if st.button("다음 월 →"):
+                update_month(1)
     
-    with col1:
-        if st.button("← 이전 월"):
-            update_month(-1)
-    
-    with col3:
-        if st.button("다음 월 →"):
-            update_month(1)
-    
-    st.markdown('</div>', unsafe_allow_html=True)  # calendar-container 닫기
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # GitHub에서 스케줄 데이터 로드
     schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
