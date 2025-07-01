@@ -12,7 +12,6 @@ import base64
 st.set_page_config(
     page_title="교대근무 달력",   # 탭에 표시될 제목
     page_icon="📅",               # 탭 아이콘 (이모지 가능)
-    layout="wide",
     initial_sidebar_state="collapsed"
 )
 
@@ -623,47 +622,44 @@ def display_calendar(calendar_data, year, month, holidays):
     st.markdown(full_calendar_html, unsafe_allow_html=True)
 
 def sidebar_controls(year, month, schedule_data):
-    st.sidebar.title("근무 조 설정")
 
     # team_history 로드
     team_history = load_team_settings_from_github()  # 리스트 반환됨
     
-    with st.sidebar.form(key='team_settings_form'):
-        available_teams = ["A", "B", "C", "D"]
-        default_team = "A"
-        try:
-            default_team = team_history[-1]["team"]  # 가장 최근 조
-        except (KeyError, IndexError, TypeError):
+    with st.sidebar.expander("근무 조 설정", expanded=False):
+        with st.form(key='team_settings_form'):
+            available_teams = ["A", "B", "C", "D"]
             default_team = "A"
-        
-        team = st.selectbox("조 선택", available_teams, index=available_teams.index(default_team))
-        change_start_date = st.date_input("적용 시작일", datetime(2025, 7, 1), key="start_date")
-        password_for_settings = st.text_input("암호 입력", type="password", key="settings_password")
-        submit_button = st.form_submit_button("설정 저장")
+            try:
+                default_team = team_history[-1]["team"]  # 가장 최근 조
+            except (KeyError, IndexError, TypeError):
+                default_team = "A"
 
-        if submit_button:
-            if password_for_settings == SCHEDULE_CHANGE_PASSWORD:
-                new_entry = {
-                    "start_date": change_start_date.strftime("%Y-%m-%d"),
-                    "team": team
-                }
+            team = st.selectbox("조 선택", available_teams, index=available_teams.index(default_team))
+            change_start_date = st.date_input("적용 시작일", datetime.today(), key="start_date")
+            password_for_settings = st.text_input("암호 입력", type="password", key="settings_password")
+            submit_button = st.form_submit_button("설정 저장")
 
-                # ✅ ① 기존 team_history를 딕셔너리로 변환하여 같은 날짜 덮어쓰기
-                team_history_dict = {entry["start_date"]: entry["team"] for entry in team_history}
-                team_history_dict[new_entry["start_date"]] = new_entry["team"]
+            if submit_button:
+                if password_for_settings == SCHEDULE_CHANGE_PASSWORD:
+                    new_entry = {
+                        "start_date": change_start_date.strftime("%Y-%m-%d"),
+                        "team": team
+                    }
 
-                # ✅ ② 다시 리스트로 변환 + 날짜 오름차순 정렬
-                team_history = [{"start_date": k, "team": v} for k, v in sorted(team_history_dict.items())]
+                    # ✅ 기존 team_history 업데이트
+                    team_history_dict = {entry["start_date"]: entry["team"] for entry in team_history}
+                    team_history_dict[new_entry["start_date"]] = new_entry["team"]
+                    team_history = [{"start_date": k, "team": v} for k, v in sorted(team_history_dict.items())]
 
-                # ✅ ③ 저장
-                if save_team_settings_to_github(team_history):
-                    st.sidebar.success(f"{new_entry['start_date']}부터 {team}조로 저장되었습니다.")
-                    st.session_state.team_history = team_history  # 세션 갱신
-                    st.rerun()
+                    if save_team_settings_to_github(team_history):
+                        st.session_state.team_history = team_history
+                        st.sidebar.success(f"{new_entry['start_date']}부터 {team}조로 저장되었습니다.")
+                        st.rerun()
+                    else:
+                        st.sidebar.error("조 설정 저장에 실패했습니다.")
                 else:
-                    st.sidebar.error("조 설정 저장에 실패했습니다.")
-            else:
-                st.sidebar.error("암호가 일치하지 않습니다.")
+                    st.sidebar.error("암호가 일치하지 않습니다.")
 
     st.sidebar.title("스케줄 변경")
 
@@ -693,27 +689,28 @@ def sidebar_controls(year, month, schedule_data):
         st.session_state.expander_open = not st.session_state.expander_open
         st.rerun()
 
-    with st.expander("스케줄 변경", expanded=False):
-        with st.form(key='schedule_change_form'):
-            change_date = st.date_input("변경할 날짜", datetime(st.session_state.year, st.session_state.month, 1), key="change_date")
-            new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
-            password = st.text_input("암호 입력", type="password", key="password")
-            change_submit_button = st.form_submit_button("스케줄 변경 저장")
+    if st.session_state.expander_open:
+        with st.expander("스케줄 변경", expanded=True):
+            with st.form(key='schedule_change_form'):
+                change_date = st.date_input("변경할 날짜", datetime(st.session_state.year, st.session_state.month, 1), key="change_date")
+                new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
+                password = st.text_input("암호 입력", type="password", key="password")
+                change_submit_button = st.form_submit_button("스케줄 변경 저장")
 
-            if change_submit_button:
-                if password == SCHEDULE_CHANGE_PASSWORD:
-                    schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
-                    change_date_str = change_date.strftime("%Y-%m-%d")
-                    schedule_data[change_date_str] = new_shift
-                    if save_schedule(schedule_data, sha):
-                        st.success("스케줄이 저장되었습니다.")
-                        # 캐시 키를 변경하여 새로운 데이터를 로드하도록 함
-                        st.session_state.cache_key = datetime.now().strftime("%Y%m%d%H%M%S")
+                if change_submit_button:
+                    if password == SCHEDULE_CHANGE_PASSWORD:
+                        schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
+                        change_date_str = change_date.strftime("%Y-%m-%d")
+                        schedule_data[change_date_str] = new_shift
+                        if save_schedule(schedule_data, sha):
+                            st.success("스케줄이 저장되었습니다.")
+                            # 캐시 키를 변경하여 새로운 데이터를 로드하도록 함
+                            st.session_state.cache_key = datetime.now().strftime("%Y%m%d%H%M%S")
+                        else:
+                            st.error("스케줄 저장에 실패했습니다.")
+                        st.rerun()
                     else:
-                        st.error("스케줄 저장에 실패했습니다.")
-                    st.rerun()
-                else:
-                    st.error("암호가 일치하지 않습니다.")
+                        st.error("암호가 일치하지 않습니다.")
 
     # 근무일수 정보 표시
     display_workdays_info(selected_year, selected_month, team_history, schedule_data)
