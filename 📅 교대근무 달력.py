@@ -318,7 +318,7 @@ def display_workdays_info(year, month, team_history, schedule_data):
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
-    # ✅ 세션 상태 기본값 설정
+    # ✅ 세션 상태 기본값 설정 - 쿼리 처리 전에 먼저 실행되어야 함!
     if "year" not in st.session_state or "month" not in st.session_state:
         today = datetime.now(pytz.timezone('Asia/Seoul'))
         st.session_state.year = today.year
