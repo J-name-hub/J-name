@@ -631,8 +631,34 @@ def display_calendar(calendar_data, year, month, holidays):
         holiday_html += '&nbsp;'  # 공휴일 데이터가 없을 때 빈 줄 추가
     holiday_html += '</div>'
 
+
+    
     # 전체 달력 HTML 조합
-    full_calendar_html = header_html + weekdays_html + calendar_html + holiday_html + '</div>'
+    full_calendar_html = header_html + weekdays_html + calendar_html + holiday_html
+
+    # ✅ 버튼을 포함한 컨테이너 추가
+    full_calendar_html += """
+        <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+            <form action="?move=prev" method="get">
+                <button type="submit"
+                    style="background-color: #4f4f4f; color: white; border: none;
+                    padding: 10px 20px; border-radius: 4px; font-size: 16px; cursor: pointer;">
+                    ← 이전 월
+                </button>
+            </form>
+            <form action="?move=next" method="get">
+                <button type="submit"
+                    style="background-color: #4f4f4f; color: white; border: none;
+                    padding: 10px 20px; border-radius: 4px; font-size: 16px; cursor: pointer;">
+                    다음 월 →
+                </button>
+            </form>
+        </div>
+    """
+
+    # 마지막으로 닫기
+    full_calendar_html += '</div>'  # 달력 전체 container 닫기
+
 
     # HTML을 Streamlit에 표시
     st.markdown(full_calendar_html, unsafe_allow_html=True)
