@@ -633,12 +633,9 @@ def sidebar_controls(year, month, schedule_data):
             default_team = team_history[-1]["team"]  # 가장 최근 조
         except (KeyError, IndexError, TypeError):
             default_team = "A"
-
-        if "start_date" not in st.session_state:
-            st.session_state.start_date = datetime.today()
         
         team = st.selectbox("조 선택", available_teams, index=available_teams.index(default_team))
-        change_start_date = st.date_input("적용 시작일", st.session_state.start_date, key="start_date")
+        change_start_date = st.date_input("적용 시작일", datetime(2025, 7, 1), key="start_date")
         password_for_settings = st.text_input("암호 입력", type="password", key="settings_password")
         submit_button = st.form_submit_button("설정 저장")
 
