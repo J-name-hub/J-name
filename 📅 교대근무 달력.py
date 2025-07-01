@@ -310,27 +310,16 @@ def display_workdays_info(year, month, team_history, schedule_data):
 
 def main():
 
-    # ✅ 세션 상태 기본값 설정 - 쿼리 처리 전에 먼저 실행되어야 함!
-    if "year" not in st.session_state or "month" not in st.session_state:
-        today = datetime.now(pytz.timezone('Asia/Seoul'))
-        st.session_state.year = today.year
-        st.session_state.month = today.month
-
-    # ✅ 쿼리 파라미터로 달 이동 처리
-    query_params = st.experimental_get_query_params()
-    move = query_params.get("move", [None])[0]
-
-    if move == "prev":
-        update_month(-1)
-        st.experimental_set_query_params()  # URL 초기화
-        st.rerun()
-    elif move == "next":
-        update_month(1)
-        st.experimental_set_query_params()
-        st.rerun()
-
     # ✅ 페이지 설정
     st.set_page_config(page_title="교대근무 달력", page_icon="📅", layout="wide", initial_sidebar_state="collapsed")
+
+    # ✅ GET 파라미터로 '이전 월', '다음 월' 버튼 처리
+    query_params = st.experimental_get_query_params()
+    move_param = query_params.get("move", [None])[0]
+    if move_param == "prev":
+        update_month(-1)
+    elif move_param == "next":
+        update_month(1)
 
     # CSS 스타일 추가
     st.markdown("""
@@ -521,27 +510,6 @@ def main():
     month_days = generate_calendar(year, month)
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
     display_calendar(calendar_data, year, month, holidays)
-
-    st.markdown("""
-    <div class="calendar-container" style="margin-top: 10px;">
-        <div style="display: flex; justify-content: space-between;">
-            <form action="?move=prev" method="get">
-                <button type="submit"
-                    style="background-color: #4f4f4f; color: white; border: none;
-                    padding: 10px 20px; border-radius: 4px; font-size: 16px; cursor: pointer;">
-                    ← 이전 월
-                </button>
-            </form>
-            <form action="?move=next" method="get">
-                <button type="submit"
-                    style="background-color: #4f4f4f; color: white; border: none;
-                    padding: 10px 20px; border-radius: 4px; font-size: 16px; cursor: pointer;">
-                    다음 월 →
-                </button>
-            </form>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
     
     # GitHub에서 스케줄 데이터 로드
     schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
