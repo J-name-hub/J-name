@@ -318,13 +318,19 @@ def display_workdays_info(year, month, team_history, schedule_data):
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
-    # 📍 URL 쿼리에서 이동 요청 처리
+    # ✅ 필수: session_state 기본값 설정 (에러 방지)
+    if "year" not in st.session_state:
+        st.session_state.year = datetime.today().year
+    if "month" not in st.session_state:
+        st.session_state.month = datetime.today().month
+
+    # ✅ URL 쿼리 파라미터 확인
     query_params = st.experimental_get_query_params()
     move = query_params.get("move", [None])[0]
-    
+
     if move == "prev":
         update_month(-1)
-        st.experimental_set_query_params()  # 파라미터 초기화
+        st.experimental_set_query_params()  # URL 쿼리 리셋
         st.rerun()
     elif move == "next":
         update_month(1)
