@@ -11,7 +11,8 @@ import base64
 # ✅ 페이지 설정
 st.set_page_config(
     page_title="교대근무 달력",   # 탭에 표시될 제목
-    page_icon="📅"               # 탭 아이콘 (이모지 가능)
+    page_icon="📅",               # 탭 아이콘 (이모지 가능)
+    initial_sidebar_state="collapsed"
 )
 
 # GitHub 설정
