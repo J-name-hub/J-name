@@ -510,6 +510,7 @@ def main():
 
     # 🔄 연도/월 이동용 하단 UI
 
+    prev_month = st.session_state.month
     
     selected_month = st.select_slider(
         "월 선택",
@@ -520,12 +521,15 @@ def main():
     )
     st.session_state.month = selected_month
 
+    # 값이 바뀐 경우 rerun
+    if selected_month != prev_month:
+        st.session_state.month = selected_month
+        st.rerun()
+
     col1, col2, col3 = st.columns([1, 5, 1])
-        
     with col1:
         if st.button("◀", key="prev_year_footer"):
             st.session_state.year -= 1
-    
     with col3:
         if st.button("▶", key="next_year_footer"):
             st.session_state.year += 1
