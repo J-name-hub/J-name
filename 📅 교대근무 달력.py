@@ -678,7 +678,7 @@ def sidebar_controls(year, month, schedule_data):
                 change_date = st.date_input("변경할 날짜", datetime(st.session_state.year, st.session_state.month, 1), key="change_date")
                 new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
                 password = st.text_input("암호 입력", type="password", key="password")
-                col1, col2, col3 = st.columns([1, 3, 1])
+                col1, col2, col3 = st.columns([1, 4, 1])
                 with col3:
                     change_submit_button = st.form_submit_button("스케줄 변경 저장")
     
