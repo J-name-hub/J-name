@@ -642,7 +642,7 @@ def sidebar_controls(year, month, schedule_data):
             team = st.selectbox("조 선택", available_teams, index=available_teams.index(default_team))
             change_start_date = st.date_input("적용 시작일", datetime.today(), key="start_date")
             password_for_settings = st.text_input("암호 입력", type="password", key="settings_password")
-            submit_button = st.form_submit_button("설정 저장")
+            submit_button = st.form_submit_button("조 설정 저장")
 
             if submit_button:
                 if password_for_settings == SCHEDULE_CHANGE_PASSWORD:
