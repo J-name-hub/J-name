@@ -312,7 +312,7 @@ def display_workdays_info(year, month, team_history, schedule_data):
         workdays_until_today = calculate_workdays_until_date(year, month, team_history, schedule_data, today)
         remaining_workdays = total_workdays - workdays_until_today
 
-    st.sidebar.title(f"** 📋 월 근무일수 : {total_workdays}일**")
+    st.sidebar.title(f"📋 월 근무일수: {total_workdays}일")
     st.sidebar.write(f"**(오늘제외 남은일수  {remaining_workdays}일)**")
 
 def main():
@@ -629,7 +629,7 @@ def sidebar_controls(year, month, schedule_data):
     team_history = load_team_settings_from_github()  # 리스트 반환됨
 
     # 🔹 1. 현재 조 표시
-    st.sidebar.title(f"🧑 현재 근무조: {team_history[-1]['team'] if team_history else 'A'}")
+    st.sidebar.title(f"👥 현재 근무조: {team_history[-1]['team'] if team_history else 'A'}")
 
     # 🔹 2. 근무 조 설정
     with st.sidebar.expander("조 설정", expanded=False):
