@@ -526,11 +526,14 @@ def main():
 
     st.divider()
 
+    # 버튼을 위한 컬럼 생성
+    coll1, coll2, coll3 = st.columns([3,5,3])
+
     # '오늘' 버튼
-    if st.button("오늘"):
-        st.session_state.year = today.year
-        st.session_state.month = today.month
-        st.rerun()
+    with coll2:
+        if st.button("Today"):
+            st.session_state.year = today.year
+            st.session_state.month = today.month
 
     # 버튼 컨테이너 종료
     st.markdown('</div>', unsafe_allow_html=True)
