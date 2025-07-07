@@ -256,26 +256,17 @@ def get_shift(target_date, team_history, schedule_data):
     pattern = shift_patterns[team]
     return pattern[delta_days % len(pattern)]
 
-# 근무 시간 계산 함수
-def get_work_hours(shift):
-    """각 근무 형태별 근무시간 반환"""
-    if shift == "주":
-        return 8
-    elif shift == "야":
-        return 6 + 9  # 당일 6시간 + 익일 9시간
-    elif shift == "올":
-        return 14 + 9  # 당일 14시간 + 익일 9시간
-    else:  # "비"
-        return 0
-
-# 주별 근무시간 계산 함수
+# 주별 근무시간 계산 함수 (수정된 버전)
 def calculate_weekly_hours(year, month, team_history, schedule_data):
-    """월별 주차별 근무시간을 계산"""
-    weekly_hours = []
+    """월별 주차별 근무시간을 계산 (야간/올간근무의 익일 시간을 다음 주에 합산)"""
+    weekly_hours = {}
     cal = generate_calendar(year, month)
     
+    # 각 주차별 시간 초기화
+    for week_num in range(1, len(cal) + 1):
+        weekly_hours[week_num] = 0
+    
     for week_num, week in enumerate(cal, 1):
-        week_total = 0
         for day in week:
             if day != 0:  # 빈 날 제외
                 date_str = f"{year}-{month:02d}-{day:02d}"
@@ -287,13 +278,56 @@ def calculate_weekly_hours(year, month, team_history, schedule_data):
                 else:
                     shift = get_shift(current_date, team_history, schedule_data)
                 
-                # 근무 시간 추가
-                week_total += get_work_hours(shift)
-        
-        if week_total > 0:  # 근무가 있는 주만 추가
-            weekly_hours.append((week_num, week_total))
+                # 당일 근무 시간 계산 및 합산
+                if shift == "주":
+                    weekly_hours[week_num] += 8
+                elif shift == "야":
+                    # 당일 6시간은 현재 주에 합산
+                    weekly_hours[week_num] += 6
+                    # 익일 9시간은 다음 주에 합산 (익일이 다음 주인 경우)
+                    next_date = current_date + timedelta(days=1)
+                    next_week_num = get_week_number_for_date(next_date, year, month, cal)
+                    if next_week_num and next_week_num != week_num:
+                        if next_week_num not in weekly_hours:
+                            weekly_hours[next_week_num] = 0
+                        weekly_hours[next_week_num] += 9
+                    else:
+                        # 익일이 같은 주라면 현재 주에 합산
+                        weekly_hours[week_num] += 9
+                elif shift == "올":
+                    # 당일 14시간은 현재 주에 합산
+                    weekly_hours[week_num] += 14
+                    # 익일 9시간은 다음 주에 합산 (익일이 다음 주인 경우)
+                    next_date = current_date + timedelta(days=1)
+                    next_week_num = get_week_number_for_date(next_date, year, month, cal)
+                    if next_week_num and next_week_num != week_num:
+                        if next_week_num not in weekly_hours:
+                            weekly_hours[next_week_num] = 0
+                        weekly_hours[next_week_num] += 9
+                    else:
+                        # 익일이 같은 주라면 현재 주에 합산
+                        weekly_hours[week_num] += 9
     
-    return weekly_hours
+    # 결과를 리스트로 변환 (기존 코드와 호환성 유지)
+    result = []
+    for week_num in sorted(weekly_hours.keys()):
+        if weekly_hours[week_num] > 0:  # 근무가 있는 주만 추가
+            result.append((week_num, weekly_hours[week_num]))
+    
+    return result
+
+def get_week_number_for_date(target_date, year, month, cal):
+    """특정 날짜가 몇 번째 주에 해당하는지 반환"""
+    if target_date.year != year or target_date.month != month:
+        return None
+    
+    target_day = target_date.day
+    
+    for week_num, week in enumerate(cal, 1):
+        if target_day in week:
+            return week_num
+    
+    return None
 
 # 근무일수 계산 함수
 def calculate_workdays(year, month, team_history, schedule_data):
