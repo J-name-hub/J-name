@@ -524,6 +524,14 @@ def main():
         if st.button("다음 월"):
             update_month(1)
 
+    st.divider()
+
+    # '오늘' 버튼
+    if st.button("오늘"):
+        st.session_state.year = today.year
+        st.session_state.month = today.month
+        st.rerun()
+
     # 버튼 컨테이너 종료
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -703,7 +711,7 @@ def sidebar_controls(year, month, schedule_data):
 
     # 🔹 5. 달력 이동
     st.sidebar.title("")
-    st.divider()
+
     months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
 
     desired_months = []
