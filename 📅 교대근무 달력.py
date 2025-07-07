@@ -257,86 +257,68 @@ def get_shift(target_date, team_history, schedule_data):
     return pattern[delta_days % len(pattern)]
 
 
-# 주별 근무시간 계산 함수 (ISO 8601 표준 주차 계산)
-def calculate_weekly_hours_with_month_info(year, month, team_history, schedule_data):
-    """월별 주차별 근무시간을 계산하고 월 정보도 함께 반환"""
+def calculate_weekly_hours_with_calendar_scope(year, month, team_history, schedule_data):
+    """달력에 표시된 모든 주의 근무시간 계산"""
     weekly_hours = {}
     cal = generate_calendar(year, month)
-    
-    for week_num, week in enumerate(cal, 1):
+
+    for week in cal:
         for day in week:
-            if day != 0:  # 빈 날 제외
-                date_str = f"{year}-{month:02d}-{day:02d}"
+            if day != 0:
                 current_date = datetime(year, month, day).date()
                 
-                # 🔹 수정된 부분: 목요일 기준 주차 계산은 유지하되, 표시 월은 달력 기준
+                # 목요일 찾기
                 target_thursday = current_date
                 while target_thursday.weekday() != 3:
-                    if target_thursday.weekday() < 3:
-                        target_thursday += timedelta(days=3 - target_thursday.weekday())
-                    else:
-                        target_thursday += timedelta(days=7 - target_thursday.weekday() + 3)
-                
-                # 목요일이 속한 월과 주차 계산
+                    target_thursday += timedelta(days=(3 - target_thursday.weekday()) % 7)
+
                 thursday_year = target_thursday.year
                 thursday_month = target_thursday.month
-                
+
                 # 해당 월에서의 주차 계산
                 month_first_day = datetime(thursday_year, thursday_month, 1).date()
                 month_first_thursday = month_first_day
                 while month_first_thursday.weekday() != 3:
                     month_first_thursday += timedelta(days=1)
-                
+
                 week_in_month = ((target_thursday - month_first_thursday).days // 7) + 1
-                
-                # 🔹 핵심 수정: 표시되는 월은 달력 기준으로 변경
-                week_key = f"{month}월 {week_in_month}주차"
-                
+                week_key = f"{thursday_month}월 {week_in_month}주차"
+
                 # 스케줄 데이터에서 근무 형태 확인
-                if date_str in schedule_data:
-                    shift = schedule_data[date_str]
-                else:
-                    shift = get_shift(current_date, team_history, schedule_data)
-                
-                # 주차별 시간 초기화
+                date_str = current_date.strftime("%Y-%m-%d")
+                shift = schedule_data.get(date_str, get_shift(current_date, team_history, schedule_data))
+
                 if week_key not in weekly_hours:
                     weekly_hours[week_key] = 0
-                
-                # 당일 근무 시간 계산 및 합산
+
+                # 근무시간 합산
                 if shift == "주":
                     weekly_hours[week_key] += 8
                 elif shift == "야":
-                    # 당일 6시간은 현재 주에 합산
                     weekly_hours[week_key] += 6
-                    # 익일 9시간은 익일이 속한 주에 합산
                     next_date = current_date + timedelta(days=1)
-                    next_week_key = get_week_key_for_date_with_display_month(next_date, year, month)
-                    if next_week_key and next_week_key != week_key:
-                        if next_week_key not in weekly_hours:
-                            weekly_hours[next_week_key] = 0
-                        weekly_hours[next_week_key] += 9
-                    else:
-                        weekly_hours[week_key] += 9
+                    next_thursday = next_date
+                    while next_thursday.weekday() != 3:
+                        next_thursday += timedelta(days=(3 - next_thursday.weekday()) % 7)
+                    next_month = next_thursday.month
+                    next_week_in_month = ((next_thursday - datetime(next_thursday.year, next_month, 1)).days // 7) + 1
+                    next_week_key = f"{next_month}월 {next_week_in_month}주차"
+                    weekly_hours[next_week_key] = weekly_hours.get(next_week_key, 0) + 9
                 elif shift == "올":
-                    # 당일 14시간은 현재 주에 합산
                     weekly_hours[week_key] += 14
-                    # 익일 9시간은 익일이 속한 주에 합산
                     next_date = current_date + timedelta(days=1)
-                    next_week_key = get_week_key_for_date_with_display_month(next_date, year, month)
-                    if next_week_key and next_week_key != week_key:
-                        if next_week_key not in weekly_hours:
-                            weekly_hours[next_week_key] = 0
-                        weekly_hours[next_week_key] += 9
-                    else:
-                        weekly_hours[week_key] += 9
-    
-    # 결과를 리스트로 변환
-    result = []
-    for week_key in sorted(weekly_hours.keys(), key=lambda x: (int(x.split('월')[0]), int(x.split(' ')[1].split('주')[0]))):
-        if weekly_hours[week_key] > 0:
-            result.append((week_key, weekly_hours[week_key]))
-    
+                    next_thursday = next_date
+                    while next_thursday.weekday() != 3:
+                        next_thursday += timedelta(days=(3 - next_thursday.weekday()) % 7)
+                    next_month = next_thursday.month
+                    next_week_in_month = ((next_thursday - datetime(next_thursday.year, next_month, 1)).days // 7) + 1
+                    next_week_key = f"{next_month}월 {next_week_in_month}주차"
+                    weekly_hours[next_week_key] = weekly_hours.get(next_week_key, 0) + 9
+
+    # 정렬된 결과 반환
+    result = sorted(weekly_hours.items(), key=lambda x: (int(x[0].split('월')[0]), int(x[0].split(' ')[1][:-2])))
     return result
+
 
 
 def get_week_key_for_date_with_display_month(target_date, display_year, display_month):
@@ -440,7 +422,7 @@ def display_workdays_info(year, month, team_history, schedule_data):
 
 # 주별 근무시간 정보 표시
 def display_weekly_hours_info(year, month, team_history, schedule_data):
-    weekly_hours = calculate_weekly_hours_with_month_info(year, month, team_history, schedule_data)
+    weekly_hours = calculate_weekly_hours_with_calendar_scope(year, month, team_history, schedule_data)
     
     st.sidebar.title("⏰ 주별 근무시간")
     
