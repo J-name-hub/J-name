@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import calendar
 import pandas as pd
 import pytz
@@ -303,7 +303,7 @@ def calculate_weekly_hours_with_calendar_scope(year, month, team_history, schedu
                     next_month = next_thursday.month
                     if isinstance(next_thursday, str):
                         next_thursday = datetime.strptime(next_thursday, "%Y-%m-%d")
-                    elif isinstance(next_thursday, datetime.date) and not isinstance(next_thursday, datetime):
+                    elif isinstance(next_thursday, date) and not isinstance(next_thursday, datetime):
                         next_thursday = datetime.combine(next_thursday, datetime.min.time())
                     
                     thursday_first_day = datetime(next_thursday.year, next_thursday.month, 1)
@@ -319,7 +319,7 @@ def calculate_weekly_hours_with_calendar_scope(year, month, team_history, schedu
                     next_month = next_thursday.month
                     if isinstance(next_thursday, str):
                         next_thursday = datetime.strptime(next_thursday, "%Y-%m-%d")
-                    elif isinstance(next_thursday, datetime.date) and not isinstance(next_thursday, datetime):
+                    elif isinstance(next_thursday, date) and not isinstance(next_thursday, datetime):
                         next_thursday = datetime.combine(next_thursday, datetime.min.time())
                     
                     thursday_first_day = datetime(next_thursday.year, next_thursday.month, 1)
