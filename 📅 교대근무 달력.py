@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import json
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 import calendar
 import pandas as pd
 import pytz
@@ -256,81 +256,6 @@ def get_shift(target_date, team_history, schedule_data):
     pattern = shift_patterns[team]
     return pattern[delta_days % len(pattern)]
 
-
-def calculate_weekly_hours_with_calendar_scope(year, month, team_history, schedule_data):
-    """달력에 표시된 모든 주의 근무시간 계산"""
-    weekly_hours = {}
-    cal = generate_calendar(year, month)
-
-    for week in cal:
-        for day in week:
-            if day != 0:
-                current_date = datetime(year, month, day).date()
-                
-                # 목요일 찾기
-                target_thursday = current_date
-                while target_thursday.weekday() != 3:
-                    target_thursday += timedelta(days=(3 - target_thursday.weekday()) % 7)
-
-                thursday_year = target_thursday.year
-                thursday_month = target_thursday.month
-
-                # 해당 월에서의 주차 계산
-                month_first_day = datetime(thursday_year, thursday_month, 1).date()
-                month_first_thursday = month_first_day
-                while month_first_thursday.weekday() != 3:
-                    month_first_thursday += timedelta(days=1)
-
-                week_in_month = ((target_thursday - month_first_thursday).days // 7) + 1
-                week_key = f"{thursday_month}월 {week_in_month}주차"
-
-                # 스케줄 데이터에서 근무 형태 확인
-                date_str = current_date.strftime("%Y-%m-%d")
-                shift = schedule_data.get(date_str, get_shift(current_date, team_history, schedule_data))
-
-                if week_key not in weekly_hours:
-                    weekly_hours[week_key] = 0
-
-                # 근무시간 합산
-                if shift == "주":
-                    weekly_hours[week_key] += 8
-                elif shift == "야":
-                    weekly_hours[week_key] += 6
-                    next_date = current_date + timedelta(days=1)
-                    next_thursday = next_date
-                    while next_thursday.weekday() != 3:
-                        next_thursday += timedelta(days=(3 - next_thursday.weekday()) % 7)
-                    next_month = next_thursday.month
-                    if isinstance(next_thursday, str):
-                        next_thursday = datetime.strptime(next_thursday, "%Y-%m-%d")
-                    elif isinstance(next_thursday, date) and not isinstance(next_thursday, datetime):
-                        next_thursday = datetime.combine(next_thursday, datetime.min.time())
-                    
-                    thursday_first_day = datetime(next_thursday.year, next_thursday.month, 1)
-                    next_week_in_month = ((next_thursday - thursday_first_day).days // 7) + 1
-                    next_week_key = f"{next_thursday.month}월 {next_week_in_month}주차"
-                    weekly_hours[next_week_key] = weekly_hours.get(next_week_key, 0) + 9
-                elif shift == "올":
-                    weekly_hours[week_key] += 14
-                    next_date = current_date + timedelta(days=1)
-                    next_thursday = next_date
-                    while next_thursday.weekday() != 3:
-                        next_thursday += timedelta(days=(3 - next_thursday.weekday()) % 7)
-                    next_month = next_thursday.month
-                    if isinstance(next_thursday, str):
-                        next_thursday = datetime.strptime(next_thursday, "%Y-%m-%d")
-                    elif isinstance(next_thursday, date) and not isinstance(next_thursday, datetime):
-                        next_thursday = datetime.combine(next_thursday, datetime.min.time())
-                    
-                    thursday_first_day = datetime(next_thursday.year, next_thursday.month, 1)
-                    next_week_in_month = ((next_thursday - thursday_first_day).days // 7) + 1
-                    next_week_key = f"{next_thursday.month}월 {next_week_in_month}주차"
-                    weekly_hours[next_week_key] = weekly_hours.get(next_week_key, 0) + 9
-
-    # 정렬된 결과 반환
-    result = sorted(weekly_hours.items(), key=lambda x: (int(x[0].split('월')[0]), int(x[0].split(' ')[1][:-2])))
-    return result
-
 # 근무일수 계산 함수
 def calculate_workdays(year, month, team_history, schedule_data):
     total_workdays = 0
@@ -389,19 +314,6 @@ def display_workdays_info(year, month, team_history, schedule_data):
 
     st.sidebar.title(f"📋 월 근무일수 : {total_workdays}일")
     st.sidebar.write(f"**(오늘제외 남은일수  {remaining_workdays}일)**")
-
-# 주별 근무시간 정보 표시
-def display_weekly_hours_info(year, month, team_history, schedule_data):
-    weekly_hours = calculate_weekly_hours_with_calendar_scope(year, month, team_history, schedule_data)
-    
-    st.sidebar.title("⏰ 주별 근무시간")
-    
-    for week_display, hours in weekly_hours:
-        # 52시간 이상이면 빨간색으로 표시
-        if hours >= 52:
-            st.sidebar.markdown(f"<span style='color: red;'>{week_display} : {hours}시간</span>", unsafe_allow_html=True)
-        else:
-            st.sidebar.write(f"{week_display} : {hours}시간")
 
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
@@ -786,13 +698,10 @@ def sidebar_controls(year, month, schedule_data):
     # 🔹 3. 근무일수 정보 표시
     display_workdays_info(st.session_state.year, st.session_state.month, team_history, schedule_data)
 
-    # 🔹 4. 주별 근무시간 정보 표시
-    display_weekly_hours_info(st.session_state.year, st.session_state.month, team_history, schedule_data)
-
-    # 🔹 5. 조 순서 안내
+    # 🔹 4. 조 순서 안내
     st.sidebar.title("🔁 AB → DA → CD → BC")
 
-    # 🔹 6. 달력 이동
+    # 🔹 5. 달력 이동
     st.sidebar.title("")
     st.divider()
     months = {1: "1월", 2: "2월", 3: "3월", 4: "4월", 5: "5월", 6: "6월", 7: "7월", 8: "8월", 9: "9월", 10: "10월", 11: "11월", 12: "12월"}
