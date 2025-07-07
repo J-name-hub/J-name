@@ -312,7 +312,7 @@ def display_workdays_info(year, month, team_history, schedule_data):
         workdays_until_today = calculate_workdays_until_date(year, month, team_history, schedule_data, today)
         remaining_workdays = total_workdays - workdays_until_today
 
-    st.sidebar.title(f"📋 월 근무일수 : {total_workdays}일")
+    st.sidebar.title(f"📋 {month}월 근무일수 : {total_workdays}일")
     st.sidebar.write(f"**(오늘제외 남은일수  {remaining_workdays}일)**")
 
 def main():
