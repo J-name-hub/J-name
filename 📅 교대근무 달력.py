@@ -256,15 +256,12 @@ def get_shift(target_date, team_history, schedule_data):
     pattern = shift_patterns[team]
     return pattern[delta_days % len(pattern)]
 
-# 주별 근무시간 계산 함수 (수정된 버전)
-def calculate_weekly_hours(year, month, team_history, schedule_data):
-    """월별 주차별 근무시간을 계산 (야간/올간근무의 익일 시간을 다음 주에 합산)"""
+
+# 주별 근무시간 계산 함수 (ISO 8601 표준 주차 계산)
+def calculate_weekly_hours_with_month_info(year, month, team_history, schedule_data):
+    """월별 주차별 근무시간을 계산하고 월 정보도 함께 반환"""
     weekly_hours = {}
     cal = generate_calendar(year, month)
-    
-    # 각 주차별 시간 초기화
-    for week_num in range(1, len(cal) + 1):
-        weekly_hours[week_num] = 0
     
     for week_num, week in enumerate(cal, 1):
         for day in week:
@@ -272,62 +269,96 @@ def calculate_weekly_hours(year, month, team_history, schedule_data):
                 date_str = f"{year}-{month:02d}-{day:02d}"
                 current_date = datetime(year, month, day).date()
                 
+                # 현재 날짜가 속한 주의 목요일 찾기
+                target_thursday = current_date
+                while target_thursday.weekday() != 3:
+                    if target_thursday.weekday() < 3:
+                        target_thursday += timedelta(days=3 - target_thursday.weekday())
+                    else:
+                        target_thursday += timedelta(days=7 - target_thursday.weekday() + 3)
+                
+                # 목요일이 속한 월과 주차 계산
+                thursday_year = target_thursday.year
+                thursday_month = target_thursday.month
+                
+                # 해당 월에서의 주차 계산
+                month_first_day = datetime(thursday_year, thursday_month, 1).date()
+                month_first_thursday = month_first_day
+                while month_first_thursday.weekday() != 3:
+                    month_first_thursday += timedelta(days=1)
+                
+                week_in_month = ((target_thursday - month_first_thursday).days // 7) + 1
+                week_key = f"{thursday_month}월 {week_in_month}주차"
+                
                 # 스케줄 데이터에서 근무 형태 확인
                 if date_str in schedule_data:
                     shift = schedule_data[date_str]
                 else:
                     shift = get_shift(current_date, team_history, schedule_data)
                 
+                # 주차별 시간 초기화
+                if week_key not in weekly_hours:
+                    weekly_hours[week_key] = 0
+                
                 # 당일 근무 시간 계산 및 합산
                 if shift == "주":
-                    weekly_hours[week_num] += 8
+                    weekly_hours[week_key] += 8
                 elif shift == "야":
                     # 당일 6시간은 현재 주에 합산
-                    weekly_hours[week_num] += 6
-                    # 익일 9시간은 다음 주에 합산 (익일이 다음 주인 경우)
+                    weekly_hours[week_key] += 6
+                    # 익일 9시간은 익일이 속한 주에 합산
                     next_date = current_date + timedelta(days=1)
-                    next_week_num = get_week_number_for_date(next_date, year, month, cal)
-                    if next_week_num and next_week_num != week_num:
-                        if next_week_num not in weekly_hours:
-                            weekly_hours[next_week_num] = 0
-                        weekly_hours[next_week_num] += 9
+                    next_week_key = get_week_key_for_date(next_date)
+                    if next_week_key != week_key:
+                        if next_week_key not in weekly_hours:
+                            weekly_hours[next_week_key] = 0
+                        weekly_hours[next_week_key] += 9
                     else:
-                        # 익일이 같은 주라면 현재 주에 합산
-                        weekly_hours[week_num] += 9
+                        weekly_hours[week_key] += 9
                 elif shift == "올":
                     # 당일 14시간은 현재 주에 합산
-                    weekly_hours[week_num] += 14
-                    # 익일 9시간은 다음 주에 합산 (익일이 다음 주인 경우)
+                    weekly_hours[week_key] += 14
+                    # 익일 9시간은 익일이 속한 주에 합산
                     next_date = current_date + timedelta(days=1)
-                    next_week_num = get_week_number_for_date(next_date, year, month, cal)
-                    if next_week_num and next_week_num != week_num:
-                        if next_week_num not in weekly_hours:
-                            weekly_hours[next_week_num] = 0
-                        weekly_hours[next_week_num] += 9
+                    next_week_key = get_week_key_for_date(next_date)
+                    if next_week_key != week_key:
+                        if next_week_key not in weekly_hours:
+                            weekly_hours[next_week_key] = 0
+                        weekly_hours[next_week_key] += 9
                     else:
-                        # 익일이 같은 주라면 현재 주에 합산
-                        weekly_hours[week_num] += 9
+                        weekly_hours[week_key] += 9
     
-    # 결과를 리스트로 변환 (기존 코드와 호환성 유지)
+    # 결과를 리스트로 변환
     result = []
-    for week_num in sorted(weekly_hours.keys()):
-        if weekly_hours[week_num] > 0:  # 근무가 있는 주만 추가
-            result.append((week_num, weekly_hours[week_num]))
+    for week_key in sorted(weekly_hours.keys(), key=lambda x: (int(x.split('월')[0]), int(x.split(' ')[1].split('주')[0]))):
+        if weekly_hours[week_key] > 0:
+            result.append((week_key, weekly_hours[week_key]))
     
     return result
 
-def get_week_number_for_date(target_date, year, month, cal):
-    """특정 날짜가 몇 번째 주에 해당하는지 반환"""
-    if target_date.year != year or target_date.month != month:
-        return None
+
+def get_week_key_for_date(target_date):
+    """특정 날짜의 주차 키를 반환"""
+    # 목요일 찾기
+    target_thursday = target_date
+    while target_thursday.weekday() != 3:
+        if target_thursday.weekday() < 3:
+            target_thursday += timedelta(days=3 - target_thursday.weekday())
+        else:
+            target_thursday += timedelta(days=7 - target_thursday.weekday() + 3)
     
-    target_day = target_date.day
+    # 목요일이 속한 월과 주차 계산
+    thursday_year = target_thursday.year
+    thursday_month = target_thursday.month
     
-    for week_num, week in enumerate(cal, 1):
-        if target_day in week:
-            return week_num
+    month_first_day = datetime(thursday_year, thursday_month, 1).date()
+    month_first_thursday = month_first_day
+    while month_first_thursday.weekday() != 3:
+        month_first_thursday += timedelta(days=1)
     
-    return None
+    week_in_month = ((target_thursday - month_first_thursday).days // 7) + 1
+    
+    return f"{thursday_month}월 {week_in_month}주차"
 
 # 근무일수 계산 함수
 def calculate_workdays(year, month, team_history, schedule_data):
@@ -390,16 +421,16 @@ def display_workdays_info(year, month, team_history, schedule_data):
 
 # 주별 근무시간 정보 표시
 def display_weekly_hours_info(year, month, team_history, schedule_data):
-    weekly_hours = calculate_weekly_hours(year, month, team_history, schedule_data)
+    weekly_hours = calculate_weekly_hours_with_month_info(year, month, team_history, schedule_data)
     
     st.sidebar.title("⏰ 주별 근무시간")
     
-    for week_num, hours in weekly_hours:
+    for week_display, hours in weekly_hours:
         # 52시간 이상이면 빨간색으로 표시
         if hours >= 52:
-            st.sidebar.markdown(f"<span style='color: red;'>{week_num}주차 : {hours}시간</span>", unsafe_allow_html=True)
+            st.sidebar.markdown(f"<span style='color: red;'>{week_display} : {hours}시간</span>", unsafe_allow_html=True)
         else:
-            st.sidebar.write(f"{week_num}주차 : {hours}시간")
+            st.sidebar.write(f"{week_display} : {hours}시간")
 
 def main():
     st.set_page_config(page_title="교대근무 달력", layout="wide")
