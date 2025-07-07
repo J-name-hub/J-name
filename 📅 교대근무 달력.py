@@ -301,7 +301,7 @@ def calculate_weekly_hours_with_calendar_scope(year, month, team_history, schedu
                     while next_thursday.weekday() != 3:
                         next_thursday += timedelta(days=(3 - next_thursday.weekday()) % 7)
                     next_month = next_thursday.month
-                    next_week_in_month = ((next_thursday - datetime(next_thursday.year, next_month, 1)).days // 7) + 1
+                    next_week_in_month = ((next_thursday - datetime(next_thursday.year, next_thursday.month, 1)).days // 7) + 1
                     next_week_key = f"{next_month}월 {next_week_in_month}주차"
                     weekly_hours[next_week_key] = weekly_hours.get(next_week_key, 0) + 9
                 elif shift == "올":
@@ -311,7 +311,7 @@ def calculate_weekly_hours_with_calendar_scope(year, month, team_history, schedu
                     while next_thursday.weekday() != 3:
                         next_thursday += timedelta(days=(3 - next_thursday.weekday()) % 7)
                     next_month = next_thursday.month
-                    next_week_in_month = ((next_thursday - datetime(next_thursday.year, next_month, 1)).days // 7) + 1
+                    next_week_in_month = ((next_thursday - datetime(next_thursday.year, next_thursday.month, 1)).days // 7) + 1
                     next_week_key = f"{next_month}월 {next_week_in_month}주차"
                     weekly_hours[next_week_key] = weekly_hours.get(next_week_key, 0) + 9
 
