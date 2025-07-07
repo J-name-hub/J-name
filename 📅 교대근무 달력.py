@@ -357,6 +357,16 @@ def main():
             background-color: #6E6E6E;  /* 호버 시 밝은 회색으로 변경 */
             border-color: #8E8E8E;
         }
+        .stButton > button#today_button {
+            background-color: #007BFF;  /* 파란색 */
+            color: #FFFFFF;
+            border: 1px solid #007BFF;
+        }
+        
+        .stButton > button#today_button:hover {
+            background-color: #0056b3;  /* 더 진한 파란색 */
+            border-color: #0056b3;
+        }
         .calendar-container {
             border: 2px solid #dee2e6;
             border-radius: 10px;
@@ -512,13 +522,21 @@ def main():
     st.markdown('<div class="button-container">', unsafe_allow_html=True)
 
     # 버튼을 위한 컬럼 생성
-    col1, col2, col3 = st.columns([3,5,3])
+    col1, col2, col3 = st.columns([3,3,3])
     
     # '이전 월' 버튼
     with col1:
         if st.button("이전 월"):
             update_month(-1)
-    
+
+    # '오늘' 버튼
+    with col2:
+        if st.button("오늘", key="today_button"):
+            today = datetime.now(pytz.timezone('Asia/Seoul'))
+            st.session_state.year = today.year
+            st.session_state.month = today.month
+            st.rerun()
+            
     # '다음 월' 버튼
     with col3:
         if st.button("다음 월"):
