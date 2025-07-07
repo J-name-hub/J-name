@@ -319,48 +319,6 @@ def calculate_weekly_hours_with_calendar_scope(year, month, team_history, schedu
     result = sorted(weekly_hours.items(), key=lambda x: (int(x[0].split('월')[0]), int(x[0].split(' ')[1][:-2])))
     return result
 
-
-
-def get_week_key_for_date_with_display_month(target_date, display_year, display_month):
-    """특정 날짜의 주차 키를 반환하되, 표시 월은 달력 기준으로"""
-    # 목요일 찾기
-    target_thursday = target_date
-    while target_thursday.weekday() != 3:
-        if target_thursday.weekday() < 3:
-            target_thursday += timedelta(days=3 - target_thursday.weekday())
-        else:
-            target_thursday += timedelta(days=7 - target_thursday.weekday() + 3)
-    
-    # 목요일이 속한 월과 주차 계산
-    thursday_year = target_thursday.year
-    thursday_month = target_thursday.month
-    
-    month_first_day = datetime(thursday_year, thursday_month, 1).date()
-    month_first_thursday = month_first_day
-    while month_first_thursday.weekday() != 3:
-        month_first_thursday += timedelta(days=1)
-    
-    week_in_month = ((target_thursday - month_first_thursday).days // 7) + 1
-    
-    # 달력에 표시되는 월 범위 확인
-    cal = generate_calendar(display_year, display_month)
-    date_in_calendar = False
-    for week in cal:
-        for day in week:
-            if day != 0:
-                cal_date = datetime(display_year, display_month, day).date()
-                if cal_date == target_date:
-                    date_in_calendar = True
-                    break
-        if date_in_calendar:
-            break
-    
-    # 달력에 표시되는 날짜면 달력 월 기준으로, 아니면 None 반환
-    if date_in_calendar:
-        return f"{display_month}월 {week_in_month}주차"
-    else:
-        return None
-
 # 근무일수 계산 함수
 def calculate_workdays(year, month, team_history, schedule_data):
     total_workdays = 0
