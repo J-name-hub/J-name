@@ -534,6 +534,7 @@ def main():
         if st.button("Today"):
             st.session_state.year = today.year
             st.session_state.month = today.month
+            st.rerun()
 
     # 버튼 컨테이너 종료
     st.markdown('</div>', unsafe_allow_html=True)
