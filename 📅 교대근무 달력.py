@@ -357,6 +357,17 @@ def main():
             background-color: #6E6E6E;  /* 호버 시 밝은 회색으로 변경 */
             border-color: #8E8E8E;
         }
+        /* Today 버튼만 다른 색상 */
+        div.stButton:nth-child(3) > button {
+            background-color: #007BFF; /* 파란색 배경 */
+            color: #FFFFFF;           /* 흰색 글자 */
+            border: 1px solid #0056b3;
+        }
+        
+        div.stButton:nth-child(3) > button:hover {
+            background-color: #0056b3; /* 진한 파란색 */
+            border-color: #004080;
+        }
         .calendar-container {
             border: 2px solid #dee2e6;
             border-radius: 10px;
