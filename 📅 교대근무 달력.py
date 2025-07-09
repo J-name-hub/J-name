@@ -316,6 +316,7 @@ def display_workdays_info(year, month, team_history, schedule_data):
     st.sidebar.write(f"**(오늘제외 남은일수  {remaining_workdays}일)**")
 
 def main():
+    st.experimental_set_query_params(version=datetime.now().timestamp())
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
     # CSS 스타일 추가
