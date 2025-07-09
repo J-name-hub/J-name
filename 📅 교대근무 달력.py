@@ -316,7 +316,6 @@ def display_workdays_info(year, month, team_history, schedule_data):
     st.sidebar.write(f"**(오늘제외 남은일수  {remaining_workdays}일)**")
 
 def main():
-    st.experimental_set_query_params(version=datetime.now().timestamp())
     st.set_page_config(page_title="교대근무 달력", layout="wide")
 
     # CSS 스타일 추가
@@ -357,17 +356,6 @@ def main():
         .stButton > button:hover {
             background-color: #6E6E6E;  /* 호버 시 밝은 회색으로 변경 */
             border-color: #8E8E8E;
-        }
-        /* Today 버튼만 다른 색상 */
-        div.stButton:nth-child(3) > button {
-            background-color: #007BFF; /* 파란색 배경 */
-            color: #FFFFFF;           /* 흰색 글자 */
-            border: 1px solid #0056b3;
-        }
-        
-        div.stButton:nth-child(3) > button:hover {
-            background-color: #0056b3; /* 진한 파란색 */
-            border-color: #004080;
         }
         .calendar-container {
             border: 2px solid #dee2e6;
