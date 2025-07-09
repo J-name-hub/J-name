@@ -539,6 +539,8 @@ def main():
     # 버튼 컨테이너 종료
     st.markdown('</div>', unsafe_allow_html=True)
 
+    display_calendar(calendar_data, year, month+1, holidays)
+
     # GitHub에서 스케줄 데이터 로드
     schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
 
