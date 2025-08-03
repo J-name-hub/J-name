@@ -13,11 +13,11 @@
   },
   "choice": {
     "trains": [
-      0
+      1
     ]
   },
   "A_options": {
     "type": "ReserveOption.GENERAL_ONLY",
-    "pay": false
+    "pay": true
   }
 }
