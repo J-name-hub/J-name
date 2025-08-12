@@ -683,18 +683,18 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
 def display_calendar(calendar_data, year, month, holidays, grad_days, grad_color):
     # 해당 월에 대학원 날짜 존재 여부
     month_has_grad = any(d.startswith(f"{year}-{month:02d}-") for d in grad_days)
-
+    
     # 배지 HTML
-    badge_html = f'<span style="font-size:20px; font-weight:70; color:{grad_color};">수업</span>' if month_has_grad else ""
-
-    # 년월 헤더 생성 (우측에 배지 배치)
+    badge_html = f'<span style="font-size:20px; font-weight:700; color:{grad_color};">대학원</span>' if month_has_grad else ""
+    
+    # 년월 헤더 생성 (제목 중앙, 배지 우측 끝)
     header_html = '''
     <div class="calendar-container">
-      <div class="calendar-header" style="display:flex; align-items:center; justify-content:space-between;">
-        <div>
+      <div class="calendar-header" style="display:flex; align-items:center; justify-content:center; position:relative;">
+        <div style="font-weight:bold;">
           <span class="year">{year}.</span><span class="month"> {month}</span><span class="year">월</span>
         </div>
-        <div>{badge}</div>
+        <div style="position:absolute; right:10px;">{badge}</div>
       </div>
     '''.format(year=year, month=month, badge=badge_html)
     
