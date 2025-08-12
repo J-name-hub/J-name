@@ -675,22 +675,9 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
     return calendar_data
 
 def display_calendar(calendar_data, year, month, holidays, grad_days, grad_color):
-    # 해당 월에 대학원 날짜 존재 여부
-    month_has_grad = any(d.startswith(f"{year}-{month:02d}-") for d in grad_days)
-    
-    # 배지 HTML
-    badge_html = f'<span style="font-size:17px; font-weight:700; color:{grad_color};">대학원</span>' if month_has_grad else ""
-    
-    # 년월 헤더 생성 (제목 중앙, 배지 우측 끝)
-    header_html = '''
-    <div class="calendar-container">
-      <div class="calendar-header" style="display:flex; align-items:center; justify-content:center; position:relative;">
-        <div style="font-weight:bold;">
-          <span class="year">{year}.</span><span class="month"> {month}</span><span class="year">월</span>
-        </div>
-        <div style="position:absolute; right:10px;">{badge}</div>
-      </div>
-    '''.format(year=year, month=month, badge=badge_html)
+    # 년월 헤더 생성
+    header_html = '<div class="calendar-container"><div class="calendar-header">'
+    header_html += f'<div class="calendar-header"><span class="year">{year}.</span><span class="month"> {month}</span></span><span class="year">월</span></div>' + '</div>'
     
     days_weekdays = ["일", "월", "화", "수", "목", "금", "토"]
     # 요일 헤더 생성
@@ -710,6 +697,16 @@ def display_calendar(calendar_data, year, month, holidays, grad_days, grad_color
 
     # 공휴일 설명 생성
     holiday_html = '<div class="holiday-descriptions">'
+
+    # 해당 월에 대학원 날짜 존재 여부
+    month_has_grad = any(d.startswith(f"{year}-{month:02d}-") for d in grad_days)
+    
+    # 대학원 글자 먼저 추가 (기존 색상 유지)
+    if month_has_grad:
+        holiday_html += f'<span style="color:{grad_color}; font-weight:700;">대학원</span>'
+        # 공휴일 내용과 구분자 추가
+        holiday_html += " / "
+
     holiday_descriptions = create_holiday_descriptions(holidays, month)
     if holiday_descriptions:
         holiday_html += " / ".join(holiday_descriptions)
