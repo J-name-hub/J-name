@@ -28,7 +28,7 @@ SCHEDULE_CHANGE_PASSWORD = st.secrets["security"]["password"]
 # 대한민국 공휴일 API 키
 HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
 
-GRAD_COLOR = "#0056B3"  # #0047AB ~ #007BFF 사이 중간톤 파랑
+GRAD_COLOR = "#0066CC"  # 중간톤 파랑
 
 # GitHub에서 스케줄 파일 로드
 @st.cache_data(ttl=3600)
@@ -685,7 +685,7 @@ def display_calendar(calendar_data, year, month, holidays, grad_days, grad_color
     month_has_grad = any(d.startswith(f"{year}-{month:02d}-") for d in grad_days)
     
     # 배지 HTML
-    badge_html = f'<span style="font-size:20px; font-weight:700; color:{grad_color};">대학원</span>' if month_has_grad else ""
+    badge_html = f'<span style="font-size:15px; font-weight:700; color:{grad_color};">대학원</span>' if month_has_grad else ""
     
     # 년월 헤더 생성 (제목 중앙, 배지 우측 끝)
     header_html = '''
