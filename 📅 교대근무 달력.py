@@ -20,6 +20,7 @@ GITHUB_TOKEN = st.secrets["github"]["token"]
 GITHUB_REPO = st.secrets["github"]["repo"]
 GITHUB_FILE_PATH = st.secrets["github"]["file_path"]
 GITHUB_TEAM_SETTINGS_PATH = "team_settings.json"
+GITHUB_GRAD_DAYS_PATH = "grad_days.json"
 
 # 스케줄 변경 비밀번호
 SCHEDULE_CHANGE_PASSWORD = st.secrets["security"]["password"]
@@ -224,6 +225,50 @@ def create_holiday_descriptions(holidays, month):
             i += 1
 
     return holiday_descriptions
+
+def load_grad_days_from_github():
+    """대학원(초록색) 날짜 리스트를 GitHub에서 가져옵니다."""
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_GRAD_DAYS_PATH}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    try:
+        r = requests.get(url, headers=headers)
+        if r.status_code == 404:
+            return set(), None  # 파일이 없으면 비어있는 상태
+        r.raise_for_status()
+        content = r.json()
+        file_content = base64.b64decode(content['content']).decode('utf-8')
+        data = json.loads(file_content)
+        # {"dates": ["YYYY-MM-DD", ...]} 형태를 가정
+        return set(data.get("dates", [])), content["sha"]
+    except requests.RequestException as e:
+        st.error(f"GitHub에서 대학원 날짜 로드 실패: {e}")
+        return set(), None
+    except Exception as e:
+        st.error(f"대학원 날짜 로드 중 오류: {e}")
+        return set(), None
+
+def save_grad_days_to_github(grad_days_set, sha=None):
+    """대학원(초록색) 날짜 리스트를 GitHub에 저장합니다."""
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_GRAD_DAYS_PATH}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    payload = {
+        "message": "Update grad days",
+        "content": base64.b64encode(
+            json.dumps({"dates": sorted(list(grad_days_set))}, ensure_ascii=False, indent=2).encode("utf-8")
+        ).decode("utf-8")
+    }
+    if sha:
+        payload["sha"] = sha
+    try:
+        r = requests.put(url, headers=headers, json=payload)
+        r.raise_for_status()
+        return True, r.json()["content"]["sha"]
+    except requests.RequestException as e:
+        st.error(f"GitHub에 대학원 날짜 저장 실패: {e}")
+        return False, sha
 
 # 달력 생성 함수
 @st.cache_data
@@ -496,17 +541,21 @@ def main():
         st.error(f"공휴일 데이터 로드 중 오류 발생: {e}")
         holidays = {}
     schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
-
+    
     if not schedule_data:
         schedule_data = {}
         sha = None
+
+    # 대학원 날짜 로드
+    grad_days, grad_sha = load_grad_days_from_github()
 
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     yesterday = today - timedelta(days=1)
 
     month_days = generate_calendar(year, month)
-    calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday)
+    calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday, grad_days)
     display_calendar(calendar_data, year, month, holidays)
+
 
     # 버튼 컨테이너 시작
     st.markdown('<div class="button-container">', unsafe_allow_html=True)
@@ -553,7 +602,8 @@ def update_month(delta):
 # 특정 날짜에 연분홍색 배경 적용
 highlighted_dates = ["01-27", "03-01", "04-06"]
 
-def create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday):
+def create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday, grad_days):
+
     team_history = load_team_settings_from_github()
     calendar_data = []
     for week in month_days:
@@ -575,6 +625,10 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
 
                 # 주말 및 공휴일 색상 지정
                 day_color = "red" if current_date.weekday() in [5, 6] or date_str in holidays else "black"
+
+                # ✅ 대학원 가는 날이면 초록색으로 덮어쓰기
+                if date_str in grad_days:
+                    day_color = "green"
 
                 # 오늘 날짜 테두리 처리
                 today_class = "today" if current_date == today else ""
@@ -736,6 +790,68 @@ def sidebar_controls(year, month, schedule_data):
         st.session_state.year = selected_year
         st.session_state.month = selected_month
         st.rerun()
+
+    # 🔹 6. 대학원 날짜(초록 표시) 편집
+    st.sidebar.title("🎓 대학원 날짜 편집")
+    with st.sidebar.expander("대학원 날짜 선택/저장", expanded=False):
+        # 현재 월의 모든 실제 날짜 생성
+        _, last_day = calendar.monthrange(year, month)
+        month_all_dates = [
+            datetime(year, month, d).date().strftime("%Y-%m-%d") for d in range(1, last_day + 1)
+        ]
+
+        # 최신 grad_days를 로컬 상태로 가져오기
+        grad_days_current, grad_sha_current = load_grad_days_from_github()
+
+        # 현재 월만 필터링하여 체크 상태로 보여주기
+        preset_selected = [d for d in month_all_dates if d in grad_days_current]
+
+        selected = st.multiselect(
+            f"{year}년 {month}월 대학원 날짜 선택",
+            options=month_all_dates,
+            default=preset_selected,
+            help="여러 날짜를 선택하면 해당 날짜의 숫자가 달력에서 초록색으로 표시됩니다."
+        )
+
+        pwd = st.text_input("암호 입력", type="password", key="grad_pwd")
+        colg1, colg2 = st.columns(2)
+        with colg1:
+            save_btn = st.button("저장")
+        with colg2:
+            clear_btn = st.button("이번 달 선택 해제")
+
+        # 저장 로직
+        if save_btn:
+            if pwd == SCHEDULE_CHANGE_PASSWORD:
+                # 기존 전체 집합에서 이번 달 날짜를 제거 후, 선택분 반영
+                new_grad_days = set(grad_days_current)
+                # 이번 달 것들 제거
+                new_grad_days -= set(month_all_dates)
+                # 새로 선택한 것들 추가
+                new_grad_days |= set(selected)
+
+                ok, new_sha = save_grad_days_to_github(new_grad_days, grad_sha_current)
+                if ok:
+                    st.success("대학원 날짜가 저장되었습니다.")
+                    st.session_state.cache_key = datetime.now().strftime("%Y%m%d%H%M%S")
+                    st.rerun()
+                else:
+                    st.error("저장 실패")
+            else:
+                st.error("암호가 일치하지 않습니다.")
+
+        # 이번 달만 초기화
+        if clear_btn:
+            if pwd == SCHEDULE_CHANGE_PASSWORD:
+                new_grad_days = set(grad_days_current) - set(month_all_dates)
+                ok, new_sha = save_grad_days_to_github(new_grad_days, grad_sha_current)
+                if ok:
+                    st.success("이번 달 대학원 날짜를 모두 해제했습니다.")
+                    st.rerun()
+                else:
+                    st.error("저장 실패")
+            else:
+                st.error("암호가 일치하지 않습니다.")
 
 if __name__ == "__main__":
     main()
