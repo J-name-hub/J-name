@@ -546,11 +546,6 @@ def main():
             font-weight: bold;
             color: #343a40;
         }
-        /* 달력과 동일한 폭의 버튼 컨테이너 */
-        .buttons-800 {
-            max-width: 800px;
-            margin: 0 auto;   /* 가운데 정렬 */
-        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -591,8 +586,8 @@ def main():
     display_calendar(calendar_data, year, month, holidays, grad_days, GRAD_COLOR)
 
 
-    # 버튼 줄을 800px 컨테이너로 고정
-    st.markdown('<div class="buttons-800">', unsafe_allow_html=True)
+    # 버튼 컨테이너 시작
+    st.markdown('<div class="button-container">', unsafe_allow_html=True)
 
     # 1행: 이전/다음
     col1, col2, col3 = st.columns([3,5,3])
