@@ -28,6 +28,8 @@ SCHEDULE_CHANGE_PASSWORD = st.secrets["security"]["password"]
 # 대한민국 공휴일 API 키
 HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
 
+GRAD_COLOR = "#0056B3"  # #0047AB ~ #007BFF 사이 중간톤 파랑
+
 # GitHub에서 스케줄 파일 로드
 @st.cache_data(ttl=3600)
 def load_schedule(cache_key=None):
@@ -581,7 +583,7 @@ def main():
 
     month_days = generate_calendar(year, month)
     calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday, grad_days)
-    display_calendar(calendar_data, year, month, holidays)
+    display_calendar(calendar_data, year, month, holidays, grad_days, GRAD_COLOR)
 
 
     # 버튼 컨테이너 시작
@@ -653,9 +655,9 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 # 주말 및 공휴일 색상 지정
                 day_color = "red" if current_date.weekday() in [5, 6] or date_str in holidays else "black"
 
-                # ✅ 대학원 가는 날이면 파란색으로 덮어쓰기
+                # ✅ 대학원 가는 날이면 파랑색으로 덮어쓰기
                 if date_str in grad_days:
-                    day_color = "#0056B3"
+                    day_color = GRAD_COLOR
 
                 # 오늘 날짜 테두리 처리
                 today_class = "today" if current_date == today else ""
@@ -678,10 +680,24 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
         calendar_data.append(week_data)
     return calendar_data
 
-def display_calendar(calendar_data, year, month, holidays):
-    # 년월 헤더 생성
-    header_html = '<div class="calendar-container"><div class="calendar-header">'
-    header_html += f'<div class="calendar-header"><span class="year">{year}.</span><span class="month"> {month}</span></span><span class="year">월</span></div>' + '</div>'
+def display_calendar(calendar_data, year, month, holidays, grad_days, grad_color):
+    # 해당 월에 대학원 날짜 존재 여부
+    month_has_grad = any(d.startswith(f"{year}-{month:02d}-") for d in grad_days)
+
+    # 배지 HTML
+    badge_html = f'<span style="font-size:20px; font-weight:700; color:{grad_color};">수업</span>' if month_has_grad else ""
+
+    # 년월 헤더 생성 (우측에 배지 배치)
+    header_html = '''
+    <div class="calendar-container">
+      <div class="calendar-header" style="display:flex; align-items:center; justify-content:space-between;">
+        <div>
+          <span class="year">{year}.</span><span class="month"> {month}</span><span class="year">월</span>
+        </div>
+        <div>{badge}</div>
+      </div>
+    </div>
+    '''.format(year=year, month=month, badge=badge_html)
     
     days_weekdays = ["일", "월", "화", "수", "목", "금", "토"]
     # 요일 헤더 생성
