@@ -839,37 +839,49 @@ def sidebar_controls(year, month, schedule_data):
         with colg2:
             clear_btn = st.button("해당 연도 전부 해제")
 
+        
+        pwd = st.text_input("암호 입력", type="password", key="grad_pwd_yearly")
+        colg1, colg2 = st.columns(2)
+        with colg1:
+            save_btn = st.button("입력 날짜 저장")
+        with colg2:
+            delete_btn = st.button("입력 날짜 삭제")
+
         # 최신 grad_days 상태 불러오기
         grad_days_current, grad_sha_current = load_grad_days_from_github()
 
+        # 저장 버튼
         if save_btn:
             if pwd == SCHEDULE_CHANGE_PASSWORD:
                 new_set, errors = parse_md_list_to_dates(md_text, target_year)
-
-                # 선택 연도의 기존 항목 제거 후, 새로 입력한 항목 추가
+                # 입력 연도의 기존 항목 제거 후 새로 입력한 항목 추가
                 kept = {d for d in grad_days_current if not d.startswith(f"{target_year}-")}
                 merged = kept | new_set
-
                 ok, new_sha = save_grad_days_to_github(merged, grad_sha_current)
                 if ok:
                     if errors:
                         st.warning("다음 항목은 무시되었습니다: " + ", ".join(errors))
-                    st.success(f"{target_year}년 대학원 날짜가 저장되었습니다.")
+                    st.success("입력 날짜가 저장되었습니다.")
                     st.rerun()
                 else:
                     st.error("저장 실패")
             else:
                 st.error("암호가 일치하지 않습니다.")
 
-        if clear_btn:
+        # 삭제 버튼
+        if delete_btn:
             if pwd == SCHEDULE_CHANGE_PASSWORD:
-                kept = {d for d in grad_days_current if not d.startswith(f"{target_year}-")}
-                ok, new_sha = save_grad_days_to_github(kept, grad_sha_current)
+                delete_set, errors = parse_md_list_to_dates(md_text, target_year)
+                # 입력된 날짜만 제거
+                merged = set(grad_days_current) - delete_set
+                ok, new_sha = save_grad_days_to_github(merged, grad_sha_current)
                 if ok:
-                    st.success(f"{target_year}년 대학원 날짜를 모두 해제했습니다.")
+                    if errors:
+                        st.warning("다음 항목은 무시되었습니다: " + ", ".join(errors))
+                    st.success("입력 날짜가 삭제되었습니다.")
                     st.rerun()
                 else:
-                    st.error("저장 실패")
+                    st.error("삭제 실패")
             else:
                 st.error("암호가 일치하지 않습니다.")
 
