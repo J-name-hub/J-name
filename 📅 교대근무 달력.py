@@ -408,10 +408,11 @@ def main():
             margin-bottom: 0;
         }
         .stButton {
-            display: inline-block;
+            display: block;
+            width: 100%;
         }
         .stButton > button {
-            width: 100%;
+            width: 100% !important;   /* 컬럼 폭 = 버튼 폭 */
             display: inline-flex;
             align-items: center;
             justify-content: center;
