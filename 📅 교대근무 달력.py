@@ -593,10 +593,10 @@ def main():
     # 1행: 이전/다음
     col1, col2, col3 = st.columns([3,5,3])
     with col1:
-        if st.button("이전 월"):
+        if st.button("이전 월", use_container_width=True):
             update_month(-1)
     with col3:
-        if st.button("다음 월"):
+        if st.button("다음 월", use_container_width=True):
             update_month(1)
 
     st.divider()
@@ -604,7 +604,7 @@ def main():
     # 2행: Today
     coll1, coll2, coll3 = st.columns([3,5,3])
     with coll2:
-        if st.button("Today"):
+        if st.button("Today", use_container_width=True):
             st.session_state.year = today.year
             st.session_state.month = today.month
             st.rerun()
