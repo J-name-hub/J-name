@@ -835,14 +835,6 @@ def sidebar_controls(year, month, schedule_data):
         pwd = st.text_input("암호 입력", type="password", key="grad_pwd_yearly")
         colg1, colg2 = st.columns(2)
         with colg1:
-            save_btn = st.button("해당 연도에 저장/덮어쓰기")
-        with colg2:
-            clear_btn = st.button("해당 연도 전부 해제")
-
-        
-        pwd = st.text_input("암호 입력", type="password", key="grad_pwd_yearly")
-        colg1, colg2 = st.columns(2)
-        with colg1:
             save_btn = st.button("입력 날짜 저장")
         with colg2:
             delete_btn = st.button("입력 날짜 삭제")
