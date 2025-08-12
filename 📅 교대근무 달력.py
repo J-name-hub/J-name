@@ -270,6 +270,33 @@ def save_grad_days_to_github(grad_days_set, sha=None):
         st.error(f"GitHub에 대학원 날짜 저장 실패: {e}")
         return False, sha
 
+# 대학원 입력 날짜 변환
+def parse_md_list_to_dates(md_text: str, year: int):
+    """
+    '8/15, 8/17, 12/3' → {'YYYY-08-15','YYYY-08-17','YYYY-12-03'}
+    허용 형식: M/D (공백 자유), 구분자는 콤마. 앞/뒤 0은 없어도 됨.
+    유효하지 않은 항목은 무시하고 에러 목록으로 반환.
+    """
+    if not md_text:
+        return set(), []
+
+    tokens = [t.strip() for t in md_text.replace("，", ",").split(",") if t.strip()]
+    parsed = set()
+    errors = []
+
+    for t in tokens:
+        if "/" not in t:
+            errors.append(t); continue
+        m_str, d_str = t.split("/", 1)
+        try:
+            m = int(m_str)
+            d = int(d_str)
+            dt = datetime(year, m, d)  # 유효성 체크 겸 포맷
+            parsed.add(dt.strftime("%Y-%m-%d"))
+        except Exception:
+            errors.append(t)
+    return parsed, errors
+
 # 달력 생성 함수
 @st.cache_data
 def generate_calendar(year, month):
@@ -793,60 +820,53 @@ def sidebar_controls(year, month, schedule_data):
 
     # 🔹 6. 대학원 날짜(초록 표시) 편집
     st.sidebar.title("🎓 대학원 날짜 편집")
-    with st.sidebar.expander("대학원 날짜 선택/저장", expanded=False):
-        # 현재 월의 모든 실제 날짜 생성
-        _, last_day = calendar.monthrange(year, month)
-        month_all_dates = [
-            datetime(year, month, d).date().strftime("%Y-%m-%d") for d in range(1, last_day + 1)
-        ]
+    with st.sidebar.expander("연도 선택 + M/D 목록 입력", expanded=False):
+        # 연도만 선택
+        current_year = datetime.now(pytz.timezone('Asia/Seoul')).year
+        target_year = st.number_input("적용 연도", min_value=2000, max_value=2100, value=current_year, step=1)
 
-        # 최신 grad_days를 로컬 상태로 가져오기
-        grad_days_current, grad_sha_current = load_grad_days_from_github()
-
-        # 현재 월만 필터링하여 체크 상태로 보여주기
-        preset_selected = [d for d in month_all_dates if d in grad_days_current]
-
-        selected = st.multiselect(
-            f"{year}년 {month}월 대학원 날짜 선택",
-            options=month_all_dates,
-            default=preset_selected,
-            help="여러 날짜를 선택하면 해당 날짜의 숫자가 달력에서 초록색으로 표시됩니다."
+        # 텍스트로 M/D 나열 (예: 8/15, 8/17, 12/3)
+        md_text = st.text_area(
+            "날짜 입력 (예: 8/15, 8/17, 12/3)",
+            placeholder="8/15, 8/17, 12/3",
+            height=90
         )
 
-        pwd = st.text_input("암호 입력", type="password", key="grad_pwd")
+        pwd = st.text_input("암호 입력", type="password", key="grad_pwd_yearly")
         colg1, colg2 = st.columns(2)
         with colg1:
-            save_btn = st.button("저장")
+            save_btn = st.button("해당 연도에 저장/덮어쓰기")
         with colg2:
-            clear_btn = st.button("이번 달 선택 해제")
+            clear_btn = st.button("해당 연도 전부 해제")
 
-        # 저장 로직
+        # 최신 grad_days 상태 불러오기
+        grad_days_current, grad_sha_current = load_grad_days_from_github()
+
         if save_btn:
             if pwd == SCHEDULE_CHANGE_PASSWORD:
-                # 기존 전체 집합에서 이번 달 날짜를 제거 후, 선택분 반영
-                new_grad_days = set(grad_days_current)
-                # 이번 달 것들 제거
-                new_grad_days -= set(month_all_dates)
-                # 새로 선택한 것들 추가
-                new_grad_days |= set(selected)
+                new_set, errors = parse_md_list_to_dates(md_text, target_year)
 
-                ok, new_sha = save_grad_days_to_github(new_grad_days, grad_sha_current)
+                # 선택 연도의 기존 항목 제거 후, 새로 입력한 항목 추가
+                kept = {d for d in grad_days_current if not d.startswith(f"{target_year}-")}
+                merged = kept | new_set
+
+                ok, new_sha = save_grad_days_to_github(merged, grad_sha_current)
                 if ok:
-                    st.success("대학원 날짜가 저장되었습니다.")
-                    st.session_state.cache_key = datetime.now().strftime("%Y%m%d%H%M%S")
+                    if errors:
+                        st.warning("다음 항목은 무시되었습니다: " + ", ".join(errors))
+                    st.success(f"{target_year}년 대학원 날짜가 저장되었습니다.")
                     st.rerun()
                 else:
                     st.error("저장 실패")
             else:
                 st.error("암호가 일치하지 않습니다.")
 
-        # 이번 달만 초기화
         if clear_btn:
             if pwd == SCHEDULE_CHANGE_PASSWORD:
-                new_grad_days = set(grad_days_current) - set(month_all_dates)
-                ok, new_sha = save_grad_days_to_github(new_grad_days, grad_sha_current)
+                kept = {d for d in grad_days_current if not d.startswith(f"{target_year}-")}
+                ok, new_sha = save_grad_days_to_github(kept, grad_sha_current)
                 if ok:
-                    st.success("이번 달 대학원 날짜를 모두 해제했습니다.")
+                    st.success(f"{target_year}년 대학원 날짜를 모두 해제했습니다.")
                     st.rerun()
                 else:
                     st.error("저장 실패")
