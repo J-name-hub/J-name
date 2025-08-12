@@ -704,11 +704,11 @@ def display_calendar(calendar_data, year, month, holidays, grad_days, grad_color
     # 대학원 글자 먼저 추가 (기존 색상 유지)
     if month_has_grad:
         holiday_html += f'<span style="color:{grad_color}; font-weight:700;">대학원</span>'
-        # 공휴일 내용과 구분자 추가
-        holiday_html += " / "
 
     holiday_descriptions = create_holiday_descriptions(holidays, month)
     if holiday_descriptions:
+        if month_has_grad:
+            holiday_html += " / "  # 대학원 뒤에 구분자 추가
         holiday_html += " / ".join(holiday_descriptions)
     else:
         holiday_html += '&nbsp;'  # 공휴일 데이터가 없을 때 빈 줄 추가
