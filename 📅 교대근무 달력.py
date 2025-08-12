@@ -653,9 +653,9 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 # 주말 및 공휴일 색상 지정
                 day_color = "red" if current_date.weekday() in [5, 6] or date_str in holidays else "black"
 
-                # ✅ 대학원 가는 날이면 초록색으로 덮어쓰기
+                # ✅ 대학원 가는 날이면 파란색으로 덮어쓰기
                 if date_str in grad_days:
-                    day_color = "green"
+                    day_color = "#1E90FF"
 
                 # 오늘 날짜 테두리 처리
                 today_class = "today" if current_date == today else ""
