@@ -768,7 +768,7 @@ def sidebar_controls(year, month, schedule_data):
                     st.sidebar.error("암호가 일치하지 않습니다.")
 
     toggle_label = "스케줄 변경 비활성화" if st.session_state.expander_open else "스케줄 변경 활성화"
-    if st.sidebar.button(toggle_label):
+    if st.sidebar.button(toggle_label, use_container_width=True):
         st.session_state.expander_open = not st.session_state.expander_open
         st.rerun()
 
@@ -778,7 +778,7 @@ def sidebar_controls(year, month, schedule_data):
                 change_date = st.date_input("변경할 날짜", datetime(st.session_state.year, st.session_state.month, 1), key="change_date")
                 new_shift = st.selectbox("새 스케줄", ["주", "야", "비", "올"], key="new_shift")
                 password = st.text_input("암호 입력", type="password", key="password")
-                change_submit_button = st.form_submit_button("스케줄 변경 저장")
+                change_submit_button = st.form_submit_button("스케줄 변경 저장", use_container_width=True)
     
                 if change_submit_button:
                     if password == SCHEDULE_CHANGE_PASSWORD:
@@ -842,9 +842,9 @@ def sidebar_controls(year, month, schedule_data):
         pwd = st.text_input("암호 입력", type="password", key="grad_pwd_yearly")
         colg1, colg2 = st.columns(2)
         with colg1:
-            save_btn = st.button("입력 날짜 저장")
+            save_btn = st.button("입력 날짜 저장", use_container_width=True)
         with colg2:
-            delete_btn = st.button("입력 날짜 삭제")
+            delete_btn = st.button("입력 날짜 삭제", use_container_width=True)
 
         # 최신 grad_days 상태 불러오기
         grad_days_current, grad_sha_current = load_grad_days_from_github()
