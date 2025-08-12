@@ -685,7 +685,7 @@ def display_calendar(calendar_data, year, month, holidays, grad_days, grad_color
     month_has_grad = any(d.startswith(f"{year}-{month:02d}-") for d in grad_days)
     
     # 배지 HTML
-    badge_html = f'<span style="font-size:15px; font-weight:700; color:{grad_color};">대학원</span>' if month_has_grad else ""
+    badge_html = f'<span style="font-size:17px; font-weight:700; color:{grad_color};">대학원</span>' if month_has_grad else ""
     
     # 년월 헤더 생성 (제목 중앙, 배지 우측 끝)
     header_html = '''
