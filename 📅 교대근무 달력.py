@@ -21,6 +21,7 @@ GITHUB_REPO = st.secrets["github"]["repo"]
 GITHUB_FILE_PATH = st.secrets["github"]["file_path"]
 GITHUB_TEAM_SETTINGS_PATH = "team_settings.json"
 GITHUB_GRAD_DAYS_PATH = "grad_days.json"
+GITHUB_EXAM_PERIODS_PATH = "exam_periods.json"
 
 # 스케줄 변경 비밀번호
 SCHEDULE_CHANGE_PASSWORD = st.secrets["security"]["password"]
@@ -28,7 +29,8 @@ SCHEDULE_CHANGE_PASSWORD = st.secrets["security"]["password"]
 # 대한민국 공휴일 API 키
 HOLIDAY_API_KEY = st.secrets["api_keys"]["holiday_api_key"]
 
-GRAD_COLOR = "#0066CC"  # 중간톤 파랑
+GRAD_COLOR = "#0066CC"  # 대학원 표시 색 (중간톤 파랑)
+EXAM_COLOR = "#FF6F00"  # 시험기간 표시 색 (오렌지)
 
 # GitHub에서 스케줄 파일 로드
 @st.cache_data(ttl=3600)
@@ -299,6 +301,93 @@ def parse_md_list_to_dates(md_text: str, year: int):
             errors.append(t)
     return parsed, errors
 
+def load_exam_periods_from_github():
+    """시험기간 목록을 GitHub에서 가져옵니다. 반환: ([(start,end),...], sha)"""
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_EXAM_PERIODS_PATH}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    try:
+        r = requests.get(url, headers=headers)
+        if r.status_code == 404:
+            return [], None  # 파일 없으면 빈 목록
+        r.raise_for_status()
+        content = r.json()
+        file_content = base64.b64decode(content['content']).decode('utf-8')
+        data = json.loads(file_content)
+        ranges = data.get("ranges", [])
+        # 정규화해 튜플로
+        norm = []
+        for item in ranges:
+            s = item.get("start")
+            e = item.get("end", s)
+            if s:
+                norm.append((s, e))
+        return norm, content["sha"]
+    except requests.RequestException as e:
+        st.error(f"GitHub에서 시험기간 로드 실패: {e}")
+        return [], None
+    except Exception as e:
+        st.error(f"시험기간 로드 중 오류: {e}")
+        return [], None
+
+def save_exam_periods_to_github(ranges_list, sha=None):
+    """ranges_list = [(YYYY-MM-DD, YYYY-MM-DD), ...]"""
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_EXAM_PERIODS_PATH}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    payload = {
+        "message": "Update exam periods",
+        "content": base64.b64encode(
+            json.dumps({"ranges": [{"start": s, "end": e} for s, e in sorted(ranges_list)]},
+                       ensure_ascii=False, indent=2).encode("utf-8")
+        ).decode("utf-8")
+    }
+    if sha:
+        payload["sha"] = sha
+    try:
+        r = requests.put(url, headers=headers, json=payload)
+        r.raise_for_status()
+        return True, r.json()["content"]["sha"]
+    except requests.RequestException as e:
+        st.error(f"GitHub에 시험기간 저장 실패: {e}")
+        return False, sha
+
+def parse_ranges_md_to_periods(md_text: str, year: int):
+    """
+    '9/15~9/19, 12/2~12/3, 9/20' → {("YYYY-09-15","YYYY-09-19"),("YYYY-12-02","YYYY-12-03"),("YYYY-09-20","YYYY-09-20")}
+    무효 항목은 errors에 수집
+    """
+    if not md_text:
+        return set(), []
+
+    raw = md_text.replace("，", ",").replace("\n", ",")
+    tokens = [t.strip() for t in raw.split(",") if t.strip()]
+    parsed = set()
+    errors = []
+
+    def _mkdate(y,m,d):
+        return datetime(y, m, d).date().strftime("%Y-%m-%d")
+
+    for t in tokens:
+        try:
+            if "~" in t:
+                l, r = [x.strip() for x in t.split("~", 1)]
+                lm, ld = [int(x) for x in l.split("/", 1)]
+                rm, rd = [int(x) for x in r.split("/", 1)]
+                sd = datetime(year, lm, ld).date()
+                ed = datetime(year, rm, rd).date()
+                if ed < sd:
+                    sd, ed = ed, sd
+                parsed.add((sd.strftime("%Y-%m-%d"), ed.strftime("%Y-%m-%d")))
+            else:
+                m, d = [int(x) for x in t.split("/", 1)]
+                sd = _mkdate(year, m, d)
+                parsed.add((sd, sd))
+        except Exception:
+            errors.append(t)
+    return parsed, errors
+
 # 달력 생성 함수
 @st.cache_data
 def generate_calendar(year, month):
@@ -521,6 +610,10 @@ def main():
             border: 2px solid #007bff;
             background-color: #E8F0FE;
         }
+        .calendar-cell-content.exam {
+            border: 2px solid #FF6F00;   /* 오렌지 테두리 */
+            background-color: #FFF3E0;   /* 연한 오렌지 배경 */
+        }
         .calendar-day {
             font-weight: bold;
             color: #343a40;
@@ -579,12 +672,15 @@ def main():
     # 대학원 날짜 로드
     grad_days, grad_sha = load_grad_days_from_github()
 
+    # 시험기간 로드
+    exam_ranges, exam_sha = load_exam_periods_from_github()
+
     today = datetime.now(pytz.timezone('Asia/Seoul')).date()
     yesterday = today - timedelta(days=1)
 
     month_days = generate_calendar(year, month)
-    calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday, grad_days)
-    display_calendar(calendar_data, year, month, holidays, grad_days, GRAD_COLOR)
+    calendar_data = create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday, grad_days, exam_ranges)
+    display_calendar(calendar_data, year, month, holidays, grad_days, GRAD_COLOR, exam_ranges)
 
 
     # 버튼 컨테이너 시작
@@ -615,7 +711,7 @@ def main():
     # GitHub에서 스케줄 데이터 로드
     schedule_data, sha = load_schedule(cache_key=datetime.now().strftime("%Y%m%d%H%M%S"))
 
-    sidebar_controls(year, month, schedule_data)
+    sidebar_controls(year, month, schedule_data, exam_ranges, exam_sha)
 
 def update_month(delta):
     new_date = datetime(st.session_state.year, st.session_state.month, 1) + relativedelta(months=delta)
@@ -626,9 +722,18 @@ def update_month(delta):
 # 특정 날짜에 연분홍색 배경 적용
 highlighted_dates = ["01-27", "03-01", "04-06"]
 
-def create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday, grad_days):
+def create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday, grad_days, exam_ranges=None):
 
     team_history = load_team_settings_from_github()
+    exam_ranges = exam_ranges or []  # [(start,end),...]
+
+    def _in_exam(d: datetime.date) -> bool:
+        ds = d.strftime("%Y-%m-%d")
+        for s, e in exam_ranges:
+            if s <= ds <= e:
+                return True
+        return False
+    
     calendar_data = []
     for week in month_days:
         week_data = []
@@ -656,12 +761,14 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
 
                 # 오늘 날짜 테두리 처리
                 today_class = "today" if current_date == today else ""
+                # 시험기간 테두리 처리
+                exam_class = "exam" if _in_exam(current_date) else ""
 
                 shift_text = shift if shift != '비' else '&nbsp;'
                 shift_style = f"background-color: {shift_background}; color: {shift_color};" if shift != '비' else f"color: {shift_color};"
 
                 cell_content = f'''
-                    <div class="calendar-cell-content {today_class}">
+                    <div class="calendar-cell-content {today_class} {exam_class}">
                         <div class="calendar-day" style="background-color: {day_background}; color: {day_color}; 
                         border-radius: 5px; padding: 4px 8px; height: 24px; display: flex; align-items: center; justify-content: center;">
                             {day}
@@ -675,7 +782,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
         calendar_data.append(week_data)
     return calendar_data
 
-def display_calendar(calendar_data, year, month, holidays, grad_days, grad_color):
+def display_calendar(calendar_data, year, month, holidays, grad_days, grad_color, exam_ranges=None):
     # 년월 헤더 생성
     header_html = '<div class="calendar-container"><div class="calendar-header">'
     header_html += f'<div class="calendar-header"><span class="year">{year}.</span><span class="month"> {month}</span></span><span class="year">월</span></div>' + '</div>'
@@ -701,18 +808,43 @@ def display_calendar(calendar_data, year, month, holidays, grad_days, grad_color
 
     # 해당 월에 대학원 날짜 존재 여부
     month_has_grad = any(d.startswith(f"{year}-{month:02d}-") for d in grad_days)
-    
+    added = False
     # 대학원 글자 먼저 추가 (기존 색상 유지)
     if month_has_grad:
         holiday_html += f'<span style="color:{grad_color}; font-weight:700;">대학원</span>'
+        added = True
+
+    # 월과 겹치는 시험기간 목록 필터링
+    def _overlaps_month(s, e):
+        first = datetime(year, month, 1).date().strftime("%Y-%m-%d")
+        last  = datetime(year, month, calendar.monthrange(year, month)[1]).date().strftime("%Y-%m-%d")
+        return not (e < first or s > last)
+
+    month_exam = []
+    for s, e in (exam_ranges or []):
+        if _overlaps_month(s, e):
+            # 표현은 MM/DD~MM/DD
+            s_dt = datetime.strptime(s, "%Y-%m-%d")
+            e_dt = datetime.strptime(e, "%Y-%m-%d")
+            if s == e:
+                month_exam.append(f"{s_dt.strftime('%m/%d')}")
+            else:
+                month_exam.append(f"{s_dt.strftime('%m/%d')}~{e_dt.strftime('%m/%d')}")
+
+    if month_exam:
+        if added:
+            holiday_html += " | "
+        holiday_html += f'<span style="color:{EXAM_COLOR}; font-weight:700;">시험기간: {", ".join(month_exam)}</span>'
+        added = True
 
     holiday_descriptions = create_holiday_descriptions(holidays, month)
     if holiday_descriptions:
-        if month_has_grad:
+        if added:
             holiday_html += " | "  # 대학원 뒤에 구분자 추가
         holiday_html += " / ".join(holiday_descriptions)
     else:
-        holiday_html += '&nbsp;'  # 공휴일 데이터가 없을 때 빈 줄 추가
+        if not added:
+            holiday_html += '&nbsp;'  # 공휴일 데이터가 없을 때 빈 줄 추가
     holiday_html += '</div>'
 
     # 전체 달력 HTML 조합
@@ -823,7 +955,7 @@ def sidebar_controls(year, month, schedule_data):
         st.session_state.month = selected_month
         st.rerun()
 
-    # 🔹 6. 대학원 날짜(초록 표시) 편집
+    # 🔹 6. 대학원 날짜(파랑 표시) 편집
     st.sidebar.title("🎓 대학원 날짜 편집")
     with st.sidebar.expander("연도 선택 + M/D 목록 입력", expanded=False):
         # 연도만 선택
@@ -876,6 +1008,60 @@ def sidebar_controls(year, month, schedule_data):
                     if errors:
                         st.warning("다음 항목은 무시되었습니다: " + ", ".join(errors))
                     st.success("입력 날짜가 삭제되었습니다.")
+                    st.rerun()
+                else:
+                    st.error("삭제 실패")
+            else:
+                st.error("암호가 일치하지 않습니다.")
+
+    # 🔹 7. 대학원 시험기간 편집
+    st.sidebar.title("📝 대학원 시험기간 편집")
+    with st.sidebar.expander("연도 선택 + M/D~M/D 목록 입력", expanded=False):
+        current_year = datetime.now(pytz.timezone('Asia/Seoul')).year
+        target_year = st.number_input("적용 연도", min_value=2000, max_value=2100, value=current_year, step=1)
+
+        md_text = st.text_area(
+            "기간 입력 (쉼표/줄바꿈 구분, 예: 9/15~9/19, 12/2~12/3, 9/20)",
+            placeholder="9/15~9/19, 12/2~12/3",
+            height=90
+        )
+
+        pwd = st.text_input("암호 입력", type="password", key="exam_pwd_yearly")
+        colx1, colx2 = st.columns(2)
+        with colx1:
+            save_btn = st.button("입력 기간 저장", use_container_width=True)
+        with colx2:
+            delete_btn = st.button("입력 기간 삭제", use_container_width=True)
+
+        # 최신 상태 로드
+        exam_ranges_current, exam_sha_current = load_exam_periods_from_github()
+
+        if save_btn:
+            if pwd == SCHEDULE_CHANGE_PASSWORD:
+                new_set, errors = parse_ranges_md_to_periods(md_text, target_year)  # set of (s,e)
+                # 해당 연도 기존 항목 제거 후 입력 항목으로 교체(merge)
+                kept = {(s, e) for (s, e) in exam_ranges_current if not (s.startswith(f"{target_year}-") or e.startswith(f"{target_year}-"))}
+                merged = kept | new_set
+                ok, new_sha = save_exam_periods_to_github(sorted(list(merged)), exam_sha_current)
+                if ok:
+                    if errors:
+                        st.warning("무시된 항목: " + ", ".join(errors))
+                    st.success("시험기간이 저장되었습니다.")
+                    st.rerun()
+                else:
+                    st.error("저장 실패")
+            else:
+                st.error("암호가 일치하지 않습니다.")
+
+        if delete_btn:
+            if pwd == SCHEDULE_CHANGE_PASSWORD:
+                del_set, errors = parse_ranges_md_to_periods(md_text, target_year)  # 제거 대상
+                merged = set(exam_ranges_current) - del_set
+                ok, new_sha = save_exam_periods_to_github(sorted(list(merged)), exam_sha_current)
+                if ok:
+                    if errors:
+                        st.warning("무시된 항목: " + ", ".join(errors))
+                    st.success("입력한 기간이 삭제되었습니다.")
                     st.rerun()
                 else:
                     st.error("삭제 실패")
