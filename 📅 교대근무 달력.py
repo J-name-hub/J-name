@@ -853,7 +853,7 @@ def display_calendar(calendar_data, year, month, holidays, grad_days, grad_color
     # HTML을 Streamlit에 표시
     st.markdown(full_calendar_html, unsafe_allow_html=True)
 
-def sidebar_controls(year, month, schedule_data):
+def sidebar_controls(year, month, schedule_data, exam_ranges, exam_sha):
 
     # team_history 로드
     team_history = load_team_settings_from_github()  # 리스트 반환됨
