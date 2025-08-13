@@ -1058,9 +1058,7 @@ def sidebar_controls(year, month, schedule_data, exam_ranges, exam_sha):
         if save_btn:
             if pwd == SCHEDULE_CHANGE_PASSWORD:
                 new_set, errors = parse_md_list_to_dates(md_text, target_year)
-                # 입력 연도의 기존 항목 제거 후 새로 입력한 항목 추가
-                kept = {d for d in grad_days_current if not d.startswith(f"{target_year}-")}
-                merged = kept | new_set
+                merged = set(grad_days_current) | new_set   # 기존 + 신규를 합집합으로
                 ok, new_sha = save_grad_days_to_github(merged, grad_sha_current)
                 if ok:
                     if errors:
@@ -1114,9 +1112,7 @@ def sidebar_controls(year, month, schedule_data, exam_ranges, exam_sha):
         if save_btn:
             if pwd == SCHEDULE_CHANGE_PASSWORD:
                 new_set, errors = parse_ranges_md_to_periods(md_text, target_year)  # set of (s,e)
-                # 해당 연도 기존 항목 제거 후 입력 항목으로 교체(merge)
-                kept = {(s, e) for (s, e) in exam_ranges_current if not (s.startswith(f"{target_year}-") or e.startswith(f"{target_year}-"))}
-                merged = kept | new_set
+                merged = set(exam_ranges_current) | new_set   # 기존 + 신규를 합집합으로
                 ok, new_sha = save_exam_periods_to_github(sorted(list(merged)), exam_sha_current)
                 if ok:
                     if errors:
