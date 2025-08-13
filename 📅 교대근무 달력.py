@@ -643,6 +643,55 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
+    # 시험기간 연결형 띠 CSS 추가
+    st.markdown("""
+        <style>
+        /* 시험기간: 연속 날짜를 하나의 띠로 보이게 */
+        .calendar-cell { position: relative; }  /* 행 내부 간격 제거용 */
+        .calendar-cell-content { position: relative; z-index: 1; }  /* 내용은 띠 위에 올라오게 */
+        
+        /* 공통: band를 그리는 레이어 */
+        .exam-band::before {
+              content: "";
+              position: absolute;
+              z-index: 0;
+              /* 셀 내부 여백과 겹치지 않게 살짝 안쪽 */
+              top: 6px; bottom: 6px;
+              background: #FFF3E0;             /* 연한 오렌지 배경 */
+              border-top: 2px solid #FF6F00;   /* 위/아래 테두리 */
+              border-bottom: 2px solid #FF6F00;
+        }
+        
+        /* 시작: 왼쪽 둥글게 + 좌측 테두리 */
+        .exam-start::before {
+              left: 6px; right: 0;
+              border-left: 2px solid #FF6F00;
+              border-radius: 16px 0 0 16px;
+        }
+        
+        /* 중간: 양옆으로 가득, 좌/우 테두리는 없음(겹침 방지) */
+        .exam-mid::before {
+              left: 0; right: 0;
+              border-left: 0; border-right: 0;
+              border-radius: 0;
+        }
+        
+        /* 끝: 오른쪽 둥글게 + 우측 테두리 */
+        .exam-end::before {
+              left: 0; right: 6px;
+              border-right: 2px solid #FF6F00;
+              border-radius: 0 16px 16px 0;
+        }
+        
+        /* 단일일: 상하좌우 테두리 + 양쪽 둥글게 */
+        .exam-single::before {
+              left: 6px; right: 6px;
+              border: 2px solid #FF6F00;
+              border-radius: 16px;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
     # 세션 상태 초기화
     if "year" not in st.session_state or "month" not in st.session_state:
         today = datetime.now(pytz.timezone('Asia/Seoul'))
@@ -725,15 +774,37 @@ highlighted_dates = ["01-27", "03-01", "04-06"]
 def create_calendar_data(year, month, month_days, schedule_data, holidays, today, yesterday, grad_days, exam_ranges=None):
 
     team_history = load_team_settings_from_github()
-    exam_ranges = exam_ranges or []  # [(start,end),...]
+    exam_ranges = exam_ranges or []  # [(YYYY-MM-DD, YYYY-MM-DD), ...]
 
-    def _in_exam(d: datetime.date) -> bool:
-        ds = d.strftime("%Y-%m-%d")
-        for s, e in exam_ranges:
-            if s <= ds <= e:
-                return True
-        return False
-    
+    # 빠른 포함 판정을 위해 set 구성 (모든 시험 날짜)
+    exam_dates = set()
+    for s, e in exam_ranges:
+        sd = datetime.strptime(s, "%Y-%m-%d").date()
+        ed = datetime.strptime(e, "%Y-%m-%d").date()
+        d = sd
+        while d <= ed:
+            exam_dates.add(d.strftime("%Y-%m-%d"))
+            d += timedelta(days=1)
+
+    def _exam_class_for(date_obj):
+        ds = date_obj.strftime("%Y-%m-%d")
+        if ds not in exam_dates:
+            return ""  # 미해당
+
+        prev_ds = (date_obj - timedelta(days=1)).strftime("%Y-%m-%d")
+        next_ds = (date_obj + timedelta(days=1)).strftime("%Y-%m-%d")
+        prev_in = prev_ds in exam_dates
+        next_in = next_ds in exam_dates
+
+        if prev_in and next_in:
+            return "exam-band exam-mid"
+        elif prev_in and not next_in:
+            return "exam-band exam-end"
+        elif not prev_in and next_in:
+            return "exam-band exam-start"
+        else:
+            return "exam-band exam-single"
+
     calendar_data = []
     for week in month_days:
         week_data = []
@@ -762,7 +833,7 @@ def create_calendar_data(year, month, month_days, schedule_data, holidays, today
                 # 오늘 날짜 테두리 처리
                 today_class = "today" if current_date == today else ""
                 # 시험기간 테두리 처리
-                exam_class = "exam" if _in_exam(current_date) else ""
+                exam_class = _exam_class_for(current_date)
 
                 shift_text = shift if shift != '비' else '&nbsp;'
                 shift_style = f"background-color: {shift_background}; color: {shift_color};" if shift != '비' else f"color: {shift_color};"
