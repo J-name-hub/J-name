@@ -664,7 +664,7 @@ def main():
         .calendar-cell-content.exam-band::before{
           content:"";
           position:absolute; z-index:0; pointer-events:none;
-          top:6px; bottom:6px; left:0; right:0;          /* 우선 0, 경계가 보이면 -1~ -2로 조정 */
+          top:0; bottom:0; left:0; right:0;          /* 우선 0, 경계가 보이면 -1~ -2로 조정 */
           background:#FFF3E0;
           border-top:2px solid #FF6F00;
           border-bottom:2px solid #FF6F00;
