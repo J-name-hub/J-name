@@ -686,6 +686,12 @@ def main():
           border:2px solid #FF6F00;
           border-radius:16px;
         }
+        /* 글자/배지(주·야·비)를 band 위로 올리기 */
+        .calendar-day,
+        .calendar-shift { position: relative; z-index: 1; }
+        
+        /* 오늘(파란 테두리) 상자도 band 위에 확실히 */
+        .calendar-cell-content.today { position: relative; z-index: 2; }
         </style>
     """, unsafe_allow_html=True)
 
