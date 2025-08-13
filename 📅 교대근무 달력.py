@@ -642,51 +642,56 @@ def main():
     # 시험기간 연결형 띠 CSS 추가
     st.markdown("""
         <style>
-        /* 시험기간: 연속 날짜를 하나의 띠로 보이게 */
-        .calendar-cell { position: relative; }  /* 행 내부 간격 제거용 */
-        .calendar-cell-content { position: relative; z-index: 1; }  /* 내용은 띠 위에 올라오게 */
-        
-        /* 공통: band를 그리는 레이어 */
-        .exam-band::before {
-              content: "";
-              position: absolute;
-              z-index: 0;
-              /* 셀 내부 여백과 겹치지 않게 살짝 안쪽 */
-              top: 6px; bottom: 6px;
-              background: #FFF3E0;             /* 연한 오렌지 배경 */
-              border-top: 2px solid #FF6F00;   /* 위/아래 테두리 */
-              border-bottom: 2px solid #FF6F00;
+        /* 1) 기존의 .calendar-cell-content.exam 테두리/배경 비활성화 */
+        .calendar-cell-content.exam {
+          border: none !important;
+          background: transparent !important;
         }
         
-        /* 시작: 왼쪽 둥글게 + 좌측 테두리 */
-        .exam-start::before {
-              left: 6px; right: 0;
-              border-left: 2px solid #FF6F00;
-              border-radius: 16px 0 0 16px;
+        /* 2) 한 줄에서 칸 간격 제거 (space-between 없애고, 1/7 꽉 채우기) */
+        .calendar-row {
+          justify-content: flex-start !important;
+          gap: 0 !important;
+        }
+        .calendar-cell {
+          width: calc(100% / 7) !important;
         }
         
-        /* 중간: 양옆으로 가득, 좌/우 테두리는 없음(겹침 방지) */
-        .exam-mid::before {
-              left: 0; right: 0;
-              border-left: 0; border-right: 0;
-              border-radius: 0;
+        /* 3) 띠는 '내용 아래'에 깔기 */
+        .calendar-cell { position: relative; }
+        .calendar-cell-content { position: relative; z-index: 1; }
+        
+        /* 공통: band 레이어. 칸 사이 미세 간격을 덮기 위해 좌우 -2px 오버랩 */
+        .calendar-cell-content.exam-band::before {
+          content: "";
+          position: absolute;
+          z-index: 0;               /* 내용 아래 */
+          top: 6px; bottom: 6px;
+          left: -2px; right: -2px;  /* 칸 경계 살짝 덮어 간격 숨김 */
+          background: #FFF3E0;
+          border-top: 2px solid #FF6F00;
+          border-bottom: 2px solid #FF6F00;
+          pointer-events: none;
         }
         
-        /* 끝: 오른쪽 둥글게 + 우측 테두리 */
-        .exam-end::before {
-              left: 0; right: 6px;
-              border-right: 2px solid #FF6F00;
-              border-radius: 0 16px 16px 0;
+        /* 시작/중간/끝/단일일 */
+        .calendar-cell-content.exam-start::before {
+          border-left: 2px solid #FF6F00;
+          border-radius: 16px 0 0 16px;
         }
-        
-        /* 단일일: 상하좌우 테두리 + 양쪽 둥글게 */
-        .exam-single::before {
-              left: 6px; right: 6px;
-              border: 2px solid #FF6F00;
-              border-radius: 16px;
+        .calendar-cell-content.exam-mid::before {
+          /* 양 옆 테두리 없음 */
+        }
+        .calendar-cell-content.exam-end::before {
+          border-right: 2px solid #FF6F00;
+          border-radius: 0 16px 16px 0;
+        }
+        .calendar-cell-content.exam-single::before {
+          border: 2px solid #FF6F00;
+          border-radius: 16px;
         }
         </style>
-        """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
     # 세션 상태 초기화
     if "year" not in st.session_state or "month" not in st.session_state:
