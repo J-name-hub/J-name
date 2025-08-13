@@ -1094,7 +1094,7 @@ def sidebar_controls(year, month, schedule_data, exam_ranges, exam_sha):
 
         md_text = st.text_area(
             r"기간 입력 (예: 9/15\~9/19, 12/2\~12/3, 9/20)",
-            placeholder="9/15~9/19, 12/2~12/3",
+            placeholder="9/15~9/19, 12/2~12/3, 9/20",
             height=90,
             key="exam_md_text"
         )
