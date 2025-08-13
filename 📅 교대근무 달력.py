@@ -960,21 +960,22 @@ def sidebar_controls(year, month, schedule_data, exam_ranges, exam_sha):
     with st.sidebar.expander("연도 선택 + M/D 목록 입력", expanded=False):
         # 연도만 선택
         current_year = datetime.now(pytz.timezone('Asia/Seoul')).year
-        target_year = st.number_input("적용 연도", min_value=2000, max_value=2100, value=current_year, step=1)
+        target_year = st.number_input("적용 연도", min_value=2000, max_value=2100, value=current_year, step=1, key="grad_target_year")
 
         # 텍스트로 M/D 나열 (예: 8/15, 8/17, 12/3)
         md_text = st.text_area(
             "날짜 입력 (예: 8/15, 8/17, 12/3)",
             placeholder="8/15, 8/17, 12/3",
-            height=90
+            height=90,
+            key="grad_md_text"
         )
 
         pwd = st.text_input("암호 입력", type="password", key="grad_pwd_yearly")
         colg1, colg2 = st.columns(2)
         with colg1:
-            save_btn = st.button("입력 날짜 저장", use_container_width=True)
+            save_btn = st.button("입력 날짜 저장", use_container_width=True, key="grad_save_btn")
         with colg2:
-            delete_btn = st.button("입력 날짜 삭제", use_container_width=True)
+            delete_btn = st.button("입력 날짜 삭제", use_container_width=True, key="grad_delete_btn")
 
         # 최신 grad_days 상태 불러오기
         grad_days_current, grad_sha_current = load_grad_days_from_github()
@@ -1018,20 +1019,21 @@ def sidebar_controls(year, month, schedule_data, exam_ranges, exam_sha):
     st.sidebar.title("📝 대학원 시험기간 편집")
     with st.sidebar.expander("연도 선택 + M/D~M/D 목록 입력", expanded=False):
         current_year = datetime.now(pytz.timezone('Asia/Seoul')).year
-        target_year = st.number_input("적용 연도", min_value=2000, max_value=2100, value=current_year, step=1)
+        target_year = st.number_input("적용 연도", min_value=2000, max_value=2100, value=current_year, step=1, key="exam_target_year")
 
         md_text = st.text_area(
             "기간 입력 (쉼표/줄바꿈 구분, 예: 9/15~9/19, 12/2~12/3, 9/20)",
             placeholder="9/15~9/19, 12/2~12/3",
-            height=90
+            height=90,
+            key="exam_md_text"
         )
 
         pwd = st.text_input("암호 입력", type="password", key="exam_pwd_yearly")
         colx1, colx2 = st.columns(2)
         with colx1:
-            save_btn = st.button("입력 기간 저장", use_container_width=True)
+            save_btn = st.button("입력 기간 저장", use_container_width=True, key="exam_save_btn")
         with colx2:
-            delete_btn = st.button("입력 기간 삭제", use_container_width=True)
+            delete_btn = st.button("입력 기간 삭제", use_container_width=True, key="exam_delete_btn")
 
         # 최신 상태 로드
         exam_ranges_current, exam_sha_current = load_exam_periods_from_github()
