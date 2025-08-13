@@ -1029,8 +1029,6 @@ def sidebar_controls(year, month, schedule_data, exam_ranges, exam_sha):
         st.session_state.month = selected_month
         st.rerun()
 
-    st.divider()
-
     # 🔹 6. 대학원 날짜(파랑 표시) 편집
     st.sidebar.title("🎓 대학원")
     with st.sidebar.expander("대학원 날짜 편집", expanded=False):
