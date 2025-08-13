@@ -1030,8 +1030,8 @@ def sidebar_controls(year, month, schedule_data, exam_ranges, exam_sha):
         st.rerun()
 
     # 🔹 6. 대학원 날짜(파랑 표시) 편집
-    st.sidebar.title("🎓 대학원 편집")
-    with st.sidebar.expander("날짜 편집", expanded=False):
+    st.sidebar.title("🎓 대학원")
+    with st.sidebar.expander("대학원 날짜 편집", expanded=False):
         # 연도만 선택
         current_year = datetime.now(pytz.timezone('Asia/Seoul')).year
         target_year = st.number_input("적용 연도", min_value=2000, max_value=2100, value=current_year, step=1, key="grad_target_year")
@@ -1088,7 +1088,7 @@ def sidebar_controls(year, month, schedule_data, exam_ranges, exam_sha):
                 st.error("암호가 일치하지 않습니다.")
 
     # 🔹 7. 대학원 시험기간(주황 표시) 편집
-    with st.sidebar.expander("시험기간 편집", expanded=False):
+    with st.sidebar.expander("대학원 시험기간 편집", expanded=False):
         current_year = datetime.now(pytz.timezone('Asia/Seoul')).year
         target_year = st.number_input("적용 연도", min_value=2000, max_value=2100, value=current_year, step=1, key="exam_target_year")
 
