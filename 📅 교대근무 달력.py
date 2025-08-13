@@ -686,27 +686,6 @@ def main():
           border:2px solid #FF6F00;
           border-radius:16px;
         }
-        /* 오늘 + band: 파란 테두리 아래로 살짝 확장해서 흰 틈 제거 */
-        .calendar-cell-content.today.exam-band::before{
-          top: -2px;    /* 위로 2px 확장 */
-          bottom: -2px; /* 아래로 2px 확장 */
-          left: -2px;   /* 좌우도 살짝 확장(코너 보정) */
-          right: -2px;
-        }
-        
-        /* 곡률반경은 현재 값 유지 (5px/16px 조합) */
-        .calendar-cell-content.today.exam-mid::before{
-          border-radius: 5px;
-        }
-        .calendar-cell-content.today.exam-start::before{
-          border-radius: 16px 5px 5px 16px;
-          right: -2px;   /* 오늘 셀 오른쪽 코너 보정 */
-        }
-        .calendar-cell-content.today.exam-end::before{
-          border-radius: 5px 16px 16px 5px;
-          left: -2px;    /* 오늘 셀 왼쪽 코너 보정 */
-        }
-        
         /* 글자/배지(주·야·비)를 band 위로 올리기 */
         .calendar-day,
         .calendar-shift { position: relative; z-index: 1; }
