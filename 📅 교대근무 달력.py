@@ -607,7 +607,7 @@ def main():
             height: 100%;
         }
         .calendar-cell-content.today {
-            border: 2px solid #007bff;
+            border: 2.3px solid #007bff;
             background-color: #E8F0FE;
         }
         .calendar-day {
