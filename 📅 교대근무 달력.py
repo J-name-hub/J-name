@@ -642,53 +642,49 @@ def main():
     # 시험기간 연결형 띠 CSS 추가
     st.markdown("""
         <style>
-        /* 1) 기존의 .calendar-cell-content.exam 테두리/배경 비활성화 */
-        .calendar-cell-content.exam {
-          border: none !important;
-          background: transparent !important;
+        /* 0) 기존 exam 박스 스타일은 끄기 (band만 사용) */
+        .calendar-cell-content.exam { border:none !important; background:transparent !important; }
+        
+        /* 1) 한 줄에서 칸 간격 제거 + 칸 폭 1/7로 고정 */
+        .calendar-row { justify-content:flex-start !important; gap:0 !important; }
+        .calendar-cell { width:calc(100%/7) !important; padding:0 !important; }
+        
+        /* 2) 콘텐츠가 셀 가로폭을 꽉 채우게 */
+        .calendar-cell-content{
+          width:100% !important;
+          height:100% !important;
+          box-sizing:border-box !important;
+          position:relative; z-index:1;   /* 내용은 band 위 */
         }
         
-        /* 2) 한 줄에서 칸 간격 제거 (space-between 없애고, 1/7 꽉 채우기) */
-        .calendar-row {
-          justify-content: flex-start !important;
-          gap: 0 !important;
-        }
-        .calendar-cell {
-          width: calc(100% / 7) !important;
-        }
+        /* 3) band는 아래 레이어로 깔기 */
+        .calendar-cell{ position:relative; }
         
-        /* 3) 띠는 '내용 아래'에 깔기 */
-        .calendar-cell { position: relative; }
-        .calendar-cell-content { position: relative; z-index: 1; }
-        
-        /* 공통: band 레이어. 칸 사이 미세 간격을 덮기 위해 좌우 -2px 오버랩 */
-        .calendar-cell-content.exam-band::before {
-          content: "";
-          position: absolute;
-          z-index: 0;               /* 내용 아래 */
-          top: 6px; bottom: 6px;
-          left: -2px; right: -2px;  /* 칸 경계 살짝 덮어 간격 숨김 */
-          background: #FFF3E0;
-          border-top: 2px solid #FF6F00;
-          border-bottom: 2px solid #FF6F00;
-          pointer-events: none;
+        /* 공통 band 레이어 (필요시 좌우 -1px로 미세 오버랩) */
+        .calendar-cell-content.exam-band::before{
+          content:"";
+          position:absolute; z-index:0; pointer-events:none;
+          top:6px; bottom:6px; left:0; right:0;          /* 우선 0, 경계가 보이면 -1~ -2로 조정 */
+          background:#FFF3E0;
+          border-top:2px solid #FF6F00;
+          border-bottom:2px solid #FF6F00;
         }
         
         /* 시작/중간/끝/단일일 */
-        .calendar-cell-content.exam-start::before {
-          border-left: 2px solid #FF6F00;
-          border-radius: 16px 0 0 16px;
+        .calendar-cell-content.exam-start::before{
+          border-left:2px solid #FF6F00;
+          border-radius:16px 0 0 16px;
         }
-        .calendar-cell-content.exam-mid::before {
-          /* 양 옆 테두리 없음 */
+        .calendar-cell-content.exam-mid::before{
+          /* 좌우 테두리 없음 */
         }
-        .calendar-cell-content.exam-end::before {
-          border-right: 2px solid #FF6F00;
-          border-radius: 0 16px 16px 0;
+        .calendar-cell-content.exam-end::before{
+          border-right:2px solid #FF6F00;
+          border-radius:0 16px 16px 0;
         }
-        .calendar-cell-content.exam-single::before {
-          border: 2px solid #FF6F00;
-          border-radius: 16px;
+        .calendar-cell-content.exam-single::before{
+          border:2px solid #FF6F00;
+          border-radius:16px;
         }
         </style>
     """, unsafe_allow_html=True)
