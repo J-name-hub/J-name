@@ -610,10 +610,6 @@ def main():
             border: 2px solid #007bff;
             background-color: #E8F0FE;
         }
-        .calendar-cell-content.exam {
-            border: 2px solid #FF6F00;   /* 오렌지 테두리 */
-            background-color: #FFF3E0;   /* 연한 오렌지 배경 */
-        }
         .calendar-day {
             font-weight: bold;
             color: #343a40;
