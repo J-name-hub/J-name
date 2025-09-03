@@ -933,7 +933,12 @@ def sidebar_controls(year, month, schedule_data, exam_ranges, exam_sha):
     team_history = load_team_settings_from_github()  # 리스트 반환됨
 
     # 🔹 1. 현재 조 표시
-    st.sidebar.title(f"👥 현재 근무조 : {team_history[-1]['team'] if team_history else 'A'}")
+    today = datetime.now(pytz.timezone("Asia/Seoul")).date()
+    if team_history:  # 값이 있으면 함수 사용
+        current_team = get_team_for_date(today, team_history)
+    else:  # 비어 있으면 기본값 "미설정"
+        current_team = "미설정"
+    st.sidebar.title(f"👥 현재 근무조 : {current_team}")
 
     # 🔹 2. 근무 조 설정
     with st.sidebar.expander("조 설정", expanded=False):
