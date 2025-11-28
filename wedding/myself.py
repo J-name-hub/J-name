@@ -1,5 +1,8 @@
 import streamlit as st
 from datetime import date
+from pathlib import Path
+
+BASE_DIR = Path(__file__).parent
 
 st.set_page_config(
     page_title="우리 결혼합니다",
@@ -10,12 +13,13 @@ st.set_page_config(
 # -------------------------------
 # 설정 : 이미지 파일 경로
 # -------------------------------
-HERO_IMAGE = "imgs/hero.jpg"  # 메인 사진
+HERO_IMAGE = BASE_DIR / "imgs" / "hero.jpg"  # 메인 사진
+
 PHOTO_GALLERY = [
-    "imgs/photo1.jpg",
-    "imgs/photo2.jpg",
-    "imgs/photo3.jpg",
-    "imgs/photo4.jpg",
+    BASE_DIR / "imgs" / "photo1.jpg",
+    BASE_DIR / "imgs" / "photo2.jpg",
+    BASE_DIR / "imgs" / "photo3.jpg",
+    BASE_DIR / "imgs" / "photo4.jpg",
 ]
 
 WEDDING_DATE = date(2025, 10, 18)
@@ -130,7 +134,7 @@ st.markdown(
 st.markdown("<div class='mobile-frame'>", unsafe_allow_html=True)
 
 # 상단 사진 + 타이틀
-st.image(HERO_IMAGE, use_column_width=True)
+st.image(str(HERO_IMAGE), use_column_width=True)
 
 st.markdown("<div class='headline'>Wedding Invitation</div>", unsafe_allow_html=True)
 st.markdown("<div class='names'>JUNHO & YURI</div>", unsafe_allow_html=True)
