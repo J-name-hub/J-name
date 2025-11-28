@@ -373,7 +373,7 @@ st.image(str(HERO_IMAGE), use_column_width=True)
 
 # 타이틀 & D-day
 st.markdown("<div class='headline'>Wedding Invitation</div>", unsafe_allow_html=True)
-st.markdown("<div class='names'>JUNHO & YURI</div>", unsafe_allow_html=True)
+st.markdown("<div class='names'>HYEONCHAN & SORYUNG</div>", unsafe_allow_html=True)
 
 st.markdown(
     f"<div class='date-text'>{WEDDING_DATE.strftime('%Y.%m.%d')} · {WEDDING_TIME_STR}</div>",
@@ -460,7 +460,6 @@ with col_cal:
 st.markdown("<br>", unsafe_allow_html=True)
 
 # 지도 embed
-st.markdown("<div class='section-box'>", unsafe_allow_html=True)
 st.components.v1.html(MAP_IFRAME, height=270, scrolling=False)
 st.markdown(
     f"<div style='text-align:center; margin-top:0.4rem;'>"
@@ -468,7 +467,6 @@ st.markdown(
     f"</div>",
     unsafe_allow_html=True,
 )
-st.markdown("</div>", unsafe_allow_html=True)
 
 
 # -----------------------------------------
@@ -521,7 +519,7 @@ if comments:
         )
 else:
     st.markdown(
-        "<div class='section-box'>아직 댓글이 없습니다. 첫 축하 메시지를 남겨주세요.</div>",
+        "<div class='section-box'>아직 댓글이 없습니다. 첫 축하 메시지를 남겨주세요. 😊</div>",
         unsafe_allow_html=True,
     )
 
