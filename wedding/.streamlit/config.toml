@@ -1,0 +1,6 @@
+[theme]
+base = "light"
+primaryColor = "#d5c4a1"   # 원하는 포인트 컬러
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f7f5f1"
+textColor = "#333333"
