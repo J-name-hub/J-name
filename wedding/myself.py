@@ -50,12 +50,12 @@ MAP_IFRAME = """
   height="260"
   frameborder="0"
   style="border:0;border-radius:16px;"
-  src="https://maps.google.com/maps?q=37.5665,126.9780&z=15&output=embed"
+  src="https://maps.google.com/maps?q=37.601408,126.819016&z=15&output=embed"
   allowfullscreen>
 </iframe>
 """
 
-NAVER_MAP_URL = "https://map.naver.com"  # 필요 시 유지
+NAVER_MAP_URL = "https://map.naver.com/p/search/%ED%96%89%EC%A3%BC%EC%82%B0%EC%84%B1/place/13219297?c=11.00,0,0,0,dh&placePath=/home?entry=bmp&from=map&fromPanelNum=2&timestamp=202511282319&locale=ko&svcName=map_pcv5&searchText=%ED%96%89%EC%A3%BC%EC%82%B0%EC%84%B1"  # 필요 시 유지
 
 # -----------------------------------------
 # GitHub 설정 (secrets에서 로드)
@@ -191,7 +191,8 @@ st.markdown(
         background: #e6ded4;
         color: #6b5b4a;
         cursor: pointer;
-        width: 100%;
+        width: auto;         /* <-- 여기 */
+        min-width: 140px;    /* 적당한 최소 폭 */
     }
     .stButton>button:hover {
         background: #d6c6b6;
@@ -444,10 +445,13 @@ st.markdown("<br>", unsafe_allow_html=True)
 st.markdown("<div class='section-box'>", unsafe_allow_html=True)
 st.components.v1.html(MAP_IFRAME, height=270, scrolling=False)
 st.markdown(
-    f"<a class='link-button' href='{NAVER_MAP_URL}' target='_blank'>네이버 지도 앱에서 보기</a>",
+    f"<div style='text-align:center; margin-top:0.4rem;'>"
+    f"<a class='link-button' href='{NAVER_MAP_URL}' target='_blank'>네이버 지도 앱에서 보기</a>"
+    f"</div>",
     unsafe_allow_html=True,
 )
 st.markdown("</div>", unsafe_allow_html=True)
+
 
 # -----------------------------------------
 # 연락처
@@ -470,10 +474,12 @@ st.markdown(
 # -----------------------------------------
 st.markdown("<div class='section-title'>💬 축하 댓글</div>", unsafe_allow_html=True)
 
+st.markdown("<div style='text-align:center;'>", unsafe_allow_html=True)
 with st.form("comment_form", clear_on_submit=True):
     c_name = st.text_input("이름")
     c_msg = st.text_area("축하 메시지를 남겨주세요")
     submitted = st.form_submit_button("댓글 남기기")
+st.markdown("</div>", unsafe_allow_html=True)
 
     if submitted:
         save_comment(c_name, c_msg)
