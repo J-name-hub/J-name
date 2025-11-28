@@ -212,4 +212,6 @@ message = st.text_area("축하 메시지 (선택)")
 
 if st.button("전달하기"):
     # TODO: 여기에 구글 시트, DB, 이메일 등 연동
-    st.success("전달되었습니다.
+    st.success("전달되었습니다. 감사합니다.")
+
+st.markdown("</div>", unsafe_allow_html=True)
