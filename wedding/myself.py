@@ -497,10 +497,11 @@ with st.form("comment_form", clear_on_submit=True):
     c_name = st.text_input("이름")
     c_msg = st.text_area("축하 메시지를 남겨주세요")
     submitted = st.form_submit_button("댓글 남기기")
-st.markdown("</div>", unsafe_allow_html=True)
 
     if submitted:
         save_comment(c_name, c_msg)
+st.markdown("</div>", unsafe_allow_html=True)
+
 
 # 기존 댓글 불러오기
 comments, _ = load_comments()
