@@ -198,6 +198,24 @@ st.markdown(
         background: #d6c6b6;
     }
 
+    /* 사진 프레임: 일정한 크기 + 이미지 채우기 */
+    .photo-frame {
+        width: 100%;
+        max-width: 360px;              /* 실제 보여줄 폭 */
+        height: 260px;                 /* 프레임 세로 고정 */
+        margin: 0 auto 0.4rem auto;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        background-color: #ddd;        /* 로딩 중 배경 */
+    }
+    .photo-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;             /* 비율 유지하면서 프레임 채우기 */
+        display: block;
+    }
+
     footer {visibility: hidden;}
     header {visibility: hidden;}
     </style>
@@ -397,14 +415,17 @@ n = len(PHOTO_GALLERY)
 left_col, center_col, right_col = st.columns([1, 6, 1])
 
 with left_col:
-    if st.button("◀", key="prev"):
+    if st.button("◀", key="prev", use_container_width=True):
         st.session_state.photo_idx = (st.session_state.photo_idx - 1) % n
 
 with center_col:
-    st.image(str(PHOTO_GALLERY[st.session_state.photo_idx]), use_column_width=True)
+    # 고정 프레임 안에 이미지를 넣는 방식
+    st.markdown("<div class='photo-frame'>", unsafe_allow_html=True)
+    st.image(str(PHOTO_GALLERY[st.session_state.photo_idx]))
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with right_col:
-    if st.button("▶", key="next"):
+    if st.button("▶", key="next", use_container_width=True):
         st.session_state.photo_idx = (st.session_state.photo_idx + 1) % n
 
 dots = "".join("● " if i == st.session_state.photo_idx else "○ " for i in range(n))
