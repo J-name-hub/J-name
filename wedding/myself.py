@@ -191,29 +191,10 @@ st.markdown(
         background: #e6ded4;
         color: #6b5b4a;
         cursor: pointer;
-        width: auto;         /* <-- 여기 */
-        min-width: 140px;    /* 적당한 최소 폭 */
+        width: 100%;
     }
     .stButton>button:hover {
         background: #d6c6b6;
-    }
-
-    /* 사진 프레임: 일정한 크기 + 이미지 채우기 */
-    .photo-frame {
-        width: 100%;
-        max-width: 360px;              /* 실제 보여줄 폭 */
-        height: 260px;                 /* 프레임 세로 고정 */
-        margin: 0 auto 0.4rem auto;
-        border-radius: 18px;
-        overflow: hidden;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-        background-color: #ddd;        /* 로딩 중 배경 */
-    }
-    .photo-frame img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;             /* 비율 유지하면서 프레임 채우기 */
-        display: block;
     }
 
     footer {visibility: hidden;}
@@ -419,10 +400,7 @@ with left_col:
         st.session_state.photo_idx = (st.session_state.photo_idx - 1) % n
 
 with center_col:
-    # 고정 프레임 안에 이미지를 넣는 방식
-    st.markdown("<div class='photo-frame'>", unsafe_allow_html=True)
-    st.image(str(PHOTO_GALLERY[st.session_state.photo_idx]))
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.image(str(PHOTO_GALLERY[st.session_state.photo_idx]), use_column_width=True)
 
 with right_col:
     if st.button("▶", key="next", use_container_width=True):
