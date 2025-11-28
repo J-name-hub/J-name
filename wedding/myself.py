@@ -376,7 +376,7 @@ st.markdown("<div class='headline'>Wedding Invitation</div>", unsafe_allow_html=
 st.markdown("<div class='names'>HYEONCHAN & SORYUNG</div>", unsafe_allow_html=True)
 
 st.markdown(
-    f"<div class='date-text'>{WEDDING_DATE.strftime('%Y.%m.%d')} · {WEDDING_TIME_STR}</div>",
+    f"<div class='date-text'>{WEDDING_DATE.strftime('%Y.%m.%d (%a)')} · {WEDDING_TIME_STR}</div>",
     unsafe_allow_html=True,
 )
 
