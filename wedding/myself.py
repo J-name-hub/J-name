@@ -348,7 +348,25 @@ BGM_HTML = """
 st.markdown("<div class='mobile-frame'>", unsafe_allow_html=True)
 
 # 배경 음악 embed (브라우저 정책 때문에 자동 재생이 안 될 수도 있음)
-st.components.v1.html(BGM_HTML, height=0, width=0)
+# ---- BGM: 로컬 mp3 자동재생(loop) ----
+def get_audio_player_html(mp3_path: Path):
+    """로컬 mp3 파일을 base64로 인코딩해 <audio> 태그로 재생."""
+    mp3_bytes = mp3_path.read_bytes()
+    b64 = base64.b64encode(mp3_bytes).decode()
+    html = f"""
+        <audio autoplay loop>
+            <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+            브라우저가 audio 태그를 지원하지 않습니다.
+        </audio>
+    """
+    return html
+
+BGM_FILE = BASE_DIR / "bgm.mp3"   # myser.py와 동일 폴더 내 mp3 파일
+bgm_html = get_audio_player_html(BGM_FILE)
+
+# 배경음악 삽입: 페이지 시작 부분에 추가
+st.components.v1.html(bgm_html, height=0, width=0)
+
 
 # 상단 메인 사진
 st.image(str(HERO_IMAGE), use_column_width=True)
