@@ -2,8 +2,16 @@ from pathlib import Path
 from datetime import date, datetime
 import json
 import base64
+import calendar
 import requests
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
+
+# -----------------------------------------
+# 자동 새로고침 (초단위 카운트다운용)
+# -----------------------------------------
+# interval=1000ms -> 1초마다 전체 앱을 다시 렌더링
+st_autorefresh(interval=1000, key="countdown_refresh")
 
 # -----------------------------------------
 # 기본 설정
@@ -29,13 +37,13 @@ PHOTO_GALLERY = [
 # 예식 정보
 WEDDING_DATE = date(2027, 1, 16)
 WEDDING_TIME_STR = "오후 2시"
-# 실제 카운트다운용 (14:00 기준, 한국시간 가정)
+# 실제 카운트다운 기준 시간 (14:00, 한국시간 가정)
 WEDDING_DATETIME = datetime(2027, 1, 16, 14, 0, 0)
 
 VENUE_NAME = "○○웨딩홀 3층"
 VENUE_ADDR = "서울시 ○○구 ○○로 123"
 
-# 지도 embed (네이버/카카오/구글에서 복사한 iframe으로 교체)
+# 지도 embed (네이버/카카오/구글에서 가져온 iframe으로 교체 가능)
 MAP_IFRAME = """
 <iframe
   width="100%"
@@ -53,13 +61,13 @@ NAVER_MAP_URL = "https://map.naver.com"  # 필요 시 유지
 # GitHub 설정 (secrets에서 로드)
 # -----------------------------------------
 GITHUB_TOKEN = st.secrets["github"]["token"]
-GITHUB_REPO = st.secrets["github"]["repo"]         # 예: "J-name-hub/J-name"
-GITHUB_FILE_PATH = st.secrets["github"]["file_path"]  # 예: "wedding/comments.json"
+GITHUB_REPO = st.secrets["github"]["repo"]           # 예: "J-name-hub/J-name"
+GITHUB_FILE_PATH = st.secrets["github"]["file_path"] # 예: "wedding/comments.json"
 GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
 
 
 # -----------------------------------------
-# 스타일 (화이트 웨딩톤 + 가운데 정렬)
+# 스타일 (화이트 웨딩톤 + 가운데 정렬 + 링크/버튼 조정)
 # -----------------------------------------
 st.markdown(
     """
@@ -143,6 +151,17 @@ st.markdown(
         color: #b0a69b;
     }
 
+    /* 일반 링크 스타일 (굵고 진한 파란색) */
+    a {
+        color: #1f4fa8;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+
+    /* pill 형태 링크 버튼 */
     .link-button {
         display: inline-block;
         padding: 0.45rem 0.9rem;
@@ -150,15 +169,20 @@ st.markdown(
         border: 1px solid #d2c6b8;
         font-size: 0.85rem;
         text-decoration: none;
-        color: #555555;
-        margin: 0.4rem 0.2rem 0 0.2rem;
+        color: #1f4fa8;
+        background-color: #fdfdfd;
+        margin: 0.4rem 0.3rem 0 0.3rem;
     }
 
-    .link-button:active {
+    .link-button:hover {
         background: #ebe0d5;
+        text-decoration: none;
     }
 
-    /* 버튼 공통 스타일 */
+    /* 버튼 공통 스타일 + 폭 자동조정 */
+    .stButton {
+        text-align: center;
+    }
     .stButton>button {
         border-radius: 999px;
         border: none;
@@ -167,8 +191,8 @@ st.markdown(
         background: #e6ded4;
         color: #6b5b4a;
         cursor: pointer;
+        width: 100%;
     }
-
     .stButton>button:hover {
         background: #d6c6b6;
     }
@@ -180,8 +204,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+
 # -----------------------------------------
-# 유틸: D-day & 카운트다운
+# 유틸: D-day & 카운트다운 (초 단위)
 # -----------------------------------------
 def get_countdown_string():
     now = datetime.now()
@@ -189,43 +214,38 @@ def get_countdown_string():
     sec = int(delta.total_seconds())
 
     if sec <= 0:
-        return "오늘의 예식 또는 이미 지난 예식입니다."
+        return "오늘의 예식이거나 이미 지난 예식입니다."
 
     days = sec // 86400
     sec %= 86400
     hours = sec // 3600
     sec %= 3600
     minutes = sec // 60
+    seconds = sec % 60
 
     dday_str = f"D-{days}" if days > 0 else "D-Day"
-    return f"{dday_str} · {days}일 {hours}시간 {minutes}분 남았습니다."
+    return f"{dday_str} · {days}일 {hours}시간 {minutes}분 {seconds}초 남았습니다."
 
 
 # -----------------------------------------
-# 유틸: 월 달력 HTML (예식 날짜 강조)
+# 유틸: 월 달력 HTML (예식 날짜 강조, 요일 3글자, 제목 굵게)
 # -----------------------------------------
-import calendar
-
 def render_calendar_html(target_date: date) -> str:
     cal = calendar.Calendar(firstweekday=6)  # 일요일 시작
     year, month = target_date.year, target_date.month
     weeks = cal.monthdayscalendar(year, month)
 
+    weekday_labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
     html = """
     <table style="width:100%;border-collapse:collapse;font-size:0.8rem;color:#65574a;">
       <thead>
         <tr>
-          <th style="padding:4px;">Su</th>
-          <th style="padding:4px;">Mo</th>
-          <th style="padding:4px;">Tu</th>
-          <th style="padding:4px;">We</th>
-          <th style="padding:4px;">Th</th>
-          <th style="padding:4px;">Fr</th>
-          <th style="padding:4px;">Sa</th>
-        </tr>
-      </thead>
-      <tbody>
     """
+    for label in weekday_labels:
+        html += f"<th style='padding:4px;font-weight:bold;'>{label}</th>"
+    html += "</tr></thead><tbody>"
+
     for week in weeks:
         html += "<tr>"
         for day in week:
@@ -314,11 +334,11 @@ def save_comment(name: str, message: str):
 # -----------------------------------------
 BGM_HTML = """
 <audio autoplay loop>
+  <!-- 실제 사용 시 src를 본인이 업로드한 mp3 주소로 교체 -->
   <source src="https://www.w3schools.com/html/horse.ogg" type="audio/ogg">
   <source src="https://www.w3schools.com/html/horse.mp3" type="audio/mpeg">
 </audio>
 """
-# 실제 사용 시 위의 src를 본인이 업로드한 mp3 주소로 교체
 
 
 # -----------------------------------------
@@ -353,20 +373,19 @@ st.markdown("### 📸 Our Moments")
 
 if "photo_idx" not in st.session_state:
     st.session_state.photo_idx = 0
-
 n = len(PHOTO_GALLERY)
 
 left_col, center_col, right_col = st.columns([1, 6, 1])
 
 with left_col:
-    if st.button("◀", key="prev", use_container_width=True):
+    if st.button("◀", key="prev"):
         st.session_state.photo_idx = (st.session_state.photo_idx - 1) % n
 
 with center_col:
     st.image(str(PHOTO_GALLERY[st.session_state.photo_idx]), use_column_width=True)
 
 with right_col:
-    if st.button("▶", key="next", use_container_width=True):
+    if st.button("▶", key="next"):
         st.session_state.photo_idx = (st.session_state.photo_idx + 1) % n
 
 dots = "".join("● " if i == st.session_state.photo_idx else "○ " for i in range(n))
@@ -412,7 +431,7 @@ with col_cal:
     st.markdown(
         f"""
         <div class='section-box' style='font-size:0.85rem;'>
-        {WEDDING_DATE.year}년 {WEDDING_DATE.month}월
+        <b>{WEDDING_DATE.year}년 {WEDDING_DATE.month}월</b>
         {cal_html}
         </div>
         """,
@@ -477,7 +496,7 @@ if comments:
         )
 else:
     st.markdown(
-        "<div class='section-box'>아직 댓글이 없습니다. 첫 축하 메시지를 남겨주세요. 😊</div>",
+        "<div class='section-box'>아직 댓글이 없습니다. 첫 축하 메시지를 남겨주세요.</div>",
         unsafe_allow_html=True,
     )
 
