@@ -27,10 +27,10 @@ PHOTO_GALLERY = [
 ]
 
 # 예식 정보
-WEDDING_DATE = date(2025, 10, 18)
+WEDDING_DATE = date(2027, 1, 16)
 WEDDING_TIME_STR = "오후 2시"
 # 실제 카운트다운용 (14:00 기준, 한국시간 가정)
-WEDDING_DATETIME = datetime(2025, 10, 18, 14, 0, 0)
+WEDDING_DATETIME = datetime(2027, 1, 16, 14, 0, 0)
 
 VENUE_NAME = "○○웨딩홀 3층"
 VENUE_ADDR = "서울시 ○○구 ○○로 123"
