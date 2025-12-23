@@ -33,13 +33,13 @@ PHOTO_GALLERY = [
 ]
 
 # 예식 정보
-WEDDING_DATE = date(2027, 1, 16)
-WEDDING_TIME_STR = "오후 2시"
-# 실제 카운트다운 기준 시간 (14:00, 한국시간 가정)
-WEDDING_DATETIME = datetime(2027, 1, 16, 14, 0, 0)
+WEDDING_DATE = date(2026, 12, 12)
+WEDDING_TIME_STR = "오전 11시"
+# 실제 카운트다운 기준 시간 (11:00, 한국시간 가정)
+WEDDING_DATETIME = datetime(2026, 12, 12, 11, 0, 0)
 
-VENUE_NAME = "○○웨딩홀 3층"
-VENUE_ADDR = "서울시 ○○구 ○○로 123"
+VENUE_NAME = "더휴웨딩홀"
+VENUE_ADDR = "서울 강남구 테헤란로 407 EK-TOWER 2층"
 
 # 지도 embed (네이버/카카오/구글에서 가져온 iframe으로 교체 가능)
 MAP_IFRAME = """
@@ -48,12 +48,12 @@ MAP_IFRAME = """
   height="260"
   frameborder="0"
   style="border:0;border-radius:16px;"
-  src="https://maps.google.com/maps?q=37.601408,126.819016&z=15&output=embed"
+  src="https://naver.me/FSwbdsM1"
   allowfullscreen>
 </iframe>
 """
 
-NAVER_MAP_URL = "https://map.naver.com/p/search/%ED%96%89%EC%A3%BC%EC%82%B0%EC%84%B1/place/13219297?c=11.00,0,0,0,dh&placePath=/home?entry=bmp&from=map&fromPanelNum=2&timestamp=202511282319&locale=ko&svcName=map_pcv5&searchText=%ED%96%89%EC%A3%BC%EC%82%B0%EC%84%B1"  # 필요 시 유지
+NAVER_MAP_URL = "https://naver.me/FSwbdsM1"  # 필요 시 유지
 
 # -----------------------------------------
 # GitHub 설정 (secrets에서 로드)
@@ -342,7 +342,7 @@ BGM_HTML = """
 # -----------------------------------------
 # 본문 시작
 # -----------------------------------------
-
+# st.markdown("<div class='mobile-frame'>", unsafe_allow_html=True)
 
 # 배경 음악 embed (브라우저 정책 때문에 자동 재생이 안 될 수도 있음)
 # ---- BGM: 로컬 mp3 자동재생(loop) ----
