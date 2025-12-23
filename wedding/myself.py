@@ -342,7 +342,7 @@ BGM_HTML = """
 # -----------------------------------------
 # 본문 시작
 # -----------------------------------------
-st.markdown("<div class='mobile-frame'>", unsafe_allow_html=True)
+
 
 # 배경 음악 embed (브라우저 정책 때문에 자동 재생이 안 될 수도 있음)
 # ---- BGM: 로컬 mp3 자동재생(loop) ----
@@ -361,7 +361,8 @@ def get_audio_player_html(mp3_path: Path):
 BGM_FILE = BASE_DIR / "bgm.mp3"   # myser.py와 동일 폴더 내 mp3 파일
 bgm_html = get_audio_player_html(BGM_FILE)
 
-
+# 배경음악 삽입: 페이지 시작 부분에 추가
+st.components.v1.html(bgm_html, height=0, width=0)
 
 # 상단 메인 사진
 st.image(str(HERO_IMAGE), use_column_width=True)
