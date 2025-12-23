@@ -28,10 +28,8 @@ BASE_DIR = Path(__file__).parent
 # 이미지 경로 (파일명은 실제 파일명에 맞게 수정)
 HERO_IMAGE = BASE_DIR / "imgs" / "hero.jpg"
 PHOTO_GALLERY = [
-    BASE_DIR / "imgs" / "photo1.jpg",
-    BASE_DIR / "imgs" / "photo2.jpg",
-    BASE_DIR / "imgs" / "photo3.jpg",
-    BASE_DIR / "imgs" / "photo4.jpg",
+    BASE_DIR / "imgs" / "photo1.png",
+    BASE_DIR / "imgs" / "photo2.png",
 ]
 
 # 예식 정보
