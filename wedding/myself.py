@@ -48,7 +48,7 @@ MAP_IFRAME = """
   height="260"
   frameborder="0"
   style="border:0;border-radius:16px;"
-  src="https://naver.me/FSwbdsM1"
+  src="https://www.google.com/maps?q=더휴웨딩홀 EK타워&output=embed"
   allowfullscreen>
 </iframe>
 """
