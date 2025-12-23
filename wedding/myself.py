@@ -361,8 +361,6 @@ def get_audio_player_html(mp3_path: Path):
 BGM_FILE = BASE_DIR / "bgm.mp3"   # myser.py와 동일 폴더 내 mp3 파일
 bgm_html = get_audio_player_html(BGM_FILE)
 
-# 배경음악 삽입: 페이지 시작 부분에 추가
-st.components.v1.html(bgm_html, height=0, width=0)
 
 
 # 상단 메인 사진
