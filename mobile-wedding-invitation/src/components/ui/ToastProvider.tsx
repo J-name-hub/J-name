@@ -1,28 +1,29 @@
-"use client";
+'use client';
 
-import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
-import styled from "styled-components";
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import styled from 'styled-components';
 
 type Toast = { id: string; message: string };
 
-type Ctx = {
+type ToastContextValue = {
   toast: (message: string) => void;
 };
 
-const ToastContext = createContext<Ctx | null>(null);
+const ToastContext = createContext<ToastContextValue | null>(null);
 
-export function useToast() {
+export const useToast = () => {
   const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used within ToastProvider");
+  if (!ctx) throw new Error('useToast must be used within ToastProvider');
   return ctx;
-}
+};
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
+export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
   const [items, setItems] = useState<Toast[]>([]);
 
   const toast = useCallback((message: string) => {
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     setItems((prev) => [...prev, { id, message }]);
+
     window.setTimeout(() => {
       setItems((prev) => prev.filter((t) => t.id !== id));
     }, 2200);
@@ -40,7 +41,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       </Wrap>
     </ToastContext.Provider>
   );
-}
+};
 
 const Wrap = styled.div`
   position: fixed;
@@ -51,7 +52,7 @@ const Wrap = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: min(var(--maxw), calc(100vw - 24px));
+  width: min(520px, calc(100vw - 24px));
   pointer-events: none;
 `;
 
