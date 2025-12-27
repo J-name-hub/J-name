@@ -1,30 +1,30 @@
-"use client";
+'use client';
 
-import styled from "styled-components";
-import { buildGoogleCalendarUrl, buildIcs } from "@/src/lib/calendar";
-import { useToast } from "@/src/components/ui/ToastProvider";
+import styled from 'styled-components';
+import { buildGoogleCalendarUrl, buildIcs } from '../../lib/calendar';
+import { useToast } from './ToastProvider';
 
-export default function CalendarButtons() {
+const CalendarButtons = () => {
   const { toast } = useToast();
 
   const downloadIcs = () => {
     const ics = buildIcs();
-    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
 
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
-    a.download = "wedding.ics";
+    a.download = 'wedding.ics';
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
 
-    toast("캘린더 파일(ICS)을 다운로드했습니다.");
+    toast('캘린더 파일(ICS)을 다운로드했습니다.');
   };
 
   const openGoogle = () => {
-    window.open(buildGoogleCalendarUrl(), "_blank", "noopener,noreferrer");
+    window.open(buildGoogleCalendarUrl(), '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -33,7 +33,7 @@ export default function CalendarButtons() {
       <Btn type="button" onClick={downloadIcs}>ICS 다운로드</Btn>
     </Row>
   );
-}
+};
 
 const Row = styled.div`
   display: flex;
@@ -43,7 +43,7 @@ const Row = styled.div`
 `;
 
 const Btn = styled.button`
-  border: 1px solid var(--border);
+  border: 1px solid rgba(0,0,0,.08);
   background: #fff;
   border-radius: 999px;
   padding: 10px 14px;
@@ -54,3 +54,5 @@ const Btn = styled.button`
   &:active { transform: scale(0.98); }
   &:hover { background: rgba(0,0,0,.03); }
 `;
+
+export default CalendarButtons;
