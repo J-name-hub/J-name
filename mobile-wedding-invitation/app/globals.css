@@ -1,0 +1,24 @@
+:root{
+  --bg: #fbfaf8;
+  --surface: #ffffff;
+  --text: #1f1f1f;
+  --muted: rgba(31,31,31,.62);
+  --border: rgba(0,0,0,.07);
+  --accent: #c9b28b; /* 샴페인 */
+  --accent-2: #2d2a26;
+  --radius-lg: 18px;
+  --radius-md: 14px;
+  --shadow: 0 14px 40px rgba(0,0,0,.10);
+  --maxw: 520px;
+}
+
+html, body{
+  padding: 0;
+  margin: 0;
+  background: var(--bg);
+}
+
+*{ box-sizing: border-box; }
+
+a{ color: inherit; text-decoration: none; }
+button{ font: inherit; }
