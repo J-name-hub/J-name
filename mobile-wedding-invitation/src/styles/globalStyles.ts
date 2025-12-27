@@ -3,7 +3,7 @@
 import { createGlobalStyle } from "styled-components";
 import { weddingConfig } from "@/src/config/wedding-config";
 
-const watermarkId = weddingConfig.meta._jwk_watermark_id || "JWK-NonCommercial";
+const watermarkId = weddingConfig.meta._jhc_watermark_id || "JHC-NonCommercial";
 
 export const GlobalStyle = createGlobalStyle`
   @font-face {
