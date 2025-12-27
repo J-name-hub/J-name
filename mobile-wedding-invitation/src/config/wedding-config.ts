@@ -51,10 +51,10 @@ export const weddingConfig = {
     tel: "02-1234-5678",
     naverMapId: "웨딩홀 이름", // 네이버 지도 검색용 장소명
     coordinates: {
-      latitude: 37.5665,
-      longitude: 126.9780,
+      latitude: 37.5050219,
+      longitude: 127.0503096,
     },
-    placeId: "123456789", // 네이버 지도 장소 ID
+    placeId: "31375440", // 네이버 지도 장소 ID
     mapZoom: "17", // 지도 줌 레벨
     mapNaverCoordinates: "14141300,4507203,15,0,0,0,dh", // 네이버 지도 길찾기 URL용 좌표 파라미터 (구 형식)
     transportation: {
