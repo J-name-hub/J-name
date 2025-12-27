@@ -1,0 +1,13 @@
+# robots.txt
+User-agent: *
+Disallow: /
+
+# 특정 봇에 대한 추가 제한
+User-agent: Googlebot
+Disallow: /
+
+User-agent: Bingbot
+Disallow: /
+
+User-agent: Yeti
+Disallow: / 
