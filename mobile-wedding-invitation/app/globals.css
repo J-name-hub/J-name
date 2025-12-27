@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-color: #F8F6F2;
+  --secondary-color: #D4B996; 
+  --text-dark: #333333;
+  --text-medium: #666666;
+  --text-light: #999999;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'MaruBuri', sans-serif;
+  color: var(--text-dark);
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* 모바일 최적화 스타일 */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+}
