@@ -5,17 +5,6 @@ import { weddingConfig } from "@/src/config/wedding-config";
 
 const watermarkId = weddingConfig.meta._jwk_watermark_id || "JWK-NonCommercial";
 
-/**
- * @license
- * 웨딩 청첩장 템플릿
- * Copyright (c) 2025 Jawon Koo
- * 라이선스: CC BY-NC-ND 4.0
- * 저작자표시-비영리-변경금지
- * https://creativecommons.org/licenses/by-nc-nd/4.0/deed.ko
- *
- * ID: ${watermarkId}
- */
-
 export const GlobalStyle = createGlobalStyle`
   @font-face {
     font-family: 'MaruBuri';
