@@ -55,7 +55,7 @@ export const weddingConfig = {
       longitude: 127.0503096,
     },
     placeId: "31375440", // 네이버 지도 장소 ID
-    mapZoom: "17", // 지도 줌 레벨
+    mapZoom: "15", // 지도 줌 레벨
     mapNaverCoordinates: "14141300,4507203,15,0,0,0,dh", // 네이버 지도 길찾기 URL용 좌표 파라미터 (구 형식)
     transportation: {
       subway: "지하철역 1번 출구에서 도보 5분",
