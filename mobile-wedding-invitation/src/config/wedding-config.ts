@@ -7,7 +7,7 @@ export const weddingConfig = {
     description: "결혼식 초대장",
     ogImage: "/images/ha0h-1fsi-bqt3.jpg",
     noIndex: true,
-    _jwk_watermark_id: "JWK-WEDDING-TEMPLATE-V1"
+    _jhc_watermark_id: "JHC-WEDDING-TEMPLATE-V1"
   },
 
   main: {
