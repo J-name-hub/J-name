@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getJsonFromGitHub, putJsonToGitHub, checkPassword } from "@/lib/github";
-import { paths } from "@/lib/paths";
+import { getJsonFromGitHub, putJsonToGitHub, checkPassword } from "../../../lib/github";
+import { paths } from "../../../lib/paths";
 
 export async function GET() {
   const { schedule } = paths();
