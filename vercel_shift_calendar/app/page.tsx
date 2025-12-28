@@ -90,6 +90,9 @@ export default function Home() {
 
   const [notice, setNotice] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickedDate, setPickedDate] = useState<string | null>(null);
+
   // edit inputs
   const [pw, setPw] = useState<string>("");
   const [changeDate, setChangeDate] = useState<string>(ymd(new Date(year, month - 1, 1)));
