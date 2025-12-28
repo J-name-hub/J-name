@@ -100,7 +100,7 @@ a { color: inherit; text-decoration: none; }
 
 /* 오늘일 때만 테두리 표시 */
 .todayWrap.isToday{
-  border: 1.5px solid var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
   background: rgba(232,240,254,.6);
 }
 
@@ -292,3 +292,19 @@ details[open] > .accordionSummary::before { content: "–"; }
   .title { font-size: 20px; }
   .btn { padding: 9px 10px; }
 }
+
+
+/* --- Mobile/Focus safety: keep outlines inside the cell (no bleed to neighbors) --- */
+.cell.clickable:focus { outline: none; }
+.cell.clickable:focus-visible { outline: none; }
+.cell.clickable:focus-visible::after{
+  content:"";
+  position:absolute;
+  inset:3px;               /* keep inside the cell border */
+  border: 1.5px solid rgba(0,123,255,.55);
+  border-radius: 12px;
+  pointer-events:none;
+}
+
+/* --- Today box: prevent horizontal overflow on small screens --- */
+.todayWrap{ max-width: 100%; }
