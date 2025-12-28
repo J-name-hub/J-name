@@ -59,8 +59,7 @@ function parseMdDates(md: string, year: number): { dates: string[]; errors: stri
 }
 
 function parseMdRanges(md: string, year: number): { ranges: ExamRange[]; errors: string[] } {
-  const raw = (md || "").replace(/，/g, ",").replace(/
-/g, ",");
+  const raw = (md || "").replace(/，/g, ",").replace(/\n/g, ",");
   const tokens = raw
     .split(",")
     .map((t) => t.trim())
