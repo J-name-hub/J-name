@@ -134,6 +134,11 @@ a { color: inherit; text-decoration: none; }
   height: 24px;
   min-width: 34px;
   padding: 0 10px;
+
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 14px;
+  
   line-height: 1;
   vertical-align: middle;
 }
@@ -289,7 +294,7 @@ details[open] > .accordionSummary::before { content: "–"; }
 @media (max-width: 560px) {
   .header { flex-direction: column; align-items: flex-start; }
   .cell { min-height: 60px; padding: 6px; }
-  .shiftBadge { height: 22px; font-size: 13px; min-width: 32px; padding: 0 8px; }
+  .shiftBadge { height: 22px; font-size: 13px; min-width: 32px; padding: 0 8px; border-radius: 999px; font-weight: 900;}
   .legend { font-size: 12px; }
   .holidayName { transform: scale(0.8); transform-origin: center; }
   .title { font-size: 20px; }
