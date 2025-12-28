@@ -335,11 +335,20 @@ export default function Home() {
       <div className="card" id="calendar-capture">
         <div className="header">
           <div>
-            <div className="title">교대근무 달력</div>
-            <div className="subtitle">현재 근무조: {currentTeam} · 날짜 클릭으로 근무 변경</div>
+            <div className="title">{formatMonthTitle(year, month)}</div>
+            <div className="subtitle">현재 근무조: {currentTeam}</div>
           </div>
-          <div className="title">{formatMonthTitle(year, month)}</div>
+          <div className="topRightActions">
+            <button className="btn" onClick={saveAsImage}>이미지 저장</button>
+          </div>
         </div>
+
+        <div className="grid">
+          {WEEKDAYS.map((d, i) => (
+            <div key={d} className="weekday" style={{ color: i === 0 || i === 6 ? "#ef4444" : undefined }}>
+              {d}
+            </div>
+          ))}
 
         <div className="toolbar">
           <button className="btn" onClick={() => moveMonth(-1)}>
@@ -359,17 +368,7 @@ export default function Home() {
           <button className="btn" onClick={() => moveMonth(1)}>
             다음 월
           </button>
-          <button className="btn" onClick={saveAsImage}>
-            이미지 저장
-          </button>
         </div>
-
-        <div className="grid">
-          {WEEKDAYS.map((d, i) => (
-            <div key={d} className="weekday" style={{ color: i === 0 || i === 6 ? "#ef4444" : undefined }}>
-              {d}
-            </div>
-          ))}
 
           {monthCells.map((day, idx) => {
             if (!day) return <div key={idx} className="cell" />;
