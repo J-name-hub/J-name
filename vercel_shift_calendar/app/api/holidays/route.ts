@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fetchKoreanHolidays } from "@/lib/holidays";
+import { fetchKoreanHolidays } from "../../../lib/holidays";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
