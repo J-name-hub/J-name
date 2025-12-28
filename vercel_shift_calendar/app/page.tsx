@@ -341,6 +341,25 @@ export default function Home() {
           <div className="topRightActions">
             <button className="btn" onClick={saveAsImage}>이미지 저장</button>
           </div>
+          <div className="toolbar">
+            <button className="btn" onClick={() => moveMonth(-1)}>
+              이전 월
+            </button>
+            <button
+              className="btn"
+              onClick={() => {
+                const t = new Date();
+                setYear(t.getFullYear());
+                setMonth(t.getMonth() + 1);
+                setChangeDate(ymd(new Date(t.getFullYear(), t.getMonth(), 1)));
+              }}
+            >
+              Today
+            </button>
+            <button className="btn" onClick={() => moveMonth(1)}>
+              다음 월
+            </button>
+          </div>
         </div>
 
         <div className="grid">
@@ -418,26 +437,6 @@ export default function Home() {
 
         </div>
       </div>
-
-        <div className="toolbar">
-          <button className="btn" onClick={() => moveMonth(-1)}>
-            이전 월
-          </button>
-          <button
-            className="btn"
-            onClick={() => {
-              const t = new Date();
-              setYear(t.getFullYear());
-              setMonth(t.getMonth() + 1);
-              setChangeDate(ymd(new Date(t.getFullYear(), t.getMonth(), 1)));
-            }}
-          >
-            Today
-          </button>
-          <button className="btn" onClick={() => moveMonth(1)}>
-            다음 월
-          </button>
-        </div>
 
       <div className="card panel">
         <h3>편집 (GitHub에 저장됨)</h3>
