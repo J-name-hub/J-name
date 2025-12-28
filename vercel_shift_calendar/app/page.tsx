@@ -1,8 +1,16 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import html2canvas from "html2canvas";
 import { monthMatrix, parseYmd, ymd, addDays } from "../lib/date";
-import { expandExamDates, getTeamForDate, resolveShift, type ScheduleMap, type TeamHistoryItem, type Shift } from "../lib/shift";
+import {
+  expandExamDates,
+  getTeamForDate,
+  resolveShift,
+  type ScheduleMap,
+  type TeamHistoryItem,
+  type Shift,
+} from "../lib/shift";
 
 type HolidaysMap = Record<string, string[]>;
 type ExamRange = { start: string; end: string };
@@ -26,23 +34,37 @@ function formatMonthTitle(y: number, m: number) {
 
 function parseMdDates(md: string, year: number): { dates: string[]; errors: string[] } {
   const raw = (md || "").replace(/，/g, ",");
-  const tokens = raw.split(",").map((t) => t.trim()).filter(Boolean);
+  const tokens = raw
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
   const out: string[] = [];
   const errors: string[] = [];
   for (const t of tokens) {
     const m = t.match(/^(\d{1,2})\s*\/\s*(\d{1,2})$/);
-    if (!m) { errors.push(t); continue; }
-    const mm = Number(m[1]), dd = Number(m[2]);
+    if (!m) {
+      errors.push(t);
+      continue;
+    }
+    const mm = Number(m[1]),
+      dd = Number(m[2]);
     const d = new Date(year, mm - 1, dd);
-    if (d.getFullYear() !== year || d.getMonth() !== mm - 1 || d.getDate() !== dd) { errors.push(t); continue; }
+    if (d.getFullYear() !== year || d.getMonth() !== mm - 1 || d.getDate() !== dd) {
+      errors.push(t);
+      continue;
+    }
     out.push(ymd(d));
   }
   return { dates: out, errors };
 }
 
 function parseMdRanges(md: string, year: number): { ranges: ExamRange[]; errors: string[] } {
-  const raw = (md || "").replace(/，/g, ",").replace(/\n/g, ",");
-  const tokens = raw.split(",").map((t) => t.trim()).filter(Boolean);
+  const raw = (md || "").replace(/，/g, ",").replace(/
+/g, ",");
+  const tokens = raw
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
   const ranges: ExamRange[] = [];
   const errors: string[] = [];
   for (const t of tokens) {
@@ -54,7 +76,8 @@ function parseMdRanges(md: string, year: number): { ranges: ExamRange[]; errors:
         if (!lm || !rm) throw new Error("bad");
         const sd = new Date(year, Number(lm[1]) - 1, Number(lm[2]));
         const ed = new Date(year, Number(rm[1]) - 1, Number(rm[2]));
-        const s = ymd(sd), e = ymd(ed);
+        const s = ymd(sd),
+          e = ymd(ed);
         ranges.push(s <= e ? { start: s, end: e } : { start: e, end: s });
       } else {
         const m = t.match(/^(\d{1,2})\s*\/\s*(\d{1,2})$/);
@@ -90,9 +113,6 @@ export default function Home() {
 
   const [notice, setNotice] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickedDate, setPickedDate] = useState<string | null>(null);
-
   // edit inputs
   const [pw, setPw] = useState<string>("");
   const [changeDate, setChangeDate] = useState<string>(ymd(new Date(year, month - 1, 1)));
@@ -107,12 +127,14 @@ export default function Home() {
   const [examYear, setExamYear] = useState<number>(now.getFullYear());
   const [examMd, setExamMd] = useState<string>("");
 
+  // click-to-change sheet
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickedDate, setPickedDate] = useState<string | null>(null);
+
   const monthCells = useMemo(() => monthMatrix(year, month), [year, month]);
   const todayStr = ymd(new Date());
 
-  const examDates = useMemo(() => {
-    return expandExamDates(examRanges);
-  }, [examRanges]);
+  const examDates = useMemo(() => expandExamDates(examRanges), [examRanges]);
 
   function examBandClass(dateStr: string) {
     if (!examDates.has(dateStr)) return null;
@@ -128,7 +150,6 @@ export default function Home() {
   }
 
   async function loadAll(y: number) {
-    // holidays is year-scoped
     const h = await fetch(`/api/holidays?year=${y}`).then((r) => r.json());
     setHolidays(h.holidays || {});
     const s = await fetch(`/api/schedule`).then((r) => r.json());
@@ -154,7 +175,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // when year changes, reload holiday only
     fetch(`/api/holidays?year=${year}`)
       .then((r) => r.json())
       .then((h) => setHolidays(h.holidays || {}))
@@ -169,9 +189,7 @@ export default function Home() {
     setChangeDate(ymd(new Date(d.getFullYear(), d.getMonth(), 1)));
   }
 
-  const currentTeam = useMemo(() => {
-    return getTeamForDate(new Date(), teamHistory);
-  }, [teamHistory]);
+  const currentTeam = useMemo(() => getTeamForDate(new Date(), teamHistory), [teamHistory]);
 
   async function saveScheduleChange() {
     setNotice(null);
@@ -182,8 +200,8 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: pw, schedule: next, sha: scheduleSha }),
       });
-      if (!r.ok) throw new Error((await r.json()).error || "save failed");
-      const out = await r.json();
+      const out = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(out.error || "save failed");
       setSchedule(next);
       setScheduleSha(out.sha ?? scheduleSha);
       setNotice({ kind: "ok", text: "스케줄이 저장되었습니다." });
@@ -206,8 +224,8 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: pw, team_history: merged, sha: teamSha }),
       });
-      if (!r.ok) throw new Error((await r.json()).error || "save failed");
-      const out = await r.json();
+      const out = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(out.error || "save failed");
       setTeamHistory(merged);
       setTeamSha(out.sha ?? teamSha);
       setNotice({ kind: "ok", text: "조 설정이 저장되었습니다." });
@@ -228,11 +246,14 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: pw, dates: next, sha: gradSha }),
       });
-      if (!r.ok) throw new Error((await r.json()).error || "save failed");
-      const out = await r.json();
+      const out = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(out.error || "save failed");
       setGradDates(next);
       setGradSha(out.sha ?? gradSha);
-      setNotice({ kind: "ok", text: `대학원 날짜가 ${addMode ? "저장" : "삭제"}되었습니다.${errors.length ? " (일부 무시됨)" : ""}` });
+      setNotice({
+        kind: "ok",
+        text: `대학원 날짜가 ${addMode ? "저장" : "삭제"}되었습니다.${errors.length ? " (일부 무시됨)" : ""}`,
+      });
     } catch (e: any) {
       setNotice({ kind: "err", text: e?.message ?? String(e) });
     }
@@ -255,11 +276,14 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: pw, ranges: next, sha: examSha }),
       });
-      if (!r.ok) throw new Error((await r.json()).error || "save failed");
-      const out = await r.json();
+      const out = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(out.error || "save failed");
       setExamRanges(next);
       setExamSha(out.sha ?? examSha);
-      setNotice({ kind: "ok", text: `시험기간이 ${addMode ? "저장" : "삭제"}되었습니다.${errors.length ? " (일부 무시됨)" : ""}` });
+      setNotice({
+        kind: "ok",
+        text: `시험기간이 ${addMode ? "저장" : "삭제"}되었습니다.${errors.length ? " (일부 무시됨)" : ""}`,
+      });
     } catch (e: any) {
       setNotice({ kind: "err", text: e?.message ?? String(e) });
     }
@@ -273,7 +297,8 @@ export default function Home() {
       if (r.end < first || r.start > last) continue;
       const s = parseYmd(r.start);
       const e = parseYmd(r.end);
-      const fmt = (d: Date) => `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+      const fmt = (d: Date) =>
+        `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
       out.push(r.start === r.end ? fmt(s) : `${fmt(s)}~${fmt(e)}`);
     }
     return out;
@@ -284,30 +309,60 @@ export default function Home() {
     for (const [ds, names] of Object.entries(holidays)) {
       const d = parseYmd(ds);
       if (d.getFullYear() !== year || d.getMonth() + 1 !== month) continue;
-      out.push(`${d.getDate()}일: ${names.join(", ")}`);
+      out.push(`${d.getDate()}일(${WEEKDAYS[d.getDay()]}): ${names.join(", ")}`);
     }
     return out.sort((a, b) => {
-      const da = Number(a.split("일:")[0].replace(/[^0-9]/g, ""));
-      const db = Number(b.split("일:")[0].replace(/[^0-9]/g, ""));
+      const da = Number(a.split("일")[0].replace(/[^0-9]/g, ""));
+      const db = Number(b.split("일")[0].replace(/[^0-9]/g, ""));
       return da - db;
     });
   }, [holidays, year, month]);
 
+  const hasHolidayData = useMemo(() => Object.keys(holidays).length > 0, [holidays]);
+
+  async function saveAsImage() {
+    const el = document.getElementById("calendar-capture");
+    if (!el) return;
+    const canvas = await html2canvas(el, { scale: 2 });
+    const url = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${year}-${String(month).padStart(2, "0")}-calendar.png`;
+    a.click();
+  }
+
   return (
     <>
-      <div className="card">
+      <div className="card" id="calendar-capture">
         <div className="header">
           <div>
             <div className="title">교대근무 달력</div>
-            <div className="subtitle">현재 근무조: {currentTeam} · 표시 기준: 일요일 시작</div>
+            <div className="subtitle">현재 근무조: {currentTeam} · 날짜 클릭으로 근무 변경</div>
           </div>
           <div className="title">{formatMonthTitle(year, month)}</div>
         </div>
 
         <div className="toolbar">
-          <button className="btn" onClick={() => moveMonth(-1)}>이전 월</button>
-          <button className="btn" onClick={() => { const t = new Date(); setYear(t.getFullYear()); setMonth(t.getMonth()+1); setChangeDate(ymd(new Date(t.getFullYear(), t.getMonth(), 1))); }}>Today</button>
-          <button className="btn" onClick={() => moveMonth(1)}>다음 월</button>
+          <button className="btn" onClick={() => moveMonth(-1)}>
+            이전 월
+          </button>
+          <button
+            className="btn"
+            onClick={() => {
+              const t = new Date();
+              setYear(t.getFullYear());
+              setMonth(t.getMonth() + 1);
+              setChangeDate(ymd(new Date(t.getFullYear(), t.getMonth(), 1)));
+            }}
+          >
+            Today
+          </button>
+          <button className="btn" onClick={() => moveMonth(1)}>
+            다음 월
+          </button>
+          <button className="btn" onClick={saveAsImage}>
+            이미지 저장
+          </button>
         </div>
 
         <div className="grid">
@@ -324,22 +379,34 @@ export default function Home() {
             const dateObj = new Date(year, month - 1, day);
 
             const sft = resolveShift(dateObj, teamHistory, schedule);
-            const isHoliday = Boolean(holidays[dateStr]?.length);
+            const holidayNames = holidays[dateStr] || [];
+            const isHoliday = holidayNames.length > 0;
             const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
             const isGrad = gradDates.includes(dateStr);
 
             const band = examBandClass(dateStr);
 
-            const dayColor = isGrad ? "var(--grad)" : (isHoliday || isWeekend ? "#ef4444" : "#111827");
+            const dayColor = isGrad ? "var(--grad)" : isHoliday || isWeekend ? "#ef4444" : "#111827";
 
             return (
-              <div key={idx} className="cell">
+              <div
+                key={idx}
+                className={cls("cell", "clickable")}
+                onClick={() => {
+                  setPickedDate(dateStr);
+                  setChangeDate(dateStr);
+                  setPickerOpen(true);
+                }}
+                role="button"
+                tabIndex={0}
+              >
                 {band ? <div className={band} /> : null}
                 <div className="contentTop">
                   <div className={cls("daynum", dateStr === todayStr && "today")} style={{ color: dayColor }}>
                     {day}
                   </div>
                   <div className={shiftClass(sft)}>{sft === "비" ? " " : sft}</div>
+                  {holidayNames.length ? <div className="holidayName">{holidayNames.join(", ")}</div> : null}
                 </div>
               </div>
             );
@@ -347,32 +414,56 @@ export default function Home() {
         </div>
 
         <div className="legend">
-          <span className="pill"><span className="dot dot-grad" />대학원</span>
-          <span className="pill"><span className="dot dot-exam" />시험기간</span>
-          <span className="pill"><span className="dot dot-holiday" />공휴일/주말</span>
+          <span className="pill">
+            <span className="dot dot-grad" />
+            대학원
+          </span>
+          <span className="pill">
+            <span className="dot dot-exam" />
+            시험기간
+          </span>
+          <span className="pill">
+            <span className="dot dot-holiday" />
+            공휴일/주말
+          </span>
+
+          {!hasHolidayData ? (
+            <span className="pill" style={{ borderColor: "rgba(239,68,68,.35)", background: "rgba(239,68,68,.06)" }}>
+              공휴일 데이터 없음 (HOLIDAY_API_KEY 미설정/오류 가능)
+            </span>
+          ) : null}
+
           {monthExamLabels.length ? (
             <span className="pill" style={{ borderColor: "rgba(255,111,0,.35)", background: "rgba(255,111,0,.08)" }}>
               시험기간: {monthExamLabels.join(", ")}
             </span>
           ) : null}
-          {holidayText.length ? (
-            <span className="pill">공휴일: {holidayText.join(" / ")}</span>
-          ) : null}
+
+          {holidayText.length ? <span className="pill">공휴일: {holidayText.join(" / ")}</span> : null}
         </div>
       </div>
 
       <div className="card panel">
         <h3>편집 (GitHub에 저장됨)</h3>
 
-        <div className="row">
-          <div>
+        <details className="accordion">
+          <summary className="accordionSummary">편집 암호</summary>
+          <div className="accordionBody">
             <label>편집 암호</label>
-            <input className="input" type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="SCHEDULE_CHANGE_PASSWORD" />
+            <input
+              className="input"
+              type="password"
+              value={pw}
+              onChange={(e) => setPw(e.target.value)}
+              placeholder="SCHEDULE_CHANGE_PASSWORD"
+            />
             <div className="help">암호가 맞으면 아래 기능들이 GitHub 파일에 반영됩니다(서버에서만 검증).</div>
           </div>
+        </details>
 
-          <div>
-            <label>스케줄 변경</label>
+        <details className="accordion">
+          <summary className="accordionSummary">스케줄 변경</summary>
+          <div className="accordionBody">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 110px 120px", gap: 8 }}>
               <input className="input" type="date" value={changeDate} onChange={(e) => setChangeDate(e.target.value)} />
               <select className="select" value={newShift} onChange={(e) => setNewShift(e.target.value as Shift)}>
@@ -381,17 +472,17 @@ export default function Home() {
                 <option value="비">비</option>
                 <option value="올">올</option>
               </select>
-              <button className="btn" onClick={saveScheduleChange}>저장</button>
+              <button className="btn" onClick={saveScheduleChange}>
+                저장
+              </button>
             </div>
-            <div className="help">Streamlit의 “스케줄 변경”과 동일한 개념(해당 날짜만 override).</div>
+            <div className="help">달력 날짜 클릭으로도 변경 가능합니다(해당 날짜만 override).</div>
           </div>
-        </div>
+        </details>
 
-        <div style={{ height: 14 }} />
-
-        <div className="row">
-          <div>
-            <label>조 설정 (팀 변경)</label>
+        <details className="accordion">
+          <summary className="accordionSummary">조 설정 (팀 변경)</summary>
+          <div className="accordionBody">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 110px 120px", gap: 8 }}>
               <input className="input" type="date" value={teamStartDate} onChange={(e) => setTeamStartDate(e.target.value)} />
               <select className="select" value={teamNew} onChange={(e) => setTeamNew(e.target.value as any)}>
@@ -400,52 +491,97 @@ export default function Home() {
                 <option value="C">C</option>
                 <option value="D">D</option>
               </select>
-              <button className="btn" onClick={saveTeamHistory}>저장</button>
+              <button className="btn" onClick={saveTeamHistory}>
+                저장
+              </button>
             </div>
             <div className="help">team_settings.json의 team_history를 갱신합니다.</div>
           </div>
+        </details>
 
-          <div>
-            <label>대학원 날짜 편집</label>
+        <details className="accordion">
+          <summary className="accordionSummary">대학원 날짜 편집</summary>
+          <div className="accordionBody">
             <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 8, alignItems: "center" }}>
               <input className="input" type="number" value={gradYear} onChange={(e) => setGradYear(Number(e.target.value))} />
               <textarea className="textarea" value={gradMd} onChange={(e) => setGradMd(e.target.value)} placeholder="예: 8/15, 8/17, 12/3" />
             </div>
-            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <button className="btn" onClick={() => saveGrad(true)}>저장(추가)</button>
-              <button className="btn" onClick={() => saveGrad(false)}>삭제</button>
+            <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+              <button className="btn" onClick={() => saveGrad(true)}>
+                저장(추가)
+              </button>
+              <button className="btn" onClick={() => saveGrad(false)}>
+                삭제
+              </button>
             </div>
             <div className="help">입력은 M/D 콤마 구분입니다. 예: 9/1, 9/4</div>
           </div>
-        </div>
+        </details>
 
-        <div style={{ height: 14 }} />
-
-        <div className="row">
-          <div>
-            <label>시험기간 편집</label>
+        <details className="accordion">
+          <summary className="accordionSummary">시험기간 편집</summary>
+          <div className="accordionBody">
             <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 8, alignItems: "center" }}>
               <input className="input" type="number" value={examYear} onChange={(e) => setExamYear(Number(e.target.value))} />
-              <textarea className="textarea" value={examMd} onChange={(e) => setExamMd(e.target.value)} placeholder="예: 9/15~9/19, 12/2~12/3, 9/20" />
+              <textarea
+                className="textarea"
+                value={examMd}
+                onChange={(e) => setExamMd(e.target.value)}
+                placeholder="예: 9/15~9/19, 12/2~12/3, 9/20"
+              />
             </div>
-            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <button className="btn" onClick={() => saveExam(true)}>저장(추가)</button>
-              <button className="btn" onClick={() => saveExam(false)}>삭제</button>
+            <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+              <button className="btn" onClick={() => saveExam(true)}>
+                저장(추가)
+              </button>
+              <button className="btn" onClick={() => saveExam(false)}>
+                삭제
+              </button>
             </div>
             <div className="help">기간은 M/D~M/D, 단일일은 M/D로 입력합니다.</div>
           </div>
+        </details>
 
-          <div>
-            <label>참고</label>
-            <div className="notice">
-              GitHub 토큰/공휴일 API키는 브라우저에 노출되지 않도록, 모든 GitHub 호출을 Next.js API Route에서 처리합니다.
-              따라서 Vercel 배포 시 환경변수 설정이 핵심입니다.
-            </div>
-          </div>
+        <div className="notice">
+          GitHub 토큰/공휴일 API키는 브라우저에 노출되지 않도록, 모든 GitHub 호출을 Next.js API Route에서 처리합니다. (Vercel 환경변수 설정 필요)
         </div>
 
         {notice ? <div className={cls("notice", notice.kind)}>{notice.text}</div> : null}
       </div>
+
+      {pickerOpen && pickedDate ? (
+        <div className="overlay" onClick={() => setPickerOpen(false)}>
+          <div className="sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="sheetTitle">근무 변경</div>
+            <div className="sheetSub">{pickedDate}</div>
+
+            <div className="shiftButtons">
+              {(["주", "야", "비", "올"] as Shift[]).map((s) => (
+                <button key={s} className={cls("shiftBtn", newShift === s && "active")} onClick={() => setNewShift(s)}>
+                  {s}
+                </button>
+              ))}
+            </div>
+
+            <div className="sheetActions">
+              <button
+                className="btn"
+                onClick={async () => {
+                  await saveScheduleChange();
+                  setPickerOpen(false);
+                }}
+              >
+                저장
+              </button>
+              <button className="btn" onClick={() => setPickerOpen(false)}>
+                취소
+              </button>
+            </div>
+
+            <div className="help">해당 날짜만 override로 저장됩니다.</div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }
