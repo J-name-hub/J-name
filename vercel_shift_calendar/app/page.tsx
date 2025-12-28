@@ -421,14 +421,6 @@ export default function Home() {
             <span className="dot dot-grad" />
             대학원
           </span>
-          <span className="pill">
-            <span className="dot dot-exam" />
-            시험기간
-          </span>
-          <span className="pill">
-            <span className="dot dot-holiday" />
-            공휴일/주말
-          </span>
 
           {!hasHolidayData ? (
             <span className="pill" style={{ borderColor: "rgba(239,68,68,.35)", background: "rgba(239,68,68,.06)" }}>
@@ -442,7 +434,6 @@ export default function Home() {
             </span>
           ) : null}
 
-          {holidayText.length ? <span className="pill">공휴일: {holidayText.join(" / ")}</span> : null}
         </div>
       </div>
 
