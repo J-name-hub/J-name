@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { monthMatrix, parseYmd, ymd, addDays } from "@/lib/date";
-import { expandExamDates, getTeamForDate, resolveShift, type ScheduleMap, type TeamHistoryItem, type Shift } from "@/lib/shift";
+import { monthMatrix, parseYmd, ymd, addDays } from "../lib/date";
+import { expandExamDates, getTeamForDate, resolveShift, type ScheduleMap, type TeamHistoryItem, type Shift } from "../lib/shift";
 
 type HolidaysMap = Record<string, string[]>;
 type ExamRange = { start: string; end: string };
