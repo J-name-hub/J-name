@@ -401,14 +401,17 @@ export default function Home() {
               >
                 {band ? <div className={band} /> : null}
                 <div className="contentTop">
-                  <div className={cls("daynum", dateStr === todayStr && "today")} style={{ color: dayColor }}>
-                    {day}
+                  <div className={cls("todayWrap", dateStr === todayStr && "isToday")}>
+                    <div className="daynum" style={{ color: dayColor }}>
+                      {day}
+                    </div>
+                    <div className={shiftClass(sft)}>
+                      <span className={sft === "비" ? "shiftText hiddenText" : "shiftText"} aria-label={sft}>
+                        {sft}
+                      </span>
+                    </div>
                   </div>
-                  <div className={shiftClass(sft)}>
-                    <span className={sft === "비" ? "shiftText hiddenText" : "shiftText"} aria-label={sft}>
-                      {sft}
-                    </span>
-                  </div>
+                
                   {holidayNames.length ? <div className="holidayName">{holidayNames.join(", ")}</div> : null}
                 </div>
               </div>
