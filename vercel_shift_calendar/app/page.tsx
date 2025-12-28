@@ -390,7 +390,12 @@ export default function Home() {
             return (
               <div
                 key={idx}
-                className={cls("cell", "clickable")}
+                className={cls(
+                  "cell",
+                  "clickable",
+                  dateStr === todayStr && "todayCell",
+                  band && "hasExam"
+                )}
                 onClick={() => {
                   setPickedDate(dateStr);
                   setChangeDate(dateStr);
