@@ -339,12 +339,11 @@ export default function Home() {
             <div className="subtitle">현재 근무조: {currentTeam}</div>
           </div>
           <div className="topRightActions">
-            <button className="btn" onClick={saveAsImage}>이미지 저장</button>
+            <button className="btn" onClick={saveAsImage}>캡처</button>
           </div>
-          <div className="toolbar">
-            <button className="btn" onClick={() => moveMonth(-1)}>
-              이전 월
-            </button>
+          <div className="monthNav">
+            <button className="btn" onClick={() => moveMonth(-1)}>이전월</button>
+        
             <button
               className="btn"
               onClick={() => {
@@ -356,9 +355,8 @@ export default function Home() {
             >
               Today
             </button>
-            <button className="btn" onClick={() => moveMonth(1)}>
-              다음 월
-            </button>
+        
+            <button className="btn" onClick={() => moveMonth(1)}>다음월</button>
           </div>
         </div>
 
