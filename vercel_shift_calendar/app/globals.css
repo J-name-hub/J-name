@@ -91,18 +91,29 @@ a { color: inherit; text-decoration: none; }
   border: 2px solid var(--accent);
   background: #E8F0FE;
 }
-.shiftBadge {
+.shiftBadge{
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
   margin-top: 6px;
+
+  /* 정렬 완벽 고정 */
   height: 24px;
-  min-width: 30px;
-  border-radius: 8px;
-  font-weight: 900;
-  font-size: 14px;
+  min-width: 34px;
   padding: 0 10px;
-  border: 1px solid rgba(0,0,0,.10);
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.shiftText{
+  display: inline-block;
+  line-height: 1;
+}
+
+/* 비는 글자만 숨기고 공간은 유지 */
+.hiddenText{
+  visibility: hidden; /* 공간 유지 + 안 보임 */
 }
 
 .shift-day { background: var(--shift-day-bg); color: #111; }
