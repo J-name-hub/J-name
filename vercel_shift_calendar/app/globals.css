@@ -280,7 +280,7 @@ details[open] > .accordionSummary::before { content: "–"; }
   .cell { min-height: 60px; padding: 6px; }
   .shiftBadge { height: 22px; font-size: 13px; min-width: 32px; padding: 0 8px; }
   .legend { font-size: 12px; }
-  .holidayName { font-size: 11px; }
+  .holidayName { font-size: clamp(8px, 3.2vw, 11px); }
   .title { font-size: 20px; }
   .btn { padding: 9px 10px; }
 }
