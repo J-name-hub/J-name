@@ -404,7 +404,11 @@ export default function Home() {
                   <div className={cls("daynum", dateStr === todayStr && "today")} style={{ color: dayColor }}>
                     {day}
                   </div>
-                  <div className={shiftClass(sft)}>{sft === "비" ? " " : sft}</div>
+                  <div className={shiftClass(sft)}>
+                    <span className={sft === "비" ? "shiftText hiddenText" : "shiftText"} aria-label={sft}>
+                      {sft}
+                    </span>
+                  </div>
                   {holidayNames.length ? <div className="holidayName">{holidayNames.join(", ")}</div> : null}
                 </div>
               </div>
