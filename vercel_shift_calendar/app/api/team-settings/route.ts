@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getJsonFromGitHub, putJsonToGitHub, checkPassword } from "@/lib/github";
-import { paths } from "@/lib/paths";
+import { getJsonFromGitHub, putJsonToGitHub, checkPassword } from "../../../lib/github";
+import { paths } from "../../../lib/paths";
 
 type TeamItem = { start_date: string; team: "A" | "B" | "C" | "D" };
 type TeamFile = { team_history?: TeamItem[]; team?: "A" | "B" | "C" | "D" };
