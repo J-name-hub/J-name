@@ -268,8 +268,7 @@ details[open] > .accordionSummary::before { content: "–"; }
   overflow: hidden;
   text-overflow: ellipsis;
 
-  /* 좁은 화면에서 자동 축소 */
-  font-size: clamp(10px, 2.6vw, 12px);
+  font-size: 11px;
   line-height: 1.1;
 }
 
