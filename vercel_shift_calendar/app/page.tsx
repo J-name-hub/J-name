@@ -350,26 +350,6 @@ export default function Home() {
             </div>
           ))}
 
-        <div className="toolbar">
-          <button className="btn" onClick={() => moveMonth(-1)}>
-            이전 월
-          </button>
-          <button
-            className="btn"
-            onClick={() => {
-              const t = new Date();
-              setYear(t.getFullYear());
-              setMonth(t.getMonth() + 1);
-              setChangeDate(ymd(new Date(t.getFullYear(), t.getMonth(), 1)));
-            }}
-          >
-            Today
-          </button>
-          <button className="btn" onClick={() => moveMonth(1)}>
-            다음 월
-          </button>
-        </div>
-
           {monthCells.map((day, idx) => {
             if (!day) return <div key={idx} className="cell" />;
 
@@ -438,6 +418,26 @@ export default function Home() {
 
         </div>
       </div>
+
+        <div className="toolbar">
+          <button className="btn" onClick={() => moveMonth(-1)}>
+            이전 월
+          </button>
+          <button
+            className="btn"
+            onClick={() => {
+              const t = new Date();
+              setYear(t.getFullYear());
+              setMonth(t.getMonth() + 1);
+              setChangeDate(ymd(new Date(t.getFullYear(), t.getMonth(), 1)));
+            }}
+          >
+            Today
+          </button>
+          <button className="btn" onClick={() => moveMonth(1)}>
+            다음 월
+          </button>
+        </div>
 
       <div className="card panel">
         <h3>편집 (GitHub에 저장됨)</h3>
