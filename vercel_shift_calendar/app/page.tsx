@@ -436,11 +436,9 @@ export default function Home() {
         </div>
       </div>
 
-      <details className="card panel">
-        <summary className="editPanelSummary">
-          편집 (GitHub에 저장됨)
-        </summary>
-        
+      <div className="card panel">
+        <h3>편집 (GitHub에 저장됨)</h3>
+
         <details className="accordion">
           <summary className="accordionSummary">편집 암호</summary>
           <div className="accordionBody">
