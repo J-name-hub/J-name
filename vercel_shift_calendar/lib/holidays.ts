@@ -4,9 +4,7 @@ export async function fetchKoreanHolidays(year: number): Promise<HolidaysMap> {
   const key = process.env.HOLIDAY_API_KEY;
   if (!key) return {};
 
-  const url = `http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey=${encodeURIComponent(
-    key
-  )}&solYear=${year}&numOfRows=100&_type=json`;
+  const url = `http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey=${key}&solYear=${year}&numOfRows=100&_type=json`;
 
   const r = await fetch(url, { cache: "no-store" });
   if (!r.ok) return {};
