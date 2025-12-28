@@ -91,11 +91,11 @@ a { color: inherit; text-decoration: none; }
 .todayWrap{
   display: inline-flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;   /* 핵심 */
   gap: 4px;
-
   padding: 4px 6px;
   border-radius: 10px;
+  max-width: 100%;
 }
 
 /* 오늘일 때만 테두리 표시 */
@@ -202,7 +202,14 @@ a { color: inherit; text-decoration: none; }
 .examStart { border-left: 2px solid var(--exam); border-top-left-radius: 14px; border-bottom-left-radius: 14px; }
 .examEnd { border-right: 2px solid var(--exam); border-top-right-radius: 14px; border-bottom-right-radius: 14px; }
 .examSingle { border: 2px solid var(--exam); border-radius: 14px; }
-.contentTop { position: relative; z-index: 1; }
+.contentTop{
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* 핵심 */
+  text-align: center;    /* 텍스트도 가운데 */
+}
 
 
 /* --- UX additions --- */
@@ -253,6 +260,8 @@ details[open] > .accordionSummary::before { content: "–"; }
   margin-top: 6px;
   font-weight: 800;
   color: #ef4444;
+  width: 100%;
+  text-align: center;
 
   /* 줄바꿈 방지 + 말줄임 */
   white-space: nowrap;
@@ -269,24 +278,7 @@ details[open] > .accordionSummary::before { content: "–"; }
   .header { flex-direction: column; align-items: flex-start; }
   .toolbar { flex-wrap: wrap; }
   .cell { min-height: 60px; padding: 6px; }
-  .shiftBadge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  margin-top: 6px;
-
-  /* 높이/정렬 고정 */
-  height: 24px;
-  min-width: 34px;
-
-  border-radius: 8px;
-  font-weight: 900;
-  font-size: 14px;
-  padding: 0 10px;
-  border: 1px solid rgba(0,0,0,.10);
-  line-height: 1;          /* 추가 */
-  vertical-align: middle;  /* 추가 */  }
+  .shiftBadge { height: 22px; font-size: 13px; min-width: 32px; padding: 0 8px; }
   .legend { font-size: 12px; }
   .holidayName { font-size: 11px; }
   .title { font-size: 20px; }
@@ -306,5 +298,3 @@ details[open] > .accordionSummary::before { content: "–"; }
   pointer-events:none;
 }
 
-/* --- Today box: prevent horizontal overflow on small screens --- */
-.todayWrap{ max-width: 100%; }
