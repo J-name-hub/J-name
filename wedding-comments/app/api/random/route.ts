@@ -5,8 +5,6 @@ import { NextResponse } from "next/server";
 import { readFile, access } from "fs/promises";
 import path from "path";
 
-export const runtime = "nodejs"; // 중요: 혹시 edge로 잡히는 것 방지
-
 const CATEGORY_MAP: Record<string, string> = {
   dowry: "data/dowry/quotes.txt",
   // 나머지 동일
