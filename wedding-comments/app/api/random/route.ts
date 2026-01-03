@@ -17,40 +17,30 @@ export async function GET(req: Request) {
     const category = searchParams.get("category");
 
     if (!category || !(category in CATEGORY_MAP)) {
-      return NextResponse.json(
-        { ok: false, error: "Invalid category" },
-        { status: 400 }
-      );
+      return NextResponse.json({ ok: false, error: "Invalid category" }, { status: 400 });
     }
 
-    const filePath = path.join(process.cwd(), CATEGORY_MAP[category]);
+    // 🔧 핵심 수정
+    const filePath = path.resolve(CATEGORY_MAP[category]);
+
     const text = await readFile(filePath, "utf-8");
 
     const lines = text
       .split(/\r?\n/)
-      .map(v => v.trim())
+      .map(l => l.trim())
       .filter(Boolean);
-
-    if (lines.length === 0) {
-      return NextResponse.json(
-        { ok: false, error: "Empty quotes file" },
-        { status: 500 }
-      );
-    }
 
     const pick = lines[Math.floor(Math.random() * lines.length)];
 
     return NextResponse.json({
       ok: true,
-      category,
       pick,
       count: lines.length,
     });
 
   } catch (err: any) {
-    // ❗ 절대 빈 응답을 주지 않도록 보장
     return NextResponse.json(
-      { ok: false, error: err?.message || "Server error" },
+      { ok: false, error: err.message },
       { status: 500 }
     );
   }
