@@ -23,7 +23,7 @@ export async function GET(req: Request) {
       );
     }
 
-    // ✅ Root Directory 기준
+    // ✅ Root Directory 기준으로만 계산
     const filePath = path.join(
       process.cwd(),
       CATEGORY_MAP[category]
@@ -35,6 +35,13 @@ export async function GET(req: Request) {
       .split(/\r?\n/)
       .map(v => v.trim())
       .filter(Boolean);
+
+    if (lines.length === 0) {
+      return NextResponse.json(
+        { ok: false, error: "Empty quotes file" },
+        { status: 500 }
+      );
+    }
 
     const pick = lines[Math.floor(Math.random() * lines.length)];
 
