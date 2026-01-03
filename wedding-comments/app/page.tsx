@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type CategoryKey =
   | "expo"
@@ -25,40 +25,63 @@ export default function Page() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const fetchRandomAndCopy = async (key: CategoryKey) => {
+  // ✅ 카테고리별 이미 나온 문구 기록
+  const usedMap = useRef<Record<CategoryKey, Set<string>>>({
+    expo: new Set(),
+    hall: new Set(),
+    studio: new Set(),
+    dress: new Set(),
+    makeup: new Set(),
+    dowry: new Set(),
+  });
+
+  const fetchUniqueAndCopy = async (key: CategoryKey) => {
     setSelected(key);
     setLoading(true);
     setMessage("");
 
     try {
-      const res = await fetch(`/api/random?category=${key}`, {
-        cache: "no-store",
-      });
+      let data: any = null;
+      let attempt = 0;
 
-      const raw = await res.text();
+      while (attempt < 10) {
+        const res = await fetch(`/api/random?category=${key}`, {
+          cache: "no-store",
+        });
 
-      let data: any;
-      try {
-        data = JSON.parse(raw);
-      } catch {
-        throw new Error(
-          "API가 JSON이 아닌 응답을 반환했습니다:\n" +
-            raw.slice(0, 120)
-        );
+        const raw = await res.text();
+
+        try {
+          data = JSON.parse(raw);
+        } catch {
+          throw new Error("API가 JSON이 아닌 응답을 반환했습니다.");
+        }
+
+        if (!res.ok || !data.ok) {
+          throw new Error(data?.error || "API Error");
+        }
+
+        // 🔁 중복이면 다시 시도
+        if (!usedMap.current[key].has(data.pick)) {
+          break;
+        }
+
+        attempt++;
       }
 
-      if (!res.ok || !data.ok) {
-        throw new Error(data?.error || "API Error");
+      if (!data) {
+        throw new Error("문구를 불러오지 못했습니다.");
       }
 
-      // ✅ 문구 설정
+      // ✅ 기록 + 화면 반영
+      usedMap.current[key].add(data.pick);
       setText(data.pick);
 
       // ✅ 자동 복사
       await navigator.clipboard.writeText(data.pick);
 
       setMessage(
-        `자동 복사 완료 (총 ${data.count}개 중 랜덤 1개)`
+        `자동 복사 완료 (사용 ${usedMap.current[key].size} / ${data.count})`
       );
     } catch (err: any) {
       setMessage(`에러: ${err.message}`);
@@ -99,7 +122,7 @@ export default function Page() {
         {BUTTONS.map((b) => (
           <button
             key={b.key}
-            onClick={() => fetchRandomAndCopy(b.key)}
+            onClick={() => fetchUniqueAndCopy(b.key)}
             disabled={loading}
             style={{
               padding: "12px 10px",
@@ -124,16 +147,10 @@ export default function Page() {
           border: "1px solid #ddd",
           borderRadius: 12,
           padding: 14,
-          minHeight: 140,
+          minHeight: 150,
         }}
       >
-        <div
-          style={{
-            fontSize: 13,
-            color: "#666",
-            marginBottom: 8,
-          }}
-        >
+        <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>
           선택 카테고리:{" "}
           {BUTTONS.find((b) => b.key === selected)?.label}
         </div>
@@ -148,7 +165,22 @@ export default function Page() {
           {text || "버튼을 누르면 자동으로 복사됩니다."}
         </div>
 
-        <div style={{ marginTop: 14 }}>
+        {/* 하단 버튼 */}
+        <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+          <button
+            onClick={() => fetchUniqueAndCopy(selected)}
+            disabled={loading}
+            style={{
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: "1px solid #ddd",
+              background: "#fff",
+              fontWeight: 600,
+            }}
+          >
+            다른 문구
+          </button>
+
           <button
             onClick={manualCopy}
             disabled={!text}
@@ -157,7 +189,6 @@ export default function Page() {
               borderRadius: 10,
               border: "1px solid #ddd",
               background: text ? "#fff" : "#f7f7f7",
-              cursor: text ? "pointer" : "not-allowed",
               fontWeight: 700,
             }}
           >
@@ -166,27 +197,14 @@ export default function Page() {
         </div>
 
         {message && (
-          <p
-            style={{
-              marginTop: 10,
-              fontSize: 13,
-              color: "#444",
-            }}
-          >
+          <p style={{ marginTop: 10, fontSize: 13, color: "#444" }}>
             {message}
           </p>
         )}
       </div>
 
-      <p
-        style={{
-          marginTop: 16,
-          fontSize: 12,
-          color: "#666",
-        }}
-      >
-        ※ 카테고리 버튼을 누르면 자동으로 클립보드에 복사됩니다.
-        네이버 카페 댓글창에 바로 붙여넣기 하세요.
+      <p style={{ marginTop: 16, fontSize: 12, color: "#666" }}>
+        ※ 카테고리 버튼 / 다른 문구 버튼 모두 중복 방지 + 자동 복사 적용
       </p>
     </main>
   );
