@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
 
+// const BASE_DIR = "wedding-comments";  // ❌ 제거
+
 const CATEGORY_MAP: Record<string, string> = {
   expo: "data/expo/quotes.txt",
   hall: "data/hall/quotes.txt",
@@ -23,17 +25,14 @@ export async function GET(req: Request) {
       );
     }
 
-    // ✅ Root Directory 기준으로만 계산
-    const filePath = path.join(
-      process.cwd(),
-      CATEGORY_MAP[category]
-    );
+    // ✅ 프로젝트 루트 기준으로 바로 data/... 읽기
+    const filePath = path.join(process.cwd(), CATEGORY_MAP[category]);
 
     const text = await readFile(filePath, "utf-8");
 
     const lines = text
       .split(/\r?\n/)
-      .map(v => v.trim())
+      .map((v) => v.trim())
       .filter(Boolean);
 
     if (lines.length === 0) {
@@ -50,7 +49,6 @@ export async function GET(req: Request) {
       pick,
       count: lines.length,
     });
-
   } catch (err: any) {
     return NextResponse.json(
       { ok: false, error: err.message },
