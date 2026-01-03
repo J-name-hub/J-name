@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
 
-const BASE_DIR = "wedding-comments";
-
 const CATEGORY_MAP: Record<string, string> = {
   expo: "data/expo/quotes.txt",
   hall: "data/hall/quotes.txt",
@@ -25,10 +23,9 @@ export async function GET(req: Request) {
       );
     }
 
-    // ✅ 핵심: wedding-comments 기준으로 파일 찾기
+    // ✅ Root Directory 기준
     const filePath = path.join(
       process.cwd(),
-      BASE_DIR,
       CATEGORY_MAP[category]
     );
 
@@ -38,13 +35,6 @@ export async function GET(req: Request) {
       .split(/\r?\n/)
       .map(v => v.trim())
       .filter(Boolean);
-
-    if (lines.length === 0) {
-      return NextResponse.json(
-        { ok: false, error: "Empty quotes file" },
-        { status: 500 }
-      );
-    }
 
     const pick = lines[Math.floor(Math.random() * lines.length)];
 
