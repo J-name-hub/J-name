@@ -24,7 +24,8 @@ export async function GET(req: Request) {
     }
 
     // ✅ 프로젝트 루트(process.cwd()) 기준으로 data/... 읽기
-    const filePath = path.join(process.cwd(), CATEGORY_MAP[category]);
+    // const filePath = path.join(process.cwd(), CATEGORY_MAP[category]);
+    const filePath = path.resolve(CATEGORY_MAP[category]);
 
     const text = await readFile(filePath, "utf-8");
 
