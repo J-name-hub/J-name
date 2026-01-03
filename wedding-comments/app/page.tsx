@@ -25,7 +25,7 @@ export default function Page() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const fetchRandom = async (key: CategoryKey) => {
+  const fetchRandomAndCopy = async (key: CategoryKey) => {
     setSelected(key);
     setLoading(true);
     setMessage("");
@@ -35,7 +35,6 @@ export default function Page() {
         cache: "no-store",
       });
 
-      // ❗ json() 바로 호출하지 말고 text()로 먼저 받는다
       const raw = await res.text();
 
       let data: any;
@@ -52,9 +51,15 @@ export default function Page() {
         throw new Error(data?.error || "API Error");
       }
 
+      // ✅ 문구 설정
       setText(data.pick);
-      setMessage(`불러오기 완료 (총 ${data.count}개 중 랜덤 1개)`);
 
+      // ✅ 자동 복사
+      await navigator.clipboard.writeText(data.pick);
+
+      setMessage(
+        `자동 복사 완료 (총 ${data.count}개 중 랜덤 1개)`
+      );
     } catch (err: any) {
       setMessage(`에러: ${err.message}`);
       setText("");
@@ -63,10 +68,10 @@ export default function Page() {
     }
   };
 
-  const copyToClipboard = async () => {
+  const manualCopy = async () => {
     if (!text) return;
     await navigator.clipboard.writeText(text);
-    setMessage("클립보드에 복사했습니다. 댓글창에 붙여넣기 하세요.");
+    setMessage("클립보드에 다시 복사했습니다.");
   };
 
   return (
@@ -75,14 +80,14 @@ export default function Page() {
         maxWidth: 720,
         margin: "40px auto",
         padding: 16,
-        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont",
+        fontFamily: "system-ui, -apple-system",
       }}
     >
       <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 16 }}>
         후기 반응 댓글 랜덤 복사
       </h1>
 
-      {/* 버튼 영역 */}
+      {/* 카테고리 버튼 */}
       <div
         style={{
           display: "grid",
@@ -94,20 +99,20 @@ export default function Page() {
         {BUTTONS.map((b) => (
           <button
             key={b.key}
-            onClick={() => fetchRandom(b.key)}
+            onClick={() => fetchRandomAndCopy(b.key)}
             disabled={loading}
             style={{
               padding: "12px 10px",
               borderRadius: 10,
               border: "1px solid #ddd",
               background:
-                selected === b.key ? "#f2f2f2" : "#ffffff",
+                selected === b.key ? "#f2f2f2" : "#fff",
               cursor: loading ? "not-allowed" : "pointer",
               fontWeight: 600,
             }}
           >
             {loading && selected === b.key
-              ? "불러오는 중..."
+              ? "불러오고 복사 중..."
               : b.label}
           </button>
         ))}
@@ -140,33 +145,12 @@ export default function Page() {
             lineHeight: 1.6,
           }}
         >
-          {text || "버튼을 눌러 댓글을 불러오세요."}
+          {text || "버튼을 누르면 자동으로 복사됩니다."}
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            marginTop: 14,
-          }}
-        >
+        <div style={{ marginTop: 14 }}>
           <button
-            onClick={() => fetchRandom(selected)}
-            disabled={loading}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: "1px solid #ddd",
-              background: "#fff",
-              cursor: loading ? "not-allowed" : "pointer",
-              fontWeight: 600,
-            }}
-          >
-            다시 뽑기
-          </button>
-
-          <button
-            onClick={copyToClipboard}
+            onClick={manualCopy}
             disabled={!text}
             style={{
               padding: "10px 12px",
@@ -177,7 +161,7 @@ export default function Page() {
               fontWeight: 700,
             }}
           >
-            복사
+            다시 복사
           </button>
         </div>
 
@@ -201,8 +185,8 @@ export default function Page() {
           color: "#666",
         }}
       >
-        ※ 남의 후기에 공감·호응하는 댓글 용도입니다.
-        복사 후 네이버 카페 댓글창에 붙여넣기 하세요.
+        ※ 카테고리 버튼을 누르면 자동으로 클립보드에 복사됩니다.
+        네이버 카페 댓글창에 바로 붙여넣기 하세요.
       </p>
     </main>
   );
