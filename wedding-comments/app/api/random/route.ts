@@ -1,50 +1,32 @@
 import { NextResponse } from "next/server";
-import { readFile } from "fs/promises";
+import { readFile, access } from "fs/promises";
 import path from "path";
 
+export const runtime = "nodejs"; // 중요: 혹시 edge로 잡히는 것 방지
+
 const CATEGORY_MAP: Record<string, string> = {
-  expo: "data/expo/quotes.txt",
-  hall: "data/hall/quotes.txt",
-  studio: "data/studio/quotes.txt",
-  dress: "data/dress/quotes.txt",
-  makeup: "data/makeup/quotes.txt",
   dowry: "data/dowry/quotes.txt",
+  // 나머지 동일
 };
 
 export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const category = searchParams.get("category") ?? "dowry";
+
+  const rel = CATEGORY_MAP[category];
+  const filePath = path.join(process.cwd(), rel);
+
+  console.log("cwd=", process.cwd());
+  console.log("filePath=", filePath);
+
   try {
-    const { searchParams } = new URL(req.url);
-    const category = searchParams.get("category");
-
-    if (!category || !(category in CATEGORY_MAP)) {
-      return NextResponse.json(
-        { ok: false, error: "Invalid category" },
-        { status: 400 }
-      );
-    }
-
-    // ✅ 프로젝트 루트(process.cwd()) 기준으로 data/... 읽기
-    // const filePath = path.join(process.cwd(), CATEGORY_MAP[category]);
-    const filePath = path.resolve(CATEGORY_MAP[category]);
-
+    await access(filePath); // 여기서도 바로 ENOENT면 "파일이 배포에 없음"
     const text = await readFile(filePath, "utf-8");
-
-    const lines = text
-      .split(/\r?\n/)
-      .map((v) => v.trim())
-      .filter(Boolean);
-
-    if (lines.length === 0) {
-      return NextResponse.json(
-        { ok: false, error: "Empty quotes file" },
-        { status: 500 }
-      );
-    }
-
-    const pick = lines[Math.floor(Math.random() * lines.length)];
-
-    return NextResponse.json({ ok: true, pick, count: lines.length });
-  } catch (err: any) {
-    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ ok: true, sample: text.slice(0, 50), filePath });
+  } catch (e: any) {
+    return NextResponse.json(
+      { ok: false, error: e.message, cwd: process.cwd(), filePath },
+      { status: 500 }
+    );
   }
 }
