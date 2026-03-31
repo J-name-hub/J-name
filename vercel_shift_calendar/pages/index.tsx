@@ -69,10 +69,10 @@ export default function Home() {
   const [holidays, setHolidays] = useState<Record<string, string[]>>({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
-
-  // Form states
-  const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [msg, setMsg] = useState('');
+  const [capturing, setCapturing] = useState(false);
+
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   const loadAll = useCallback(async () => {
     const [sch, team, grad, exam, hol] = await Promise.all([
@@ -94,7 +94,6 @@ export default function Home() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  // Also reload holidays when year changes
   useEffect(() => {
     fetch(`/api/holidays?year=${year}`).then(r => r.json()).then(setHolidays);
   }, [year]);
@@ -153,6 +152,51 @@ export default function Home() {
     setYear(d.getFullYear());
     setMonth(d.getMonth() + 1);
   }
+
+  // ── 이미지 다운로드/공유 ─────────────────────────────────────────
+  async function handleDownloadImage() {
+    if (!calendarRef.current) return;
+    setCapturing(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(calendarRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,        // 레티나 2x 해상도
+        useCORS: true,
+        logging: false,
+      });
+
+      const filename = `근무달력_${year}년${month}월.png`;
+
+      // 모바일: Web Share API로 사진 앱에 바로 저장 가능
+      if (typeof navigator.share === 'function' && typeof navigator.canShare === 'function') {
+        canvas.toBlob(async (blob) => {
+          if (!blob) { triggerDownload(canvas, filename); return; }
+          const file = new File([blob], filename, { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: `${year}년 ${month}월 근무달력` });
+          } else {
+            triggerDownload(canvas, filename);
+          }
+        }, 'image/png');
+      } else {
+        // PC: 파일 다운로드
+        triggerDownload(canvas, filename);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setCapturing(false);
+    }
+  }
+
+  function triggerDownload(canvas: HTMLCanvasElement, filename: string) {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
+  // ────────────────────────────────────────────────────────────────
 
   async function handleScheduleChange(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -276,7 +320,6 @@ export default function Home() {
       }
     }
     const sorted = Object.keys(monthHols).sort();
-    const used = new Set<string>();
     for (let i = 0; i < sorted.length; ) {
       const start = sorted[i];
       const startDay = parseInt(start.split('-')[2]);
@@ -296,7 +339,6 @@ export default function Home() {
     return parts.join(' / ');
   }
 
-  // Month navigation options (-5 to +5 months)
   const monthOptions: { year: number; month: number }[] = [];
   for (let i = -5; i <= 5; i++) {
     const d = new Date(year, month - 1 + i, 1);
@@ -313,35 +355,26 @@ export default function Home() {
       </Head>
 
       <div className="app">
-        {/* Sidebar overlay */}
         {sidebarOpen && <div className="overlay" onClick={() => setSidebarOpen(false)} />}
 
-        {/* Sidebar */}
         <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
           <div className="sidebar-header">
             <span>⚙️ 설정</span>
             <button onClick={() => setSidebarOpen(false)}>✕</button>
           </div>
-
           <div className="sidebar-content">
             <div className="sidebar-stat">👥 현재 근무조: <strong>{currentTeam}조</strong></div>
             <div className="sidebar-stat">📋 {month}월 근무일수: <strong>{totalWorkdays}일</strong></div>
             <div className="sidebar-stat-sub">오늘 제외 남은 일수: <strong>{remainingWorkdays}일</strong></div>
             <div className="sidebar-stat">🔁 AB → DA → CD → BC</div>
-
             {msg && <div className="msg">{msg}</div>}
 
-            {/* Month selector */}
             <div className="section">
               <label className="section-label">📅 월 이동</label>
-              <select
-                className="select"
-                value={`${year}-${month}`}
-                onChange={e => {
-                  const [y, m] = e.target.value.split('-').map(Number);
-                  setYear(y); setMonth(m);
-                }}
-              >
+              <select className="select" value={`${year}-${month}`} onChange={e => {
+                const [y, m] = e.target.value.split('-').map(Number);
+                setYear(y); setMonth(m);
+              }}>
                 {monthOptions.map(o => (
                   <option key={`${o.year}-${o.month}`} value={`${o.year}-${o.month}`}>
                     {o.year}년 {MONTH_NAMES[o.month-1]}
@@ -350,7 +383,6 @@ export default function Home() {
               </select>
             </div>
 
-            {/* Team settings */}
             <div className="section">
               <button className="section-toggle" onClick={() => setActiveSection(activeSection === 'team' ? null : 'team')}>
                 👥 조 설정 {activeSection === 'team' ? '▲' : '▼'}
@@ -367,7 +399,6 @@ export default function Home() {
               )}
             </div>
 
-            {/* Schedule change */}
             <div className="section">
               <button className="section-toggle" onClick={() => setActiveSection(activeSection === 'schedule' ? null : 'schedule')}>
                 📝 스케줄 변경 {activeSection === 'schedule' ? '▲' : '▼'}
@@ -384,13 +415,12 @@ export default function Home() {
               )}
             </div>
 
-            {/* Grad days */}
             <div className="section">
               <button className="section-toggle" onClick={() => setActiveSection(activeSection === 'grad' ? null : 'grad')}>
                 🎓 대학원 날짜 편집 {activeSection === 'grad' ? '▲' : '▼'}
               </button>
               {activeSection === 'grad' && (
-                <form onSubmit={e => { e.preventDefault(); }} className="form">
+                <form onSubmit={e => e.preventDefault()} className="form">
                   <input type="number" name="year" defaultValue={today.getFullYear()} className="input" placeholder="연도" />
                   <textarea name="dates" placeholder="8/15, 8/17, 12/3" className="textarea" rows={3} />
                   <input type="password" name="password" placeholder="암호 입력" className="input" />
@@ -402,13 +432,12 @@ export default function Home() {
               )}
             </div>
 
-            {/* Exam periods */}
             <div className="section">
               <button className="section-toggle" onClick={() => setActiveSection(activeSection === 'exam' ? null : 'exam')}>
                 📚 시험기간 편집 {activeSection === 'exam' ? '▲' : '▼'}
               </button>
               {activeSection === 'exam' && (
-                <form onSubmit={e => { e.preventDefault(); }} className="form">
+                <form onSubmit={e => e.preventDefault()} className="form">
                   <input type="number" name="year" defaultValue={today.getFullYear()} className="input" placeholder="연도" />
                   <textarea name="ranges" placeholder="9/15~9/19, 12/2~12/3, 9/20" className="textarea" rows={3} />
                   <input type="password" name="password" placeholder="암호 입력" className="input" />
@@ -422,15 +451,25 @@ export default function Home() {
           </div>
         </aside>
 
-        {/* Main content */}
         <main className="main">
           <div className="top-bar">
             <button className="menu-btn" onClick={() => setSidebarOpen(true)}>☰</button>
             <span className="top-title">교대근무 달력</span>
-            <button className="today-btn" onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth()+1); }}>Today</button>
+            <div className="top-actions">
+              <button className="today-btn" onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth()+1); }}>Today</button>
+              <button
+                className="download-btn"
+                onClick={handleDownloadImage}
+                disabled={capturing}
+                title="이미지로 저장"
+              >
+                {capturing ? '⏳' : '📷'}
+              </button>
+            </div>
           </div>
 
-          <div className="calendar-container">
+          {/* 캡처 대상 영역 */}
+          <div ref={calendarRef} className="calendar-container">
             <div className="cal-header">
               <button className="nav-btn" onClick={() => navigateMonth(-1)}>‹</button>
               <div className="cal-title">
@@ -462,25 +501,15 @@ export default function Home() {
                   const isToday = dateStr === todayStr;
                   const shift = getShiftForDate(dateStr, dateObj);
                   const { bg, color } = SHIFT_COLORS[shift];
-
-                  let dayColor = isGrad ? GRAD_COLOR : (isWeekend || isHoliday ? 'red' : 'black');
+                  const dayColor = isGrad ? GRAD_COLOR : (isWeekend || isHoliday ? 'red' : 'black');
 
                   return (
-                    <div key={di} className={`cal-cell`}>
+                    <div key={di} className="cal-cell">
                       <div className={`cal-cell-inner ${isToday ? 'today' : ''} ${examClass}`}>
-                        <div
-                          className="cal-day"
-                          style={{
-                            color: dayColor,
-                            backgroundColor: isHighlighted ? '#FFB6C1' : 'transparent',
-                          }}
-                        >
+                        <div className="cal-day" style={{ color: dayColor, backgroundColor: isHighlighted ? '#FFB6C1' : 'transparent' }}>
                           {day}
                         </div>
-                        <div
-                          className="cal-shift"
-                          style={shift !== '비' ? { backgroundColor: bg, color } : { color: 'transparent' }}
-                        >
+                        <div className="cal-shift" style={shift !== '비' ? { backgroundColor: bg, color } : { color: 'transparent' }}>
                           {shift !== '비' ? shift : '비'}
                         </div>
                       </div>
@@ -491,9 +520,7 @@ export default function Home() {
             ))}
 
             <div className="cal-footer">
-              {monthGradDays.length > 0 && (
-                <span style={{ color: GRAD_COLOR, fontWeight: 700 }}>대학원</span>
-              )}
+              {monthGradDays.length > 0 && <span style={{ color: GRAD_COLOR, fontWeight: 700 }}>대학원</span>}
               {monthGradDays.length > 0 && monthExamRanges.length > 0 && ' | '}
               {monthExamRanges.length > 0 && (
                 <span style={{ color: EXAM_COLOR, fontWeight: 700 }}>
@@ -516,7 +543,6 @@ export default function Home() {
         body { font-family: 'Noto Sans KR', sans-serif; background: #f0f2f5; }
         .app { display: flex; min-height: 100vh; position: relative; }
 
-        /* Sidebar */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; }
         .sidebar {
           position: fixed; top: 0; left: -300px; width: 300px; height: 100vh;
@@ -557,12 +583,12 @@ export default function Home() {
         .btn-row { display: flex; gap: 8px; }
         .btn-row .btn { flex: 1; }
 
-        /* Main */
         .main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 0 32px; }
         .top-bar {
           width: 100%; display: flex; align-items: center; justify-content: space-between;
           padding: 12px 16px; background: #343a40; color: white; position: sticky; top: 0; z-index: 50;
         }
+        .top-actions { display: flex; align-items: center; gap: 8px; }
         .menu-btn, .today-btn {
           background: #495057; border: none; color: white; padding: 6px 14px;
           border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;
@@ -570,7 +596,16 @@ export default function Home() {
         .menu-btn:hover, .today-btn:hover { background: #6c757d; }
         .top-title { font-size: 16px; font-weight: 700; }
 
-        /* Calendar */
+        .download-btn {
+          background: #495057; border: none; color: white;
+          width: 36px; height: 36px; border-radius: 6px;
+          cursor: pointer; font-size: 18px;
+          display: flex; align-items: center; justify-content: center;
+          transition: background 0.2s;
+        }
+        .download-btn:hover { background: #6c757d; }
+        .download-btn:disabled { opacity: 0.5; cursor: wait; }
+
         .calendar-container {
           width: min(800px, 98vw); margin: 16px auto 0;
           background: white; border-radius: 12px; overflow: hidden;
@@ -620,7 +655,6 @@ export default function Home() {
           background: #f8f9fa; color: #343a40;
         }
 
-        /* Exam band */
         .cal-cell-inner.exam-band::before {
           content: ''; position: absolute; z-index: 0; pointer-events: none;
           top: 0; bottom: 0; left: 0; right: 0;
