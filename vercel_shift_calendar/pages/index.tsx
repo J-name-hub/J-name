@@ -1,6 +1,7 @@
 // pages/index.tsx
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Head from 'next/head';
+import { GetServerSideProps } from 'next';
 import {
   getTeamForDate, getShift, getMonthDays, getExamClass, formatDate,
   SHIFT_COLORS, TeamHistory, ShiftType
@@ -12,6 +13,18 @@ const HIGHLIGHTED_MONTH_DAYS = ['01-27', '03-01', '04-06'];
 const AVAILABLE_TEAMS = ['A', 'B', 'C', 'D'];
 
 type ExamRange = { start: string; end: string };
+
+interface InitialData {
+  scheduleData: Record<string, ShiftType>;
+  scheduleSha: string | null;
+  teamHistory: TeamHistory[];
+  teamSha: string | null;
+  gradDays: string[];
+  gradSha: string | null;
+  examRanges: ExamRange[];
+  examSha: string | null;
+  holidays: Record<string, string[]>;
+}
 
 function getTodayKST(): Date {
   const now = new Date();
@@ -55,18 +68,18 @@ function parseDatesText(text: string, year: number): { dates: string[]; errors: 
   return { dates, errors };
 }
 
-export default function Home() {
+export default function Home({ initialData }: { initialData: InitialData }) {
   const today = getTodayKST();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
-  const [scheduleData, setScheduleData] = useState<Record<string, ShiftType>>({});
-  const [scheduleSha, setScheduleSha] = useState<string | null>(null);
-  const [teamHistory, setTeamHistory] = useState<TeamHistory[]>([{ start_date: '2000-01-03', team: 'A' }]);
-  const [gradDays, setGradDays] = useState<string[]>([]);
-  const [gradSha, setGradSha] = useState<string | null>(null);
-  const [examRanges, setExamRanges] = useState<ExamRange[]>([]);
-  const [examSha, setExamSha] = useState<string | null>(null);
-  const [holidays, setHolidays] = useState<Record<string, string[]>>({});
+  const [scheduleData, setScheduleData] = useState<Record<string, ShiftType>>(initialData.scheduleData);
+  const [scheduleSha, setScheduleSha] = useState<string | null>(initialData.scheduleSha);
+  const [teamHistory, setTeamHistory] = useState<TeamHistory[]>(initialData.teamHistory);
+  const [gradDays, setGradDays] = useState<string[]>(initialData.gradDays);
+  const [gradSha, setGradSha] = useState<string | null>(initialData.gradSha);
+  const [examRanges, setExamRanges] = useState<ExamRange[]>(initialData.examRanges);
+  const [examSha, setExamSha] = useState<string | null>(initialData.examSha);
+  const [holidays, setHolidays] = useState<Record<string, string[]>>(initialData.holidays);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
@@ -74,6 +87,13 @@ export default function Home() {
 
   const calendarRef = useRef<HTMLDivElement>(null);
 
+  // 연도 변경 시 공휴일만 다시 로드
+  const loadHolidays = useCallback(async (y: number) => {
+    const hol = await fetch(`/api/holidays?year=${y}`).then(r => r.json());
+    setHolidays(hol || {});
+  }, []);
+
+  // 백그라운드 전체 리프레시 (데이터 변경 반영)
   const loadAll = useCallback(async () => {
     const [sch, team, grad, exam, hol] = await Promise.all([
       fetch('/api/schedule').then(r => r.json()),
@@ -92,11 +112,12 @@ export default function Home() {
     setHolidays(hol || {});
   }, [year]);
 
-  useEffect(() => { loadAll(); }, [loadAll]);
+  // 마운트 후 백그라운드 리프레시 (SSR 데이터가 최신인지 확인)
+  useEffect(() => { loadAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    fetch(`/api/holidays?year=${year}`).then(r => r.json()).then(setHolidays);
-  }, [year]);
+    loadHolidays(year);
+  }, [year, loadHolidays]);
 
   function getShiftForDate(dateStr: string, dateObj: Date): ShiftType {
     if (scheduleData[dateStr]) return scheduleData[dateStr];
@@ -673,3 +694,71 @@ export default function Home() {
     </>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  // 서버에서 직접 githubGet 호출 (API 라운드트립 없이 바로 데이터 로드)
+  const { githubGet } = await import('../lib/github');
+
+  const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  const year = today.getFullYear();
+
+  try {
+    const [sch, team, grad, exam, hol] = await Promise.all([
+      githubGet(process.env.GITHUB_SCHEDULE_PATH || 'shift_schedule.json'),
+      githubGet('team_settings.json'),
+      githubGet('grad_days.json'),
+      githubGet('exam_periods.json'),
+      // 공휴일은 공공API 직접 호출
+      (async () => {
+        const apiKey = process.env.HOLIDAY_API_KEY;
+        if (!apiKey) return {};
+        try {
+          const url = `http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo?ServiceKey=${apiKey}&solYear=${year}&numOfRows=100&_type=json`;
+          const res = await fetch(url);
+          const data = await res.json();
+          const body = data?.response?.body;
+          if (!body?.items) return {};
+          let items = body.items.item || [];
+          if (!Array.isArray(items)) items = [items];
+          const holidays: Record<string, string[]> = {};
+          for (const item of items) {
+            const dateStr = String(item.locdate);
+            const key = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
+            if (!holidays[key]) holidays[key] = [];
+            holidays[key].push(item.dateName);
+          }
+          return holidays;
+        } catch { return {}; }
+      })(),
+    ]);
+
+    const initialData: InitialData = {
+      scheduleData: (sch?.data as Record<string, ShiftType>) || {},
+      scheduleSha: sch?.sha ?? null,
+      teamHistory: ((team?.data as { team_history?: TeamHistory[] })?.team_history) || [{ start_date: '2000-01-03', team: 'A' }],
+      teamSha: team?.sha ?? null,
+      gradDays: ((grad?.data as { dates?: string[] })?.dates) || [],
+      gradSha: grad?.sha ?? null,
+      examRanges: ((exam?.data as { ranges?: ExamRange[] })?.ranges) || [],
+      examSha: exam?.sha ?? null,
+      holidays: (hol as Record<string, string[]>) || {},
+    };
+
+    return { props: { initialData } };
+  } catch (e) {
+    console.error('getServerSideProps error:', e);
+    // 실패해도 기본값으로 빈 화면 대신 안전하게 렌더
+    const initialData: InitialData = {
+      scheduleData: {},
+      scheduleSha: null,
+      teamHistory: [{ start_date: '2000-01-03', team: 'A' }],
+      teamSha: null,
+      gradDays: [],
+      gradSha: null,
+      examRanges: [],
+      examSha: null,
+      holidays: {},
+    };
+    return { props: { initialData } };
+  }
+};
