@@ -733,13 +733,13 @@ export const getServerSideProps: GetServerSideProps = async () => {
     ]);
 
     const initialData: InitialData = {
-      scheduleData: (sch?.data as Record<string, ShiftType>) || {},
+      scheduleData: sch?.data || {},
       scheduleSha: sch?.sha ?? null,
-      teamHistory: ((team?.data as { team_history?: TeamHistory[] })?.team_history) || [{ start_date: '2000-01-03', team: 'A' }],
+      teamHistory: team?.data?.team_history || [{ start_date: '2000-01-03', team: 'A' }],
       teamSha: team?.sha ?? null,
-      gradDays: ((grad?.data as { dates?: string[] })?.dates) || [],
+      gradDays: grad?.data?.dates || [],
       gradSha: grad?.sha ?? null,
-      examRanges: ((exam?.data as { ranges?: ExamRange[] })?.ranges) || [],
+      examRanges: exam?.data?.ranges || [],
       examSha: exam?.sha ?? null,
       holidays: (hol as Record<string, string[]>) || {},
     };
