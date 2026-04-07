@@ -8,14 +8,16 @@ const GITHUB_REPO = process.env.GITHUB_REPO!;
 const CACHE_TTL_MS = 60_000;
 
 interface CacheEntry {
-  value: { data: unknown; sha: string } | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  value: { data: any; sha: string } | null;
   fetchedAt: number;
   revalidating: boolean;
 }
 
 const cache = new Map<string, CacheEntry>();
 
-async function fetchFromGitHub(path: string): Promise<{ data: unknown; sha: string } | null> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function fetchFromGitHub(path: string): Promise<{ data: any; sha: string } | null> {
   const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`;
   const res = await fetch(url, {
     headers: { Authorization: `token ${GITHUB_TOKEN}` },
@@ -30,7 +32,7 @@ async function fetchFromGitHub(path: string): Promise<{ data: unknown; sha: stri
   return { data: JSON.parse(content), sha: raw.sha };
 }
 
-export async function githubGet(path: string): Promise<{ data: unknown; sha: string } | null> {
+export async function githubGet(path: string): Promise<{ data: any; sha: string } | null> {
   const now = Date.now();
   const entry = cache.get(path);
 
@@ -66,7 +68,8 @@ export async function githubGet(path: string): Promise<{ data: unknown; sha: str
 /** 쓰기 후 캐시를 즉시 갱신 */
 export async function githubPut(
   path: string,
-  content: unknown,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  content: any,
   sha: string | null,
   message: string
 ): Promise<string> {
@@ -89,7 +92,7 @@ export async function githubPut(
 
   // 쓰기 성공 → 해당 파일 캐시 즉시 갱신
   cache.set(path, {
-    value: { data: content, sha: newSha },
+    value: { data: content, sha: newSha } as { data: any; sha: string },
     fetchedAt: Date.now(),
     revalidating: false,
   });
