@@ -2,7 +2,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { githubGet, githubPut } from '../../lib/github';
 
-const FILE = process.env.GITHUB_SCHEDULE_PATH || 'shift_schedule.json';
+const FILE = process.env.GITHUB_SCHEDULE_PATH || 'vercel_shift_calendar/shift_schedule.json';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
