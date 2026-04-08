@@ -1,6 +1,0 @@
-streamlit
-folium
-requests
-streamlit_folium
-shapely
-PyGithub
