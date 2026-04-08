@@ -703,10 +703,10 @@ export const getStaticProps = async () => {
 
   try {
     const [sch, team, grad, exam, hol] = await Promise.all([
-      githubGet(process.env.GITHUB_SCHEDULE_PATH || 'shift_schedule.json'),
-      githubGet('team_settings.json'),
-      githubGet('grad_days.json'),
-      githubGet('exam_periods.json'),
+      githubGet(process.env.GITHUB_SCHEDULE_PATH || 'vercel_shift_calendar/shift_schedule.json'),
+      githubGet('vercel_shift_calendar/team_settings.json'),
+      githubGet('vercel_shift_calendar/grad_days.json'),
+      githubGet('vercel_shift_calendar/exam_periods.json'),
       // 공휴일은 공공API 직접 호출
       (async () => {
         const apiKey = process.env.HOLIDAY_API_KEY;
