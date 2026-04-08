@@ -1,7 +1,6 @@
 // pages/index.tsx
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Head from 'next/head';
-import { GetServerSideProps } from 'next';
 import {
   getTeamForDate, getShift, getMonthDays, getExamClass, formatDate,
   SHIFT_COLORS, TeamHistory, ShiftType
@@ -695,8 +694,8 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async () => {
-  // 서버에서 직접 githubGet 호출 (API 라운드트립 없이 바로 데이터 로드)
+export const getStaticProps = async () => {
+  // 빌드 시 & 백그라운드 재검증 시 실행 (ISR)
   const { githubGet } = await import('../lib/github');
 
   const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
@@ -744,10 +743,9 @@ export const getServerSideProps: GetServerSideProps = async () => {
       holidays: (hol as Record<string, string[]>) || {},
     };
 
-    return { props: { initialData } };
+    return { props: { initialData }, revalidate: 60 };
   } catch (e) {
-    console.error('getServerSideProps error:', e);
-    // 실패해도 기본값으로 빈 화면 대신 안전하게 렌더
+    console.error('getStaticProps error:', e);
     const initialData: InitialData = {
       scheduleData: {},
       scheduleSha: null,
@@ -759,6 +757,6 @@ export const getServerSideProps: GetServerSideProps = async () => {
       examSha: null,
       holidays: {},
     };
-    return { props: { initialData } };
+    return { props: { initialData }, revalidate: 10 };
   }
 };
