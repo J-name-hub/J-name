@@ -2,7 +2,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { githubGet, githubPut } from '../../lib/github';
 
-const FILE = 'exam_periods.json';
+const FILE = 'vercel_shift_calendar/exam_periods.json';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
