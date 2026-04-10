@@ -92,7 +92,7 @@ with st.sidebar:
 
     st.divider()
     if st.button("🚪 로그아웃", use_container_width=True):
-        st.session_state["authenticated"] = False
+        st.session_state.clear()
         st.rerun()
 
 # ── 메인 타이틀 ──────────────────────────────────────────────
@@ -105,6 +105,14 @@ uploaded_file = st.file_uploader(
     type=["pdf"],
     help="최대 200MB까지 지원합니다.",
 )
+
+# 파일이 바뀌면 이전 변환 결과 초기화
+current_file = uploaded_file.name if uploaded_file else None
+if current_file != st.session_state.get("last_file"):
+    st.session_state["converted_images"] = None
+    st.session_state["converted_zip"] = None
+    st.session_state["last_file"] = current_file
+    st.session_state["conv_meta"] = None
 
 if uploaded_file is None:
     st.markdown(
@@ -155,7 +163,7 @@ c4.metric("품질", f"{jpg_quality}%" if output_format == "JPG" else "무손실"
 
 st.divider()
 
-# ── 변환 실행 ────────────────────────────────────────────────
+# ── 변환 버튼 ────────────────────────────────────────────────
 if st.button("🚀 변환 시작", type="primary", use_container_width=True):
     progress = st.progress(0, text="변환 준비 중...")
     status = st.empty()
@@ -176,51 +184,65 @@ if st.button("🚀 변환 시작", type="primary", use_container_width=True):
         basename = os.path.splitext(uploaded_file.name)[0]
         ext = "jpg" if output_format == "JPG" else "png"
 
-        # ZIP 생성
+        # 개별 bytes 미리 변환해서 session_state에 저장
+        image_bytes_list = []
         zip_buf = io.BytesIO()
         with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
             for i, img in enumerate(images):
                 page_num = first_page + i
-                zf.writestr(
-                    f"{basename}_p{page_num:04d}.{ext}",
-                    img_to_bytes(img, output_format, jpg_quality),
-                )
+                b = img_to_bytes(img, output_format, jpg_quality)
+                image_bytes_list.append((page_num, img, b))
+                zf.writestr(f"{basename}_p{page_num:04d}.{ext}", b)
                 progress.progress(60 + int(35 * (i + 1) / len(images)), text=f"압축 중... ({i+1}/{len(images)})")
 
         zip_buf.seek(0)
         progress.progress(100, text="완료!")
         status.success(f"🎉 변환 완료! {len(images)}장의 이미지가 준비되었습니다.")
 
-        # ── 전체 ZIP 다운로드 ─────────────────────────────────
-        st.download_button(
-            label=f"⬇️ 전체 ZIP 다운로드 ({len(images)}장)",
-            data=zip_buf,
-            file_name=f"{basename}_images.zip",
-            mime="application/zip",
-            use_container_width=True,
-            type="primary",
-        )
-
-        st.divider()
-
-        # ── 페이지별 개별 다운로드 + 미리보기 ─────────────────
-        st.subheader("📄 페이지별 미리보기 & 개별 다운로드")
-
-        cols = st.columns(3)
-        for i, img in enumerate(images):
-            page_num = first_page + i
-            with cols[i % 3]:
-                st.image(img, caption=f"페이지 {page_num}", use_container_width=True)
-                st.download_button(
-                    label=f"⬇️ p{page_num} 다운로드",
-                    data=img_to_bytes(img, output_format, jpg_quality),
-                    file_name=f"{basename}_p{page_num:04d}.{ext}",
-                    mime="image/jpeg" if output_format == "JPG" else "image/png",
-                    use_container_width=True,
-                    key=f"dl_{page_num}",
-                )
+        # ── session_state에 저장 (다운로드 클릭해도 유지) ────
+        st.session_state["converted_images"] = image_bytes_list
+        st.session_state["converted_zip"] = zip_buf.getvalue()
+        st.session_state["conv_meta"] = {
+            "basename": basename,
+            "ext": ext,
+            "fmt": output_format,
+            "count": len(images),
+        }
 
     except Exception as e:
         progress.empty()
         status.error(f"❌ 변환 중 오류 발생: {str(e)}")
         st.exception(e)
+
+# ── 변환 결과 표시 (session_state 기반) ──────────────────────
+if st.session_state.get("converted_images"):
+    image_bytes_list = st.session_state["converted_images"]
+    meta = st.session_state["conv_meta"]
+
+    # ZIP 다운로드
+    st.download_button(
+        label=f"⬇️ 전체 ZIP 다운로드 ({meta['count']}장)",
+        data=st.session_state["converted_zip"],
+        file_name=f"{meta['basename']}_images.zip",
+        mime="application/zip",
+        use_container_width=True,
+        type="primary",
+    )
+
+    st.divider()
+
+    # 페이지별 미리보기 + 개별 다운로드
+    st.subheader("📄 페이지별 미리보기 & 개별 다운로드")
+
+    cols = st.columns(3)
+    for i, (page_num, img, b) in enumerate(image_bytes_list):
+        with cols[i % 3]:
+            st.image(img, caption=f"페이지 {page_num}", use_container_width=True)
+            st.download_button(
+                label=f"⬇️ p{page_num} 다운로드",
+                data=b,
+                file_name=f"{meta['basename']}_p{page_num:04d}.{meta['ext']}",
+                mime="image/jpeg" if meta['fmt'] == "JPG" else "image/png",
+                use_container_width=True,
+                key=f"dl_{page_num}",
+            )
