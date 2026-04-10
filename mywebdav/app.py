@@ -7,7 +7,7 @@ from urllib.parse import unquote
 
 # ── 페이지 설정 ──────────────────────────────────────────────
 st.set_page_config(
-    page_title="NAS 파일 브라우저",
+    page_title="파일 브라우저",
     page_icon="🗂️",
     layout="wide",
 )
@@ -123,7 +123,7 @@ def download_file(item_path):
 
 # ── 사이드바 ─────────────────────────────────────────────────
 with st.sidebar:
-    st.header("🗂️ NAS 브라우저")
+    st.header("🗂️ 브라우저")
     st.caption(st.secrets.get("WEBDAV_URL", ""))
     st.divider()
 
@@ -159,7 +159,7 @@ with st.sidebar:
         st.rerun()
 
 # ── 메인 ─────────────────────────────────────────────────────
-st.title("🗂️ NAS 파일 브라우저")
+st.title("🗂️ 파일 브라우저")
 
 # 브레드크럼 + 새로고침
 crumbs = st.session_state["path_stack"]
