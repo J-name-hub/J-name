@@ -3,7 +3,8 @@ const puppeteer = require('puppeteer');
 
 // ========== 설정 상수 ==========
 const STREAMLIT_URLS = [
-  'https://hyeonchan.streamlit.app'
+  'https://hyeonchan.streamlit.app',
+  'https://hyeonchan2.streamlit.app'
   // 
   // 추가 URL이 있으면 여기에 추가
   // 'https://yeongjongdonakreomap.streamlit.app',
