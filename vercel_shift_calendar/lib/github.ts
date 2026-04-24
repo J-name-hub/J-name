@@ -1,101 +1,99 @@
-// lib/github.ts
+// lib/shiftLogic.ts
 
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN!;
-const GITHUB_REPO = process.env.GITHUB_REPO!;
+export type ShiftType = '주' | '야' | '비' | '올';
+export type TeamType = 'A' | 'B' | 'C' | 'D';
 
-// ── 인메모리 캐시 ──────────────────────────────────────────────────
-// 같은 서버 인스턴스 내에서 60초간 캐시 유지 (stale-while-revalidate)
-const CACHE_TTL_MS = 60_000;
-
-interface CacheEntry {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  value: { data: any; sha: string } | null;
-  fetchedAt: number;
-  revalidating: boolean;
+export interface TeamHistory {
+  start_date: string;
+  team: TeamType;
 }
 
-const cache = new Map<string, CacheEntry>();
+const BASE_DATE = new Date(2000, 0, 3); // 2000-01-03
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function fetchFromGitHub(path: string): Promise<{ data: any; sha: string } | null> {
-  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`;
-  const res = await fetch(url, {
-    headers: { Authorization: `token ${GITHUB_TOKEN}` },
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    if (res.status === 404) return null;
-    throw new Error(`GitHub GET failed: ${res.status}`);
-  }
-  const raw = await res.json();
-  const content = Buffer.from(raw.content, 'base64').toString('utf-8');
-  return { data: JSON.parse(content), sha: raw.sha };
-}
+const SHIFTS: ShiftType[] = ['주', '야', '비', '비'];
 
-export async function githubGet(path: string): Promise<{ data: any; sha: string } | null> {
-  const now = Date.now();
-  const entry = cache.get(path);
+export const SHIFT_PATTERNS: Record<TeamType, ShiftType[]> = {
+  C: SHIFTS,
+  B: [...SHIFTS.slice(-1), ...SHIFTS.slice(0, -1)] as ShiftType[],
+  A: [...SHIFTS.slice(-2), ...SHIFTS.slice(0, -2)] as ShiftType[],
+  D: [...SHIFTS.slice(-3), ...SHIFTS.slice(0, -3)] as ShiftType[],
+};
 
-  if (entry) {
-    const age = now - entry.fetchedAt;
+export const SHIFT_COLORS: Record<ShiftType, { bg: string; color: string }> = {
+  주: { bg: 'yellow', color: 'black' },
+  야: { bg: 'lightgray', color: 'black' },
+  비: { bg: 'white', color: 'black' },
+  올: { bg: 'lightblue', color: 'black' },
+};
 
-    if (age < CACHE_TTL_MS) {
-      // 캐시가 신선함 → 즉시 반환
-      return entry.value;
+export function getTeamForDate(targetDate: Date, teamHistory: TeamHistory[]): TeamType {
+  const sorted = [...teamHistory].sort((a, b) => a.start_date.localeCompare(b.start_date));
+  let currentTeam: TeamType = sorted[0]?.team || 'A';
+  const targetStr = formatDate(targetDate);
+  for (const record of sorted) {
+    if (targetStr >= record.start_date) {
+      currentTeam = record.team;
+    } else {
+      break;
     }
-
-    // 캐시가 낡았지만 재검증 중이 아니면 백그라운드에서 갱신 (stale-while-revalidate)
-    if (!entry.revalidating) {
-      entry.revalidating = true;
-      fetchFromGitHub(path)
-        .then(fresh => {
-          cache.set(path, { value: fresh, fetchedAt: Date.now(), revalidating: false });
-        })
-        .catch(() => {
-          if (cache.has(path)) cache.get(path)!.revalidating = false;
-        });
-    }
-    // 낡은 캐시라도 즉시 반환 (깜빡임 방지)
-    return entry.value;
   }
-
-  // 캐시 없음 → 최초 fetch
-  const value = await fetchFromGitHub(path);
-  cache.set(path, { value, fetchedAt: now, revalidating: false });
-  return value;
+  return currentTeam;
 }
 
-/** 쓰기 후 캐시를 즉시 갱신 */
-export async function githubPut(
-  path: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  content: any,
-  sha: string | null,
-  message: string
-): Promise<string> {
-  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`;
-  const encoded = Buffer.from(JSON.stringify(content, null, 2)).toString('base64');
-  const body: Record<string, string> = { message, content: encoded };
-  if (sha) body.sha = sha;
+export function getShift(targetDate: Date, team: TeamType): ShiftType {
+  const deltaDays = Math.floor(
+    (targetDate.getTime() - BASE_DATE.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  const pattern = SHIFT_PATTERNS[team];
+  return pattern[((deltaDays % pattern.length) + pattern.length) % pattern.length];
+}
 
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      Authorization: `token ${GITHUB_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`GitHub PUT failed: ${res.status}`);
-  const result = await res.json();
-  const newSha = result.content.sha as string;
+export function formatDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
-  // 쓰기 성공 → 해당 파일 캐시 즉시 갱신
-  cache.set(path, {
-    value: { data: content, sha: newSha } as { data: any; sha: string },
-    fetchedAt: Date.now(),
-    revalidating: false,
-  });
+export function getMonthDays(year: number, month: number): number[][] {
+  // Returns weeks array, week starts on Sunday (0)
+  const firstDay = new Date(year, month - 1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const weeks: number[][] = [];
+  let week: number[] = Array(firstDay).fill(0);
 
-  return newSha;
+  for (let d = 1; d <= daysInMonth; d++) {
+    week.push(d);
+    if (week.length === 7) {
+      weeks.push(week);
+      week = [];
+    }
+  }
+  if (week.length > 0) {
+    while (week.length < 7) week.push(0);
+    weeks.push(week);
+  }
+  return weeks;
+}
+
+export function isInExamPeriod(dateStr: string, examRanges: { start: string; end: string }[]): boolean {
+  return examRanges.some(r => dateStr >= r.start && dateStr <= r.end);
+}
+
+export function getExamClass(
+  dateStr: string,
+  examRanges: { start: string; end: string }[]
+): string {
+  if (!isInExamPeriod(dateStr, examRanges)) return '';
+
+  const date = new Date(dateStr);
+  const prev = formatDate(new Date(date.getTime() - 86400000));
+  const next = formatDate(new Date(date.getTime() + 86400000));
+  const prevIn = isInExamPeriod(prev, examRanges);
+  const nextIn = isInExamPeriod(next, examRanges);
+
+  if (prevIn && nextIn) return 'exam-band exam-mid';
+  if (prevIn && !nextIn) return 'exam-band exam-end';
+  if (!prevIn && nextIn) return 'exam-band exam-start';
+  return 'exam-band exam-single';
 }
