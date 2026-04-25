@@ -68,7 +68,8 @@ function parseDatesText(text: string, year: number): { dates: string[]; errors: 
 }
 
 export default function Home({ initialData }: { initialData: InitialData }) {
-  const today = getTodayKST();
+  // useState로 today 고정 — 매 렌더마다 재계산되면 자정 근처에서 날짜 비교가 꼬일 수 있음
+  const [today] = useState(() => getTodayKST());
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [scheduleData, setScheduleData] = useState<Record<string, ShiftType>>(initialData.scheduleData);
@@ -85,6 +86,8 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   const [capturing, setCapturing] = useState(false);
 
   const calendarRef = useRef<HTMLDivElement>(null);
+  const gradFormRef = useRef<HTMLFormElement>(null);
+  const examFormRef = useRef<HTMLFormElement>(null);
 
   // 연도 변경 시 공휴일만 다시 로드
   const loadHolidays = useCallback(async (y: number) => {
@@ -267,9 +270,8 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     setTimeout(() => setMsg(''), 3000);
   }
 
-  async function handleGradSave(e: React.FormEvent<HTMLFormElement>, isDelete: boolean) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+  async function handleGradSave(formEl: HTMLFormElement, isDelete: boolean) {
+    const fd = new FormData(formEl);
     const password = fd.get('password') as string;
     const textRaw = fd.get('dates') as string;
     const targetYear = parseInt(fd.get('year') as string);
@@ -295,9 +297,8 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     setTimeout(() => setMsg(''), 3000);
   }
 
-  async function handleExamSave(e: React.FormEvent<HTMLFormElement>, isDelete: boolean) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+  async function handleExamSave(formEl: HTMLFormElement, isDelete: boolean) {
+    const fd = new FormData(formEl);
     const password = fd.get('password') as string;
     const textRaw = fd.get('ranges') as string;
     const targetYear = parseInt(fd.get('year') as string);
@@ -440,13 +441,13 @@ export default function Home({ initialData }: { initialData: InitialData }) {
                 🎓 대학원 날짜 편집 {activeSection === 'grad' ? '▲' : '▼'}
               </button>
               {activeSection === 'grad' && (
-                <form onSubmit={e => e.preventDefault()} className="form">
+                <form ref={gradFormRef} onSubmit={e => e.preventDefault()} className="form">
                   <input type="number" name="year" defaultValue={today.getFullYear()} className="input" placeholder="연도" />
                   <textarea name="dates" placeholder="8/15, 8/17, 12/3" className="textarea" rows={3} />
                   <input type="password" name="password" placeholder="암호 입력" className="input" />
                   <div className="btn-row">
-                    <button type="button" className="btn" onClick={e => handleGradSave(e as unknown as React.FormEvent<HTMLFormElement>, false)}>저장</button>
-                    <button type="button" className="btn btn-del" onClick={e => handleGradSave(e as unknown as React.FormEvent<HTMLFormElement>, true)}>삭제</button>
+                    <button type="button" className="btn" onClick={() => gradFormRef.current && handleGradSave(gradFormRef.current, false)}>저장</button>
+                    <button type="button" className="btn btn-del" onClick={() => gradFormRef.current && handleGradSave(gradFormRef.current, true)}>삭제</button>
                   </div>
                 </form>
               )}
@@ -457,13 +458,13 @@ export default function Home({ initialData }: { initialData: InitialData }) {
                 📚 시험기간 편집 {activeSection === 'exam' ? '▲' : '▼'}
               </button>
               {activeSection === 'exam' && (
-                <form onSubmit={e => e.preventDefault()} className="form">
+                <form ref={examFormRef} onSubmit={e => e.preventDefault()} className="form">
                   <input type="number" name="year" defaultValue={today.getFullYear()} className="input" placeholder="연도" />
                   <textarea name="ranges" placeholder="9/15~9/19, 12/2~12/3, 9/20" className="textarea" rows={3} />
                   <input type="password" name="password" placeholder="암호 입력" className="input" />
                   <div className="btn-row">
-                    <button type="button" className="btn" onClick={e => handleExamSave(e as unknown as React.FormEvent<HTMLFormElement>, false)}>저장</button>
-                    <button type="button" className="btn btn-del" onClick={e => handleExamSave(e as unknown as React.FormEvent<HTMLFormElement>, true)}>삭제</button>
+                    <button type="button" className="btn" onClick={() => examFormRef.current && handleExamSave(examFormRef.current, false)}>저장</button>
+                    <button type="button" className="btn btn-del" onClick={() => examFormRef.current && handleExamSave(examFormRef.current, true)}>삭제</button>
                   </div>
                 </form>
               )}
@@ -507,9 +508,9 @@ export default function Home({ initialData }: { initialData: InitialData }) {
             </div>
 
             {weeks.map((week, wi) => (
-              <div key={wi} className="cal-row">
+              <div key={`week-${wi}`} className="cal-row">
                 {week.map((day, di) => {
-                  if (!day) return <div key={di} className="cal-cell" />;
+                  if (!day) return <div key={`empty-${wi}-${di}`} className="cal-cell" />;
                   const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
                   const monthDay = `${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
                   const dateObj = new Date(year, month-1, day);
@@ -524,7 +525,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
                   const dayColor = isGrad ? GRAD_COLOR : (isWeekend || isHoliday ? 'red' : 'black');
 
                   return (
-                    <div key={di} className="cal-cell">
+                    <div key={dateStr} className="cal-cell">
                       <div className={`cal-cell-inner ${isToday ? 'today' : ''} ${examClass}`}>
                         <div className="cal-day" style={{ color: dayColor, backgroundColor: isHighlighted ? '#FFB6C1' : 'transparent' }}>
                           {day}
@@ -743,7 +744,7 @@ export const getStaticProps = async () => {
       holidays: (hol as Record<string, string[]>) || {},
     };
 
-    return { props: { initialData }, revalidate: 60 };
+    return { props: { initialData }, revalidate: 5 };
   } catch (e) {
     console.error('getStaticProps error:', e);
     const initialData: InitialData = {
@@ -757,6 +758,6 @@ export const getStaticProps = async () => {
       examSha: null,
       holidays: {},
     };
-    return { props: { initialData }, revalidate: 10 };
+    return { props: { initialData }, revalidate: 5 };
   }
 };
