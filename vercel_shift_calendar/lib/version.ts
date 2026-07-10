@@ -1,8 +1,9 @@
-// lib/version.ts
-//
-// ⚠️ 코드를 수정해서 배포할 때마다 이 값을 새로 바꿔주세요. (날짜.순번 형식 권장)
-// 방문자의 브라우저가 이 값이 바뀐 걸 감지하면 캐시(Cache Storage / Service Worker)를
-// 자동으로 비우고 새로고침해서, 과거 코드/화면이 남아 보이는 문제를 막습니다.
-//
-// 예) 하루에 두 번째 배포면 '2026.07.10.2' 처럼 올려주면 됩니다.
-export const APP_VERSION = '2026.07.10.1';
+// 이 파일은 빌드 시마다 자동으로 업데이트됩니다 (scripts/update-version.js)
+// Build Time: 2026-07-10T14:13:37.400Z
+export const APP_VERSION = {
+  version: '1783692817400',
+  buildTime: '2026-07-10T14:13:37.400Z',
+  hash: 'i7g0majq4x9',
+};
+
+export default APP_VERSION;
