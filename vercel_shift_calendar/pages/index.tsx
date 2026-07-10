@@ -234,6 +234,12 @@ export default function Home({ initialData }: { initialData: InitialData }) {
 
   const currentTeam = teamHistory.length ? getTeamForDate(today, teamHistory) : '미설정';
 
+  // "오늘" 버튼: 현재 달을 보고 있지 않을 때만 노출, 오늘이 있는 방향 힌트 제공
+  const ty = today.getFullYear(), tm = today.getMonth() + 1;
+  const isCurrentMonth = year === ty && month === tm;
+  const todayIsPast = (year * 12 + (month - 1)) > (ty * 12 + (tm - 1)); // 보고 있는 달이 오늘보다 미래면 오늘은 과거쪽
+  function goToday() { setYear(ty); setMonth(tm); }
+
   function navigateMonth(delta: number) {
     const d = new Date(year, month - 1 + delta, 1);
     setYear(d.getFullYear());
@@ -861,7 +867,6 @@ export default function Home({ initialData }: { initialData: InitialData }) {
             <button className="menu-btn" onClick={() => setSidebarOpen(true)}>☰</button>
             <span className="top-title">교대근무 달력</span>
             <div className="top-actions">
-              <button className="today-btn" onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth() + 1); }}>Today</button>
               <button
                 className="download-btn"
                 onClick={handleDownloadImage}
@@ -897,6 +902,15 @@ export default function Home({ initialData }: { initialData: InitialData }) {
                     </div>
                     <button className="nav-btn" onClick={() => pageBy(1)}>›</button>
                   </div>
+
+                  {/* 현재 달이 아닐 때만 나타나는 '오늘' 버튼 (캡처 시에는 숨김) */}
+                  {!isCurrentMonth && !capturing && (
+                    <div className="today-bar">
+                      <button className="today-pill" onClick={goToday}>
+                        {todayIsPast ? '‹ 오늘' : '오늘 ›'}
+                      </button>
+                    </div>
+                  )}
 
                   {/* 요일 헤더는 고정, 그리드만 좌우로 슬라이드 */}
                   <div className="cal-weekdays">
@@ -1030,11 +1044,11 @@ export default function Home({ initialData }: { initialData: InitialData }) {
           padding: 12px 16px; background: #343a40; color: white; position: sticky; top: 0; z-index: 50;
         }
         .top-actions { display: flex; align-items: center; gap: 8px; }
-        .menu-btn, .today-btn {
+        .menu-btn {
           background: #495057; border: none; color: white; padding: 6px 14px;
           border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;
         }
-        .menu-btn:hover, .today-btn:hover { background: #6c757d; }
+        .menu-btn:hover { background: #6c757d; }
         .top-title { font-size: 16px; font-weight: 700; }
 
         .download-btn {
@@ -1115,6 +1129,20 @@ export default function Home({ initialData }: { initialData: InitialData }) {
           background: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 4px 0;
         }
         .cal-wday { text-align: center; font-size: 16px; font-weight: 700; padding: 4px; }
+
+        /* 현재 달이 아닐 때 나타나는 '오늘' 버튼 */
+        .today-bar {
+          display: flex; justify-content: center;
+          background: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 6px;
+        }
+        .today-pill {
+          background: #343a40; color: #fff; border: none; border-radius: 999px;
+          padding: 5px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+          font-family: inherit; box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+          transition: background 0.15s, transform 0.1s;
+        }
+        .today-pill:hover { background: #212529; }
+        .today-pill:active { transform: scale(0.96); }
 
         /* 좌우 페이징: 요일 헤더 아래 그리드 영역만 슬라이드 */
         .cal-viewport {
