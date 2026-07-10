@@ -116,6 +116,11 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
   const [capturing, setCapturing] = useState(false);
+  // 날짜 클릭 → 근무 변경 팝업
+  const [editTarget, setEditTarget] = useState<{ dateStr: string; shift: ShiftType } | null>(null);
+  const [editShift, setEditShift] = useState<ShiftType>('주');
+  const [schedPassword, setSchedPassword] = useState(''); // 세션 동안 암호 기억(메모리에만)
+  const [saving, setSaving] = useState(false);
 
   const calendarRef = useRef<HTMLDivElement>(null);
   const gradFormRef = useRef<HTMLFormElement>(null);
@@ -541,6 +546,43 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   }
 
   // ── 특정 달의 한 페이지(주 행 + 하단 요약) 렌더 ────────────────────
+  // ── 날짜 클릭 → 근무 변경 ────────────────────────────────────────
+  const openScheduleEditor = useCallback((dateStr: string, currentShift: ShiftType) => {
+    setEditTarget({ dateStr, shift: currentShift });
+    setEditShift(currentShift);
+  }, []);
+  function closeEditor() { setEditTarget(null); }
+  async function saveEditor() {
+    if (!editTarget || saving) return;
+    setSaving(true);
+    try {
+      const res = await fetch('/api/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: schedPassword, date: editTarget.dateStr, shift: editShift, sha: scheduleSha }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setScheduleData(prev => ({ ...prev, [editTarget.dateStr]: editShift }));
+        setScheduleSha(data.sha);
+        setMsg('✅ 스케줄이 저장되었습니다.');
+        setEditTarget(null);
+      } else {
+        setMsg(`❌ ${data.error}`);
+      }
+    } catch {
+      setMsg('❌ 저장에 실패했습니다.');
+    } finally {
+      setSaving(false);
+      setTimeout(() => setMsg(''), 3000);
+    }
+  }
+  function editorDateLabel(dateStr: string) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const wd = ['일', '월', '화', '수', '목', '금', '토'][new Date(y, m - 1, d).getDay()];
+    return `${m}월 ${d}일 (${wd})`;
+  }
+
   const renderMonthBody = useCallback((y: number, m: number) => {
     const weeks = getMonthDays(y, m);
     const mm = pad2(m);
@@ -593,7 +635,11 @@ export default function Home({ initialData }: { initialData: InitialData }) {
               const dayColor = isGrad ? GRAD_COLOR : (isWeekend || isHoliday ? 'red' : 'black');
               return (
                 <div key={dateStr} className="cal-cell">
-                  <div className={`cal-cell-inner ${isToday ? 'today' : ''} ${examClass}`}>
+                  <div
+                    className={`cal-cell-inner clickable ${isToday ? 'today' : ''} ${examClass}`}
+                    onClick={() => openScheduleEditor(dateStr, shift)}
+                    title="근무 변경"
+                  >
                     <div className="cal-day" style={{ color: dayColor, backgroundColor: isHighlighted ? '#FFB6C1' : 'transparent' }}>
                       {day}
                     </div>
@@ -625,7 +671,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
         </div>
       </>
     );
-  }, [gradDays, examRanges, holidays, todayStr, getShiftForDate]);
+  }, [gradDays, examRanges, holidays, todayStr, getShiftForDate, openScheduleEditor]);
 
   // 이전/현재/다음 달 좌표
   const prevD = new Date(year, month - 2, 1);
@@ -887,6 +933,49 @@ export default function Home({ initialData }: { initialData: InitialData }) {
           </div>
 
         </main>
+
+        {/* 날짜 클릭 → 근무 변경 팝업 */}
+        {editTarget && (
+          <div className="edit-overlay" onClick={closeEditor}>
+            <div className="edit-card" onClick={e => e.stopPropagation()}>
+              <div className="edit-title">{editorDateLabel(editTarget.dateStr)} 근무 변경</div>
+              <div className="edit-shifts">
+                {(['주', '야', '비', '올'] as ShiftType[]).map(s => {
+                  const { bg, color } = SHIFT_COLORS[s];
+                  const sel = editShift === s;
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`edit-shift ${sel ? 'sel' : ''}`}
+                      style={{ backgroundColor: bg, color }}
+                      onClick={() => setEditShift(s)}
+                    >
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
+              <input
+                type="password"
+                placeholder="암호 입력"
+                value={schedPassword}
+                onChange={e => setSchedPassword(e.target.value)}
+                className="edit-input"
+                onKeyDown={e => { if (e.key === 'Enter') saveEditor(); }}
+              />
+              <div className="edit-actions">
+                <button type="button" className="edit-btn edit-cancel" onClick={closeEditor}>취소</button>
+                <button type="button" className="edit-btn edit-save" onClick={saveEditor} disabled={saving}>
+                  {saving ? '저장 중…' : '저장'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 사이드바가 닫혀 있어도 보이는 알림 */}
+        {msg && !sidebarOpen && <div className="toast">{msg}</div>}
       </div>
 
       <style jsx global>{`
@@ -1058,6 +1147,49 @@ export default function Home({ initialData }: { initialData: InitialData }) {
         .cal-footer {
           padding: 8px 12px; font-size: 14px; font-weight: 600;
           background: #f8f9fa; color: #343a40;
+        }
+
+        .cal-cell-inner.clickable { cursor: pointer; }
+        .cal-cell-inner.clickable:hover { background: #eef2ff; border-radius: 4px; }
+
+        /* 근무 변경 팝업 */
+        .edit-overlay {
+          position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+          z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .edit-card {
+          background: #fff; border-radius: 14px; padding: 20px;
+          width: min(340px, 92vw); box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+          animation: viewIn 0.18s ease;
+        }
+        .edit-title { font-size: 17px; font-weight: 700; color: #343a40; text-align: center; margin-bottom: 16px; }
+        .edit-shifts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+        .edit-shift {
+          padding: 14px 0; border: 2px solid transparent; border-radius: 10px;
+          font-size: 18px; font-weight: 700; cursor: pointer; font-family: inherit;
+          box-shadow: inset 0 0 0 1px #e9ecef;
+        }
+        .edit-shift.sel { border-color: #343a40; transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.18); }
+        .edit-input {
+          width: 100%; padding: 11px; border: 1px solid #ced4da; border-radius: 8px;
+          font-size: 14px; margin-bottom: 14px; background: #fff; color: #212529;
+        }
+        .edit-actions { display: flex; gap: 8px; }
+        .edit-btn {
+          flex: 1; padding: 11px 0; border: none; border-radius: 8px;
+          font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit;
+        }
+        .edit-cancel { background: #e9ecef; color: #495057; }
+        .edit-cancel:hover { background: #dee2e6; }
+        .edit-save { background: #343a40; color: #fff; }
+        .edit-save:hover { background: #212529; }
+        .edit-save:disabled { opacity: 0.6; cursor: wait; }
+
+        .toast {
+          position: fixed; top: 64px; left: 50%; transform: translateX(-50%);
+          background: #343a40; color: #fff; padding: 10px 18px; border-radius: 999px;
+          font-size: 14px; font-weight: 600; z-index: 400; box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+          max-width: 90vw; text-align: center;
         }
 
         .cal-cell-inner.exam-band::before {
