@@ -102,6 +102,8 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   const [today] = useState(() => getTodayKST());
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
+  const [view, setView] = useState<'month' | 'year'>('month');
+  const [yearViewYear, setYearViewYear] = useState(today.getFullYear());
   const [scheduleData, setScheduleData] = useState<Record<string, ShiftType>>(initialData.scheduleData);
   const [scheduleSha, setScheduleSha] = useState<string | null>(initialData.scheduleSha);
   const [teamHistory, setTeamHistory] = useState<TeamHistory[]>(initialData.teamHistory);
@@ -134,7 +136,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   const loadHolidays = useCallback(async (y: number) => {
     try {
       const hol = await fetch(`/api/holidays?year=${y}`).then(r => r.json());
-      setHolidays(hol || {});
+      if (hol && typeof hol === 'object') setHolidays(prev => ({ ...prev, ...hol }));
     } catch { /* 네트워크 오류 시 기존 값 유지 */ }
   }, []);
 
@@ -158,6 +160,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
 
   useEffect(() => { loadAll(); }, [loadAll]);
   useEffect(() => { loadHolidays(year); }, [year, loadHolidays]);
+  useEffect(() => { if (view === 'year') loadHolidays(yearViewYear); }, [view, yearViewYear, loadHolidays]);
 
   const getShiftForDate = useCallback((dateStr: string, dateObj: Date): ShiftType => {
     if (scheduleData[dateStr]) return scheduleData[dateStr];
@@ -240,12 +243,11 @@ export default function Home({ initialData }: { initialData: InitialData }) {
 
   function onSwipeDown(e: React.PointerEvent) {
     if (sidebarOpen || phase === 'settle') return;
-    startRef.current = { x: e.clientX, y: e.clientY, w: viewportRef.current?.clientWidth || 1 };
+    startRef.current = { x: e.clientX, y: e.clientY, w: calendarRef.current?.clientWidth || 1 };
     axisRef.current = null;
     lastMoveRef.current = { x: e.clientX, t: performance.now() };
     setPhase('drag');
     setDragX(0);
-    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* noop */ }
   }
   function onSwipeMove(e: React.PointerEvent) {
     if (phase !== 'drag') return;
@@ -284,6 +286,67 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     if (phase === 'settle') return;
     finalize(dir === 1 ? 'next' : 'prev');
   }
+
+  // ── 핀치 줌으로 월↔연 뷰 전환 ────────────────────────────────────
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchStartRef = useRef(1);
+  const pinchRatioRef = useRef(1);
+  const pinchActiveRef = useRef(false);
+  const [pinchScale, setPinchScale] = useState(1);
+  const [pinchAnim, setPinchAnim] = useState(false);
+
+  const distOf = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
+
+  function openYear() { setYearViewYear(year); setPinchAnim(true); setPinchScale(1); setView('year'); }
+  function closeYear() { setPinchAnim(true); setPinchScale(1); setView('month'); }
+  function selectMonth(y: number, m: number) { setYear(y); setMonth(m); setPinchAnim(true); setPinchScale(1); setView('month'); }
+
+  function onCalPointerDown(e: React.PointerEvent) {
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointersRef.current.size === 2) {
+      pinchActiveRef.current = true;
+      setPhase('idle'); setDragX(0); axisRef.current = null; // 진행 중이던 스와이프 취소
+      const [p1, p2] = [...pointersRef.current.values()];
+      pinchStartRef.current = distOf(p1, p2) || 1;
+      pinchRatioRef.current = 1;
+      setPinchAnim(false);
+    } else if (pointersRef.current.size === 1 && !pinchActiveRef.current && view === 'month') {
+      onSwipeDown(e);
+      try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* noop */ }
+    }
+  }
+  function onCalPointerMove(e: React.PointerEvent) {
+    if (pointersRef.current.has(e.pointerId)) pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinchActiveRef.current && pointersRef.current.size >= 2) {
+      const [p1, p2] = [...pointersRef.current.values()];
+      const r = distOf(p1, p2) / pinchStartRef.current;
+      pinchRatioRef.current = r;
+      const s = view === 'month' ? Math.min(1, Math.max(0.72, r)) : Math.min(1.4, Math.max(1, r));
+      setPinchScale(s);
+      return;
+    }
+    if (!pinchActiveRef.current) onSwipeMove(e);
+  }
+  function onCalPointerUp(e: React.PointerEvent) {
+    const wasPinch = pinchActiveRef.current;
+    pointersRef.current.delete(e.pointerId);
+    try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* noop */ }
+    if (wasPinch) {
+      if (pointersRef.current.size < 2) {
+        const r = pinchRatioRef.current;
+        setPinchAnim(true);
+        setPinchScale(1);
+        if (view === 'month' && r < 0.8) openYear();
+        else if (view === 'year' && r > 1.2) closeYear();
+        if (pointersRef.current.size === 0) pinchActiveRef.current = false;
+      }
+      return;
+    }
+    onSwipeUp(e);
+    if (pointersRef.current.size === 0) pinchActiveRef.current = false;
+  }
+
+  const zoomStyle: React.CSSProperties = { transform: `scale(${pinchScale})` };
 
   const trackStyle: React.CSSProperties =
     phase === 'drag'
@@ -538,6 +601,49 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   const curBody = useMemo(() => renderMonthBody(year, month), [renderMonthBody, year, month]);
   const nextBody = useMemo(() => renderMonthBody(nextY, nextM), [renderMonthBody, nextY, nextM]);
 
+  // ── 연 뷰용 미니 달력 ────────────────────────────────────────────
+  const renderMiniMonth = useCallback((y: number, m: number) => {
+    const weeks = getMonthDays(y, m);
+    const mm = pad2(m);
+    return (
+      <button type="button" key={m} className="mini-month" onClick={() => selectMonth(y, m)}>
+        <div className="mini-title">{m}월</div>
+        <div className="mini-grid">
+          {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
+            <span key={`h${i}`} className="mini-wday" style={{ color: i === 0 || i === 6 ? '#e03131' : '#adb5bd' }}>{d}</span>
+          ))}
+          {weeks.flat().map((day, idx) => {
+            if (!day) return <span key={idx} className="mini-cell" />;
+            const dateStr = `${y}-${mm}-${pad2(day)}`;
+            const dateObj = new Date(y, m - 1, day);
+            const shift = getShiftForDate(dateStr, dateObj);
+            const { bg } = SHIFT_COLORS[shift];
+            const work = shift === '주' || shift === '야' || shift === '올';
+            const di = idx % 7;
+            const isWeekend = di === 0 || di === 6;
+            const isHoliday = !!holidays[dateStr];
+            const isToday = dateStr === todayStr;
+            return (
+              <span
+                key={idx}
+                className={`mini-cell ${isToday ? 'mini-today' : ''}`}
+                style={{ background: work ? bg : 'transparent', color: isWeekend || isHoliday ? '#e03131' : '#495057' }}
+              >
+                {day}
+              </span>
+            );
+          })}
+        </div>
+      </button>
+    );
+  }, [getShiftForDate, holidays, todayStr]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const yearGrid = useMemo(
+    () => Array.from({ length: 12 }, (_, i) => renderMiniMonth(yearViewYear, i + 1)),
+    [renderMiniMonth, yearViewYear]
+  );
+
+
   const monthOptions: { year: number; month: number }[] = [];
   for (let i = -5; i <= 5; i++) {
     const d = new Date(year, month - 1 + i, 1);
@@ -674,40 +780,64 @@ export default function Home({ initialData }: { initialData: InitialData }) {
             </div>
           </div>
 
-          {/* 캡처 대상 영역 */}
-          <div ref={calendarRef} className="calendar-container">
-            <div className="cal-header">
-              <button className="nav-btn" onClick={() => pageBy(-1)}>‹</button>
-              <div className="cal-title">
-                <span className="cal-year">{year}.</span>
-                <span className="cal-month">{month}</span>
-                <span className="cal-year">월</span>
-              </div>
-              <button className="nav-btn" onClick={() => pageBy(1)}>›</button>
-            </div>
+          {/* 캡처 대상 영역 — 핀치 줌으로 월↔연 뷰 전환 */}
+          <div
+            ref={calendarRef}
+            className="calendar-container"
+            style={{ touchAction: 'pan-y' }}
+            onPointerDown={onCalPointerDown}
+            onPointerMove={onCalPointerMove}
+            onPointerUp={onCalPointerUp}
+            onPointerCancel={onCalPointerUp}
+          >
+            <div key={view} className={`zoomable view-enter ${pinchAnim ? 'zoom-anim' : ''}`} style={zoomStyle}>
+              {view === 'month' ? (
+                <>
+                  <div className="cal-header">
+                    <button className="nav-btn" onClick={() => pageBy(-1)}>‹</button>
+                    <div className="cal-title tappable" onClick={openYear} title="연 보기">
+                      <span className="cal-year">{year}.</span>
+                      <span className="cal-month">{month}</span>
+                      <span className="cal-year">월</span>
+                      <span className="caret">▾</span>
+                    </div>
+                    <button className="nav-btn" onClick={() => pageBy(1)}>›</button>
+                  </div>
 
-            {/* 요일 헤더는 고정, 그리드만 좌우로 슬라이드 */}
-            <div className="cal-weekdays">
-              {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
-                <div key={d} className="cal-wday" style={{ color: i === 0 || i === 6 ? 'red' : '#495057' }}>{d}</div>
-              ))}
-            </div>
+                  {/* 요일 헤더는 고정, 그리드만 좌우로 슬라이드 */}
+                  <div className="cal-weekdays">
+                    {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
+                      <div key={d} className="cal-wday" style={{ color: i === 0 || i === 6 ? 'red' : '#495057' }}>{d}</div>
+                    ))}
+                  </div>
 
-            <div
-              ref={viewportRef}
-              className={`cal-viewport ${phase === 'drag' ? 'dragging' : ''}`}
-              onPointerDown={onSwipeDown}
-              onPointerMove={onSwipeMove}
-              onPointerUp={onSwipeUp}
-              onPointerCancel={onSwipeUp}
-            >
-              <div className="cal-track" style={trackStyle}>
-                <div className="cal-page cal-page-prev">{prevBody}</div>
-                <div className="cal-page cal-page-cur">{curBody}</div>
-                <div className="cal-page cal-page-next">{nextBody}</div>
-              </div>
+                  <div
+                    ref={viewportRef}
+                    className={`cal-viewport ${phase === 'drag' ? 'dragging' : ''}`}
+                  >
+                    <div className="cal-track" style={trackStyle}>
+                      <div className="cal-page cal-page-prev">{prevBody}</div>
+                      <div className="cal-page cal-page-cur">{curBody}</div>
+                      <div className="cal-page cal-page-next">{nextBody}</div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="cal-header">
+                    <button className="nav-btn" onClick={() => setYearViewYear(y => y - 1)}>‹</button>
+                    <div className="cal-title tappable" onClick={closeYear} title="월 보기로 돌아가기">
+                      <span className="cal-month">{yearViewYear}</span>
+                      <span className="cal-year"> 년</span>
+                    </div>
+                    <button className="nav-btn" onClick={() => setYearViewYear(y => y + 1)}>›</button>
+                  </div>
+                  <div className="year-grid">{yearGrid}</div>
+                </>
+              )}
             </div>
           </div>
+
         </main>
       </div>
 
@@ -795,8 +925,40 @@ export default function Home({ initialData }: { initialData: InitialData }) {
         }
         .nav-btn:hover { color: #adb5bd; }
         .cal-title { text-align: center; }
+        .cal-title.tappable { cursor: pointer; user-select: none; }
+        .cal-title .caret { font-size: 13px; margin-left: 4px; opacity: 0.65; vertical-align: 2px; }
         .cal-year { font-size: 18px; }
         .cal-month { font-size: 30px; font-weight: 700; margin: 0 2px; }
+
+        /* 월↔연 뷰 줌 전환 */
+        .zoomable { transform-origin: center 42%; }
+        .zoomable.zoom-anim { transition: transform 0.2s ease; }
+        .view-enter { animation: viewIn 0.24s ease; }
+        @keyframes viewIn { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
+
+        /* 연 뷰 */
+        .year-grid {
+          display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+          padding: 14px; background: white;
+        }
+        .mini-month {
+          background: #fff; border: 1px solid #e9ecef; border-radius: 8px;
+          padding: 6px 5px; cursor: pointer; text-align: center; font-family: inherit;
+          display: flex; flex-direction: column; gap: 4px;
+          transition: background 0.15s, border-color 0.15s, transform 0.1s;
+        }
+        .mini-month:hover { background: #f1f3f5; border-color: #ced4da; }
+        .mini-month:active { transform: scale(0.97); }
+        .mini-title { font-size: 13px; font-weight: 700; color: #343a40; }
+        .mini-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+        .mini-wday { font-size: 8px; line-height: 1; padding-bottom: 1px; }
+        .mini-cell {
+          font-size: 9px; line-height: 1; aspect-ratio: 1 / 1;
+          display: flex; align-items: center; justify-content: center;
+          border-radius: 2px; color: #495057;
+        }
+        .mini-today { outline: 1.5px solid #007bff; outline-offset: -1px; font-weight: 700; }
+
         .cal-weekdays {
           display: grid; grid-template-columns: repeat(7, 1fr);
           background: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 4px 0;
@@ -855,6 +1017,11 @@ export default function Home({ initialData }: { initialData: InitialData }) {
           .cal-cell { height: 48px; }
           .cal-day, .cal-shift { font-size: 13px; }
           .cal-wday { font-size: 13px; }
+          .year-grid { gap: 6px; padding: 8px; }
+          .mini-month { padding: 5px 3px; }
+          .mini-cell { font-size: 8px; }
+          .mini-wday { font-size: 7px; }
+          .mini-title { font-size: 12px; }
         }
       `}</style>
     </>
