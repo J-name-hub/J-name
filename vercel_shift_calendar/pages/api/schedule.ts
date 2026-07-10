@@ -24,7 +24,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const current = await githubGet(FILE);
       const data = current?.data || {};
       data[date] = shift;
-      const newSha = await githubPut(FILE, data, sha || current?.sha || null, 'Update schedule');
+      // 방금 조회한 최신 sha를 우선 사용 — 클라이언트가 들고 있던 오래된 sha로 저장하면
+      // "GitHub PUT failed: 409"(sha 불일치)가 나므로 current.sha를 우선한다.
+      const newSha = await githubPut(FILE, data, current?.sha ?? sha ?? null, 'Update schedule');
       return res.json({ ok: true, sha: newSha });
     } catch (e) {
       return res.status(500).json({ error: String(e) });
