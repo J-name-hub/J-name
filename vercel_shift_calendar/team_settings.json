@@ -1,7 +1,23 @@
 {
   "team_history": [
     {
-      "start_date": "2026-02-11",
+      "start_date": "2024-04-25",
+      "team": "D"
+    },
+    {
+      "start_date": "2025-01-01",
+      "team": "C"
+    },
+    {
+      "start_date": "2025-06-17",
+      "team": "B"
+    },
+    {
+      "start_date": "2025-09-24",
+      "team": "D"
+    },
+    {
+      "start_date": "2026-02-21",
       "team": "B"
     }
   ]
