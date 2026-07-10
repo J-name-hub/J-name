@@ -225,6 +225,8 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   const axisRef = useRef<null | 'h' | 'v'>(null);
   const lastMoveRef = useRef({ x: 0, t: 0 });
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const draggingRef = useRef(false);   // 실제 드래그 진행 여부(스테일 클로저 방지용 ref)
+  const capturedRef = useRef<number | null>(null); // 가로 드래그 확정 후에만 포인터 캡처
 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
@@ -246,15 +248,21 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     startRef.current = { x: e.clientX, y: e.clientY, w: calendarRef.current?.clientWidth || 1 };
     axisRef.current = null;
     lastMoveRef.current = { x: e.clientX, t: performance.now() };
+    draggingRef.current = true;
+    // 여기서는 캡처하지 않는다 → 자식 버튼/제목 클릭이 삼켜지지 않음(특히 PC 마우스)
     setPhase('drag');
     setDragX(0);
   }
   function onSwipeMove(e: React.PointerEvent) {
-    if (phase !== 'drag') return;
+    if (!draggingRef.current) return;
     const dx = e.clientX - startRef.current.x;
     const dy = e.clientY - startRef.current.y;
     if (axisRef.current === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
       axisRef.current = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+      // 가로 드래그가 확정된 순간에만 포인터 캡처(클릭은 이 지점 전에 끝나므로 영향 없음)
+      if (axisRef.current === 'h') {
+        try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); capturedRef.current = e.pointerId; } catch { /* noop */ }
+      }
     }
     if (axisRef.current === 'h') {
       // 한 화면 폭을 넘어가면 저항감(고무줄) 적용. dragX는 "페이지 비율"로 저장(제목/그리드 트랙 동기화용)
@@ -266,11 +274,16 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     }
   }
   function onSwipeUp(e: React.PointerEvent) {
-    if (phase !== 'drag') return;
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    if (capturedRef.current !== null) {
+      try { (e.currentTarget as HTMLElement).releasePointerCapture(capturedRef.current); } catch { /* noop */ }
+      capturedRef.current = null;
+    }
     const isH = axisRef.current === 'h';
     const dx = e.clientX - startRef.current.x;
     axisRef.current = null;
-    if (!isH) { setPhase('idle'); setDragX(0); return; } // 탭/세로 스크롤
+    if (!isH) { setPhase('idle'); setDragX(0); return; } // 탭/세로 스크롤 → 클릭은 정상 발생
     const w = startRef.current.w;
     const now = performance.now();
     const vel = (e.clientX - lastMoveRef.current.x) / Math.max(1, now - lastMoveRef.current.t);
@@ -305,14 +318,19 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointersRef.current.size === 2) {
       pinchActiveRef.current = true;
-      setPhase('idle'); setDragX(0); axisRef.current = null; // 진행 중이던 스와이프 취소
+      // 진행 중이던 스와이프 취소
+      draggingRef.current = false;
+      if (capturedRef.current !== null) {
+        try { (e.currentTarget as HTMLElement).releasePointerCapture(capturedRef.current); } catch { /* noop */ }
+        capturedRef.current = null;
+      }
+      setPhase('idle'); setDragX(0); axisRef.current = null;
       const [p1, p2] = [...pointersRef.current.values()];
       pinchStartRef.current = distOf(p1, p2) || 1;
       pinchRatioRef.current = 1;
       setPinchAnim(false);
     } else if (pointersRef.current.size === 1 && !pinchActiveRef.current && view === 'month') {
-      onSwipeDown(e);
-      try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* noop */ }
+      onSwipeDown(e); // 캡처는 가로 드래그 확정 후 onSwipeMove에서만
     }
   }
   function onCalPointerMove(e: React.PointerEvent) {
