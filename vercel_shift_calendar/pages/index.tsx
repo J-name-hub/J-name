@@ -122,15 +122,34 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   const examFormRef = useRef<HTMLFormElement>(null);
 
   // ── 버전 체크(캐시 초기화) ────────────────────────────────────────
+  // 청첩장 CacheManager와 동일한 방식:
+  //  - 접속 시 + 5분마다 저장된 버전과 현재 버전을 비교
+  //  - 첫 방문이면 버전만 기록
+  //  - 버전이 바뀌었으면 캐시/스토리지/서비스워커를 정리 (강제 새로고침은 하지 않음)
+  //    HTML은 항상 최신으로 받고 정적파일은 해시 파일명, 일정 데이터는 매번 새로 받아오므로
+  //    강제 새로고침은 화면 깜빡임만 유발함. (수동 새로고침 버튼은 그대로 제공)
   useEffect(() => {
-    try {
-      const KEY = 'shiftcal_app_version';
-      const stored = localStorage.getItem(KEY);
-      if (stored === APP_VERSION) return;
-      localStorage.setItem(KEY, APP_VERSION);
-      if (stored === null) return;
-      clearCachesAndReload();
-    } catch { /* localStorage 사용 불가 환경이면 무시 */ }
+    const KEY = 'shiftcal_app_version';
+    const checkVersion = () => {
+      try {
+        const stored = localStorage.getItem(KEY);
+        const current = APP_VERSION.version;
+        if (!stored) { localStorage.setItem(KEY, current); return; }
+        if (stored !== current) {
+          try { localStorage.clear(); sessionStorage.clear(); } catch { /* noop */ }
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {});
+          }
+          if ('caches' in window) {
+            caches.keys().then(ns => ns.forEach(n => caches.delete(n))).catch(() => {});
+          }
+          localStorage.setItem(KEY, current);
+        }
+      } catch (e) { console.error('Version check failed:', e); }
+    };
+    checkVersion();
+    const id = setInterval(checkVersion, 5 * 60 * 1000);
+    return () => clearInterval(id);
   }, []);
 
   const loadHolidays = useCallback(async (y: number) => {
@@ -786,7 +805,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
               <button className="section-toggle" onClick={clearCachesAndReload}>
                 🔄 캐시 비우고 새로고침
               </button>
-              <div className="version-tag">버전 {APP_VERSION}</div>
+              <div className="version-tag">버전 {APP_VERSION.version} · {APP_VERSION.buildTime.slice(0, 10)}</div>
             </div>
           </div>
         </aside>
