@@ -257,11 +257,11 @@ export default function Home({ initialData }: { initialData: InitialData }) {
       axisRef.current = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
     }
     if (axisRef.current === 'h') {
-      // 한 화면 폭을 넘어가면 저항감(고무줄) 적용
+      // 한 화면 폭을 넘어가면 저항감(고무줄) 적용. dragX는 "페이지 비율"로 저장(제목/그리드 트랙 동기화용)
       const w = startRef.current.w;
       let v = dx;
       if (Math.abs(dx) > w) v = Math.sign(dx) * (w + (Math.abs(dx) - w) * 0.3);
-      setDragX(v);
+      setDragX(v / w);
       lastMoveRef.current = { x: e.clientX, t: performance.now() };
     }
   }
@@ -350,7 +350,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
 
   const trackStyle: React.CSSProperties =
     phase === 'drag'
-      ? { transform: `translate3d(${dragX}px,0,0)`, transition: 'none' }
+      ? { transform: `translate3d(${(dragX * 100).toFixed(3)}%,0,0)`, transition: 'none' }
       : phase === 'settle'
         ? {
             transform: settle === 'next' ? 'translate3d(-100%,0,0)' : settle === 'prev' ? 'translate3d(100%,0,0)' : 'translate3d(0,0,0)',
@@ -601,6 +601,16 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   const curBody = useMemo(() => renderMonthBody(year, month), [renderMonthBody, year, month]);
   const nextBody = useMemo(() => renderMonthBody(nextY, nextM), [renderMonthBody, nextY, nextM]);
 
+  // 상단 제목(연·월)도 그리드와 함께 슬라이드
+  const renderTitle = (y: number, m: number) => (
+    <div className="cal-title tappable" onClick={openYear} title="연 보기">
+      <span className="cal-year">{y}.</span>
+      <span className="cal-month">{m}</span>
+      <span className="cal-year">월</span>
+      <span className="caret">▾</span>
+    </div>
+  );
+
   // ── 연 뷰용 미니 달력 ────────────────────────────────────────────
   const renderMiniMonth = useCallback((y: number, m: number) => {
     const weeks = getMonthDays(y, m);
@@ -795,11 +805,12 @@ export default function Home({ initialData }: { initialData: InitialData }) {
                 <>
                   <div className="cal-header">
                     <button className="nav-btn" onClick={() => pageBy(-1)}>‹</button>
-                    <div className="cal-title tappable" onClick={openYear} title="연 보기">
-                      <span className="cal-year">{year}.</span>
-                      <span className="cal-month">{month}</span>
-                      <span className="cal-year">월</span>
-                      <span className="caret">▾</span>
+                    <div className="cal-title-viewport">
+                      <div className="cal-title-track" style={trackStyle}>
+                        <div className="cal-tpage cal-tpage-prev">{renderTitle(prevY, prevM)}</div>
+                        <div className="cal-tpage cal-tpage-cur">{renderTitle(year, month)}</div>
+                        <div className="cal-tpage cal-tpage-next">{renderTitle(nextY, nextM)}</div>
+                      </div>
                     </div>
                     <button className="nav-btn" onClick={() => pageBy(1)}>›</button>
                   </div>
@@ -929,6 +940,14 @@ export default function Home({ initialData }: { initialData: InitialData }) {
         .cal-title .caret { font-size: 13px; margin-left: 4px; opacity: 0.65; vertical-align: 2px; }
         .cal-year { font-size: 18px; }
         .cal-month { font-size: 30px; font-weight: 700; margin: 0 2px; }
+
+        /* 상단 제목도 그리드와 함께 좌우 슬라이드 */
+        .cal-title-viewport { flex: 1; overflow: hidden; position: relative; }
+        .cal-title-track { position: relative; will-change: transform; }
+        .cal-tpage { width: 100%; }
+        .cal-tpage-cur { position: relative; }
+        .cal-tpage-prev { position: absolute; top: 0; left: -100%; }
+        .cal-tpage-next { position: absolute; top: 0; left: 100%; }
 
         /* 월↔연 뷰 줌 전환 */
         .zoomable { transform-origin: center 42%; }
