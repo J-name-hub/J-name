@@ -1080,6 +1080,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
             ref={calendarRef}
             className="calendar-container"
             style={{ touchAction: 'pan-y' }}
+            onDragStart={e => e.preventDefault()}
             onPointerDown={onCalPointerDown}
             onPointerMove={onCalPointerMove}
             onPointerUp={onCalPointerUp}
@@ -1303,7 +1304,11 @@ export default function Home({ initialData }: { initialData: InitialData }) {
           width: min(800px, 98vw); margin: 16px auto 0;
           background: white; border-radius: 12px; overflow: hidden;
           box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+          user-select: none; -webkit-user-select: none;   /* 드래그 시 파란 텍스트 선택 방지 */
+          -webkit-touch-callout: none;                     /* iOS 길게 누르기 메뉴/선택 방지 */
+          -webkit-user-drag: none;
         }
+        .calendar-container img, .calendar-container [data-date] { -webkit-user-drag: none; user-select: none; }
         .cal-header {
           background: #343a40; color: white; display: flex;
           align-items: center; justify-content: space-between; padding: 6px 16px;
