@@ -1058,11 +1058,17 @@ export default function Home({ initialData }: { initialData: InitialData }) {
         }
         .nav-btn {
           background: none; border: none; color: white; font-size: 28px;
-          cursor: pointer; padding: 0 8px; line-height: 1;
+          cursor: pointer; padding: 4px 14px; line-height: 1;
+          position: relative; z-index: 2; border-radius: 8px;
         }
         .nav-btn:hover { color: #adb5bd; }
+        .nav-btn:active { background: rgba(255,255,255,0.14); }
         .cal-title { text-align: center; }
-        .cal-title.tappable { cursor: pointer; user-select: none; }
+        .cal-title.tappable {
+          display: inline-flex; align-items: center; cursor: pointer; user-select: none;
+          padding: 2px 10px; border-radius: 8px;   /* 클릭 영역을 글자 주변으로만 한정 */
+        }
+        .cal-title.tappable:active { background: rgba(255,255,255,0.14); }
         .cal-title .caret { font-size: 13px; margin-left: 4px; opacity: 0.65; vertical-align: 2px; }
         .cal-year { font-size: 18px; }
         .cal-month { font-size: 30px; font-weight: 700; margin: 0 2px; }
@@ -1070,7 +1076,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
         /* 상단 제목도 그리드와 함께 좌우 슬라이드 */
         .cal-title-viewport { flex: 1; overflow: hidden; position: relative; }
         .cal-title-track { position: relative; will-change: transform; }
-        .cal-tpage { width: 100%; }
+        .cal-tpage { width: 100%; text-align: center; }   /* 가운데 정렬 → 제목은 글자폭만 차지 */
         .cal-tpage-cur { position: relative; }
         .cal-tpage-prev { position: absolute; top: 0; left: -100%; }
         .cal-tpage-next { position: absolute; top: 0; left: 100%; }
