@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const current = await githubGet(FILE);
       const sorted = [...new Set(dates as string[])].sort();
-      const newSha = await githubPut(FILE, { dates: sorted }, sha || current?.sha || null, 'Update grad days');
+      const newSha = await githubPut(FILE, { dates: sorted }, current?.sha ?? sha ?? null, 'Update grad days');
       return res.json({ ok: true, sha: newSha });
     } catch (e) {
       return res.status(500).json({ error: String(e) });
