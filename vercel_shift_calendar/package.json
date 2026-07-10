@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/update-version.js",
     "build": "next build",
+    "build:fresh": "npm run prebuild && npm run build",
     "start": "next start"
   },
   "dependencies": {
