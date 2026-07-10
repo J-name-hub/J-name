@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import Head from 'next/head';
 import {
-  getTeamForDate, getShift, getMonthDays, getExamClass, formatDate,
+  getTeamForDate, getShift, getMonthDays, getExamClass, formatDate, parseYMD, isInExamPeriod,
   SHIFT_COLORS, TeamHistory, ShiftType
 } from '../lib/shiftLogic';
 import { APP_VERSION } from '../lib/version';
@@ -98,6 +98,37 @@ function parseDatesText(text: string, year: number): { dates: string[]; errors: 
   return { dates, errors };
 }
 
+// 두 날짜 사이(포함)의 모든 날짜 문자열
+function datesInRange(a: string, b: string): string[] {
+  const [start, end] = a <= b ? [a, b] : [b, a];
+  const out: string[] = [];
+  let cur = parseYMD(start);
+  const last = parseYMD(end);
+  while (cur <= last) { out.push(formatDate(cur)); cur = new Date(cur.getTime() + 86400000); }
+  return out;
+}
+function addExamRange(ranges: ExamRange[], start: string, end: string): ExamRange[] {
+  const [s, e] = start <= end ? [start, end] : [end, start];
+  return [...ranges, { start: s, end: e }].sort((a, b) => a.start.localeCompare(b.start));
+}
+// 지정한 날짜들을 시험기간에서 제거(겹치는 구간은 앞/뒤로 분할)
+function removeDatesFromExamRanges(ranges: ExamRange[], dates: string[]): ExamRange[] {
+  let result = ranges;
+  for (const date of dates) {
+    const next: ExamRange[] = [];
+    for (const r of result) {
+      if (date < r.start || date > r.end) { next.push(r); continue; }
+      const d = parseYMD(date);
+      const prev = formatDate(new Date(d.getTime() - 86400000));
+      const nxt = formatDate(new Date(d.getTime() + 86400000));
+      if (r.start <= prev) next.push({ start: r.start, end: prev });
+      if (nxt <= r.end) next.push({ start: nxt, end: r.end });
+    }
+    result = next;
+  }
+  return result;
+}
+
 export default function Home({ initialData }: { initialData: InitialData }) {
   const [today] = useState(() => getTodayKST());
   const [year, setYear] = useState(today.getFullYear());
@@ -116,11 +147,16 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
   const [capturing, setCapturing] = useState(false);
-  // 날짜 클릭 → 근무 변경 팝업
-  const [editTarget, setEditTarget] = useState<{ dateStr: string; shift: ShiftType } | null>(null);
+  // 날짜 클릭 → 근무/대학원/시험 변경 팝업
+  const [editTarget, setEditTarget] = useState<{ dateStr: string; shift: ShiftType; grad: boolean; exam: boolean } | null>(null);
   const [editShift, setEditShift] = useState<ShiftType>('주');
+  const [editGrad, setEditGrad] = useState(false);
+  const [editExam, setEditExam] = useState(false);
   const [schedPassword, setSchedPassword] = useState(''); // 세션 동안 암호 기억(메모리에만)
   const [saving, setSaving] = useState(false);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // 길게 눌러 드래그 → 연속 날짜 범위 선택 팝업
+  const [rangeSel, setRangeSel] = useState<{ start: string; end: string } | null>(null);
 
   const calendarRef = useRef<HTMLDivElement>(null);
   const gradFormRef = useRef<HTMLFormElement>(null);
@@ -234,11 +270,8 @@ export default function Home({ initialData }: { initialData: InitialData }) {
 
   const currentTeam = teamHistory.length ? getTeamForDate(today, teamHistory) : '미설정';
 
-  // "오늘" 버튼: 현재 달을 보고 있지 않을 때만 노출, 오늘이 있는 방향 힌트 제공
-  const ty = today.getFullYear(), tm = today.getMonth() + 1;
-  const isCurrentMonth = year === ty && month === tm;
-  const todayIsPast = (year * 12 + (month - 1)) > (ty * 12 + (tm - 1)); // 보고 있는 달이 오늘보다 미래면 오늘은 과거쪽
-  function goToday() { setYear(ty); setMonth(tm); }
+  // 상단 'Today' 버튼: 이번 달로 이동
+  function goToday() { setYear(today.getFullYear()); setMonth(today.getMonth() + 1); }
 
   function navigateMonth(delta: number) {
     const d = new Date(year, month - 1 + delta, 1);
@@ -257,8 +290,17 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const draggingRef = useRef(false);   // 실제 드래그 진행 여부(스테일 클로저 방지용 ref)
   const capturedRef = useRef<number | null>(null); // 가로 드래그 확정 후에만 포인터 캡처
+  // 길게 눌러 드래그 → 범위 선택
+  const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rangeActiveRef = useRef(false);
+  const rangeStartDateRef = useRef<string | null>(null);
+  const rangeEndDateRef = useRef<string | null>(null);
 
-  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+  useEffect(() => () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (longPressRef.current) clearTimeout(longPressRef.current);
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+  }, []);
 
   const finalize = useCallback((target: SettleTarget) => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -287,6 +329,10 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     if (!draggingRef.current) return;
     const dx = e.clientX - startRef.current.x;
     const dy = e.clientY - startRef.current.y;
+    // 움직이면 롱프레스(범위선택) 후보 취소 → 스와이프/스크롤로 처리
+    if (longPressRef.current && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+      clearTimeout(longPressRef.current); longPressRef.current = null;
+    }
     if (axisRef.current === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
       axisRef.current = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
       // 가로 드래그가 확정된 순간에만 포인터 캡처(클릭은 이 지점 전에 끝나므로 영향 없음)
@@ -344,12 +390,19 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   function closeYear() { setPinchAnim(true); setPinchScale(1); setView('month'); }
   function selectMonth(y: number, m: number) { setYear(y); setMonth(m); setPinchAnim(true); setPinchScale(1); setView('month'); }
 
+  const dateAtPoint = (x: number, y: number): string | null => {
+    const el = document.elementFromPoint(x, y);
+    return (el?.closest?.('[data-date]') as HTMLElement | null)?.getAttribute('data-date') || null;
+  };
+
   function onCalPointerDown(e: React.PointerEvent) {
     pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointersRef.current.size === 2) {
       pinchActiveRef.current = true;
-      // 진행 중이던 스와이프 취소
+      // 진행 중이던 스와이프/롱프레스 취소
       draggingRef.current = false;
+      if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; }
+      if (rangeActiveRef.current) { rangeActiveRef.current = false; clearRangeHighlight(); }
       if (capturedRef.current !== null) {
         try { (e.currentTarget as HTMLElement).releasePointerCapture(capturedRef.current); } catch { /* noop */ }
         capturedRef.current = null;
@@ -361,10 +414,34 @@ export default function Home({ initialData }: { initialData: InitialData }) {
       setPinchAnim(false);
     } else if (pointersRef.current.size === 1 && !pinchActiveRef.current && view === 'month') {
       onSwipeDown(e); // 캡처는 가로 드래그 확정 후 onSwipeMove에서만
+      // 길게 누르면(제자리로 400ms) 범위 선택 모드 진입
+      const startDate = (e.target as HTMLElement)?.closest?.('[data-date]')?.getAttribute('data-date') || null;
+      if (startDate) {
+        const el = e.currentTarget as HTMLElement;
+        const pid = e.pointerId;
+        rangeStartDateRef.current = startDate;
+        rangeEndDateRef.current = startDate;
+        if (longPressRef.current) clearTimeout(longPressRef.current);
+        longPressRef.current = setTimeout(() => {
+          longPressRef.current = null;
+          rangeActiveRef.current = true;
+          draggingRef.current = false;              // 스와이프 취소
+          setPhase('idle'); setDragX(0); axisRef.current = null;
+          try { el.setPointerCapture(pid); capturedRef.current = pid; } catch { /* noop */ }
+          if (typeof navigator !== 'undefined' && navigator.vibrate) { try { navigator.vibrate(15); } catch { /* noop */ } }
+          highlightRange(startDate, startDate);
+        }, 400);
+      }
     }
   }
   function onCalPointerMove(e: React.PointerEvent) {
     if (pointersRef.current.has(e.pointerId)) pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    // 범위 선택 중: 포인터 아래 날짜까지 하이라이트
+    if (rangeActiveRef.current) {
+      const d = dateAtPoint(e.clientX, e.clientY);
+      if (d) { rangeEndDateRef.current = d; highlightRange(rangeStartDateRef.current, d); }
+      return;
+    }
     if (pinchActiveRef.current && pointersRef.current.size >= 2) {
       const [p1, p2] = [...pointersRef.current.values()];
       const r = distOf(p1, p2) / pinchStartRef.current;
@@ -376,6 +453,27 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     if (!pinchActiveRef.current) onSwipeMove(e);
   }
   function onCalPointerUp(e: React.PointerEvent) {
+    if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; }
+    // 범위 선택 종료 → 팝업 열기
+    if (rangeActiveRef.current) {
+      rangeActiveRef.current = false;
+      pointersRef.current.delete(e.pointerId);
+      if (capturedRef.current !== null) {
+        try { (e.currentTarget as HTMLElement).releasePointerCapture(capturedRef.current); } catch { /* noop */ }
+        capturedRef.current = null;
+      }
+      clearRangeHighlight();
+      const s = rangeStartDateRef.current || '';
+      const en = rangeEndDateRef.current || s;
+      const [start, end] = s <= en ? [s, en] : [en, s];
+      if (start && end && start !== end) {
+        setRangeSel({ start, end });
+      } else if (start) {
+        // 한 칸만 선택됨 → 단일 편집 팝업
+        openScheduleEditor(start, getShiftForDate(start, parseYMD(start)));
+      }
+      return;
+    }
     const wasPinch = pinchActiveRef.current;
     pointersRef.current.delete(e.pointerId);
     try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* noop */ }
@@ -552,30 +650,76 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   }
 
   // ── 특정 달의 한 페이지(주 행 + 하단 요약) 렌더 ────────────────────
-  // ── 날짜 클릭 → 근무 변경 ────────────────────────────────────────
-  const openScheduleEditor = useCallback((dateStr: string, currentShift: ShiftType) => {
-    setEditTarget({ dateStr, shift: currentShift });
-    setEditShift(currentShift);
+  // ── 날짜 클릭 → 근무/대학원/시험 변경 ────────────────────────────
+  const flashCell = useCallback((dateStr: string) => {
+    const el = calendarRef.current?.querySelector(`.cal-page-cur [data-date="${dateStr}"]`) as HTMLElement | null;
+    if (!el) return;
+    el.classList.remove('flash');
+    void el.offsetWidth;            // 리플로우로 애니메이션 재시작
+    el.classList.add('flash');
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = setTimeout(() => el.classList.remove('flash'), 1400);
   }, []);
+
+  const openScheduleEditor = useCallback((dateStr: string, currentShift: ShiftType) => {
+    const grad = gradDays.includes(dateStr);
+    const exam = isInExamPeriod(dateStr, examRanges);
+    setEditTarget({ dateStr, shift: currentShift, grad, exam });
+    setEditShift(currentShift);
+    setEditGrad(grad);
+    setEditExam(exam);
+    flashCell(dateStr);
+  }, [gradDays, examRanges, flashCell]);
+
   function closeEditor() { setEditTarget(null); }
+
+  // 공통 저장 헬퍼 (실패 시 msg 설정 후 false 반환)
+  async function saveShiftDate(date: string, shift: ShiftType): Promise<boolean> {
+    const res = await fetch('/api/schedule', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: schedPassword, date, shift, sha: scheduleSha }),
+    });
+    const data = await res.json();
+    if (data.ok) { setScheduleData(prev => ({ ...prev, [date]: shift })); setScheduleSha(data.sha); return true; }
+    setMsg(`❌ ${data.error}`); return false;
+  }
+  async function saveGradDates(newDates: string[]): Promise<boolean> {
+    const sorted = [...new Set(newDates)].sort();
+    const res = await fetch('/api/grad', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: schedPassword, dates: sorted, sha: gradSha }),
+    });
+    const data = await res.json();
+    if (data.ok) { setGradDays(sorted); setGradSha(data.sha); return true; }
+    setMsg(`❌ ${data.error}`); return false;
+  }
+  async function saveExamRanges(newRanges: ExamRange[]): Promise<boolean> {
+    const sorted = [...newRanges].sort((a, b) => a.start.localeCompare(b.start));
+    const res = await fetch('/api/exam', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: schedPassword, ranges: sorted, sha: examSha }),
+    });
+    const data = await res.json();
+    if (data.ok) { setExamRanges(sorted); setExamSha(data.sha); return true; }
+    setMsg(`❌ ${data.error}`); return false;
+  }
+
   async function saveEditor() {
     if (!editTarget || saving) return;
+    const { dateStr } = editTarget;
     setSaving(true);
+    let ok = true;
     try {
-      const res = await fetch('/api/schedule', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: schedPassword, date: editTarget.dateStr, shift: editShift, sha: scheduleSha }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setScheduleData(prev => ({ ...prev, [editTarget.dateStr]: editShift }));
-        setScheduleSha(data.sha);
-        setMsg('✅ 스케줄이 저장되었습니다.');
-        setEditTarget(null);
-      } else {
-        setMsg(`❌ ${data.error}`);
+      if (editShift !== editTarget.shift) ok = (await saveShiftDate(dateStr, editShift)) && ok;
+      if (ok && editGrad !== editTarget.grad) {
+        const nd = editGrad ? [...gradDays, dateStr] : gradDays.filter(d => d !== dateStr);
+        ok = (await saveGradDates(nd)) && ok;
       }
+      if (ok && editExam !== editTarget.exam) {
+        const nr = editExam ? addExamRange(examRanges, dateStr, dateStr) : removeDatesFromExamRanges(examRanges, [dateStr]);
+        ok = (await saveExamRanges(nr)) && ok;
+      }
+      if (ok) { setMsg('✅ 저장되었습니다.'); setEditTarget(null); }
     } catch {
       setMsg('❌ 저장에 실패했습니다.');
     } finally {
@@ -587,6 +731,57 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     const [y, m, d] = dateStr.split('-').map(Number);
     const wd = ['일', '월', '화', '수', '목', '금', '토'][new Date(y, m - 1, d).getDay()];
     return `${m}월 ${d}일 (${wd})`;
+  }
+
+  // ── 범위(길게 눌러 드래그) 선택 후 일괄 적용 ──────────────────────
+  function rangeLabel(r: { start: string; end: string }) {
+    const [, sm, sd] = r.start.split('-').map(Number);
+    const [, em, ed] = r.end.split('-').map(Number);
+    const n = datesInRange(r.start, r.end).length;
+    if (r.start === r.end) return `${sm}/${sd} (1일)`;
+    return `${sm}/${sd} ~ ${em}/${ed} (${n}일)`;
+  }
+  async function applyRangeGrad(on: boolean) {
+    if (!rangeSel || saving) return;
+    setSaving(true);
+    try {
+      const ds = datesInRange(rangeSel.start, rangeSel.end);
+      const nd = on ? [...gradDays, ...ds] : gradDays.filter(d => !ds.includes(d));
+      if (await saveGradDates(nd)) { setMsg(on ? '✅ 대학원으로 지정했습니다.' : '✅ 대학원을 해제했습니다.'); setRangeSel(null); }
+    } finally { setSaving(false); setTimeout(() => setMsg(''), 3000); }
+  }
+  async function applyRangeExam(on: boolean) {
+    if (!rangeSel || saving) return;
+    setSaving(true);
+    try {
+      const nr = on ? addExamRange(examRanges, rangeSel.start, rangeSel.end)
+                    : removeDatesFromExamRanges(examRanges, datesInRange(rangeSel.start, rangeSel.end));
+      if (await saveExamRanges(nr)) { setMsg(on ? '✅ 시험기간으로 지정했습니다.' : '✅ 시험기간을 해제했습니다.'); setRangeSel(null); }
+    } finally { setSaving(false); setTimeout(() => setMsg(''), 3000); }
+  }
+  async function applyRangeShift(shift: ShiftType) {
+    if (!rangeSel || saving) return;
+    setSaving(true);
+    try {
+      const ds = datesInRange(rangeSel.start, rangeSel.end);
+      let ok = true;
+      for (const d of ds) { ok = (await saveShiftDate(d, shift)) && ok; if (!ok) break; } // 파일 충돌 방지 위해 순차 저장
+      if (ok) { setMsg(`✅ ${ds.length}일 근무를 '${shift}'(으)로 변경했습니다.`); setRangeSel(null); }
+    } finally { setSaving(false); setTimeout(() => setMsg(''), 3000); }
+  }
+
+  // 범위 선택 중 하이라이트(리렌더 없이 DOM에 직접 표시)
+  function highlightRange(a: string | null, b: string | null) {
+    const root = calendarRef.current?.querySelector('.cal-page-cur');
+    if (!root || !a || !b) return;
+    const [mn, mx] = a <= b ? [a, b] : [b, a];
+    root.querySelectorAll('[data-date]').forEach(el => {
+      const d = (el as HTMLElement).getAttribute('data-date') || '';
+      (el as HTMLElement).classList.toggle('range-sel', d >= mn && d <= mx);
+    });
+  }
+  function clearRangeHighlight() {
+    calendarRef.current?.querySelectorAll('.range-sel').forEach(el => el.classList.remove('range-sel'));
   }
 
   const renderMonthBody = useCallback((y: number, m: number) => {
@@ -643,8 +838,9 @@ export default function Home({ initialData }: { initialData: InitialData }) {
                 <div key={dateStr} className="cal-cell">
                   <div
                     className={`cal-cell-inner clickable ${isToday ? 'today' : ''} ${examClass}`}
+                    data-date={dateStr}
                     onClick={() => openScheduleEditor(dateStr, shift)}
-                    title="근무 변경"
+                    title="탭: 근무/대학원/시험 변경 · 길게 눌러 드래그: 범위 선택"
                   >
                     <div className="cal-day" style={{ color: dayColor, backgroundColor: isHighlighted ? '#FFB6C1' : 'transparent' }}>
                       {day}
@@ -867,6 +1063,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
             <button className="menu-btn" onClick={() => setSidebarOpen(true)}>☰</button>
             <span className="top-title">교대근무 달력</span>
             <div className="top-actions">
+              <button className="today-btn" onClick={goToday}>Today</button>
               <button
                 className="download-btn"
                 onClick={handleDownloadImage}
@@ -902,15 +1099,6 @@ export default function Home({ initialData }: { initialData: InitialData }) {
                     </div>
                     <button className="nav-btn" onClick={() => pageBy(1)}>›</button>
                   </div>
-
-                  {/* 현재 달이 아닐 때만 나타나는 '오늘' 버튼 (캡처 시에는 숨김) */}
-                  {!isCurrentMonth && !capturing && (
-                    <div className="today-bar">
-                      <button className="today-pill" onClick={goToday}>
-                        {todayIsPast ? '‹ 오늘' : '오늘 ›'}
-                      </button>
-                    </div>
-                  )}
 
                   {/* 요일 헤더는 고정, 그리드만 좌우로 슬라이드 */}
                   <div className="cal-weekdays">
@@ -948,11 +1136,12 @@ export default function Home({ initialData }: { initialData: InitialData }) {
 
         </main>
 
-        {/* 날짜 클릭 → 근무 변경 팝업 */}
+        {/* 날짜 클릭 → 근무/대학원/시험 변경 팝업 */}
         {editTarget && (
           <div className="edit-overlay" onClick={closeEditor}>
             <div className="edit-card" onClick={e => e.stopPropagation()}>
-              <div className="edit-title">{editorDateLabel(editTarget.dateStr)} 근무 변경</div>
+              <div className="edit-title">{editorDateLabel(editTarget.dateStr)}</div>
+              <div className="edit-label">근무</div>
               <div className="edit-shifts">
                 {(['주', '야', '비', '올'] as ShiftType[]).map(s => {
                   const { bg, color } = SHIFT_COLORS[s];
@@ -970,6 +1159,14 @@ export default function Home({ initialData }: { initialData: InitialData }) {
                   );
                 })}
               </div>
+              <div className="edit-toggles">
+                <button type="button" className={`edit-toggle ${editGrad ? 'on' : ''}`} onClick={() => setEditGrad(v => !v)}>
+                  🎓 대학원 {editGrad ? 'ON' : 'OFF'}
+                </button>
+                <button type="button" className={`edit-toggle ${editExam ? 'on' : ''}`} onClick={() => setEditExam(v => !v)}>
+                  📚 시험기간 {editExam ? 'ON' : 'OFF'}
+                </button>
+              </div>
               <input
                 type="password"
                 placeholder="암호 입력"
@@ -984,6 +1181,47 @@ export default function Home({ initialData }: { initialData: InitialData }) {
                   {saving ? '저장 중…' : '저장'}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* 길게 눌러 드래그 → 범위 일괄 설정 팝업 */}
+        {rangeSel && (
+          <div className="edit-overlay" onClick={() => !saving && setRangeSel(null)}>
+            <div className="edit-card" onClick={e => e.stopPropagation()}>
+              <div className="edit-title">{rangeLabel(rangeSel)} 일괄 설정</div>
+              <input
+                type="password"
+                placeholder="암호 입력"
+                value={schedPassword}
+                onChange={e => setSchedPassword(e.target.value)}
+                className="edit-input"
+              />
+              <div className="edit-label">🎓 대학원</div>
+              <div className="edit-shifts">
+                <button type="button" className="edit-btn edit-set" disabled={saving} onClick={() => applyRangeGrad(true)}>지정</button>
+                <button type="button" className="edit-btn edit-clear" disabled={saving} onClick={() => applyRangeGrad(false)}>해제</button>
+              </div>
+              <div className="edit-label">📚 시험기간</div>
+              <div className="edit-shifts">
+                <button type="button" className="edit-btn edit-set" disabled={saving} onClick={() => applyRangeExam(true)}>지정</button>
+                <button type="button" className="edit-btn edit-clear" disabled={saving} onClick={() => applyRangeExam(false)}>해제</button>
+              </div>
+              <div className="edit-label">근무 일괄 변경</div>
+              <div className="edit-shifts">
+                {(['주', '야', '비', '올'] as ShiftType[]).map(s => {
+                  const { bg, color } = SHIFT_COLORS[s];
+                  return (
+                    <button key={s} type="button" className="edit-shift" style={{ backgroundColor: bg, color }} disabled={saving} onClick={() => applyRangeShift(s)}>
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="edit-actions">
+                <button type="button" className="edit-btn edit-cancel" onClick={() => setRangeSel(null)} disabled={saving}>닫기</button>
+              </div>
+              {saving && <div className="edit-saving">저장 중…</div>}
             </div>
           </div>
         )}
@@ -1044,11 +1282,11 @@ export default function Home({ initialData }: { initialData: InitialData }) {
           padding: 12px 16px; background: #343a40; color: white; position: sticky; top: 0; z-index: 50;
         }
         .top-actions { display: flex; align-items: center; gap: 8px; }
-        .menu-btn {
+        .menu-btn, .today-btn {
           background: #495057; border: none; color: white; padding: 6px 14px;
           border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;
         }
-        .menu-btn:hover { background: #6c757d; }
+        .menu-btn:hover, .today-btn:hover { background: #6c757d; }
         .top-title { font-size: 16px; font-weight: 700; }
 
         .download-btn {
@@ -1130,20 +1368,6 @@ export default function Home({ initialData }: { initialData: InitialData }) {
         }
         .cal-wday { text-align: center; font-size: 16px; font-weight: 700; padding: 4px; }
 
-        /* 현재 달이 아닐 때 나타나는 '오늘' 버튼 */
-        .today-bar {
-          display: flex; justify-content: center;
-          background: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 6px;
-        }
-        .today-pill {
-          background: #343a40; color: #fff; border: none; border-radius: 999px;
-          padding: 5px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
-          font-family: inherit; box-shadow: 0 2px 6px rgba(0,0,0,0.18);
-          transition: background 0.15s, transform 0.1s;
-        }
-        .today-pill:hover { background: #212529; }
-        .today-pill:active { transform: scale(0.96); }
-
         /* 좌우 페이징: 요일 헤더 아래 그리드 영역만 슬라이드 */
         .cal-viewport {
           position: relative; overflow: hidden;
@@ -1184,7 +1408,18 @@ export default function Home({ initialData }: { initialData: InitialData }) {
         }
 
         .cal-cell-inner.clickable { cursor: pointer; }
-        .cal-cell-inner.clickable:hover { background: #eef2ff; border-radius: 4px; }
+        @media (hover: hover) {
+          .cal-cell-inner.clickable:hover { background: #eef2ff; border-radius: 4px; }
+        }
+        /* 클릭 직후 잠깐(1.4초) 반짝 — 오늘(파랑)과 구분되도록 앰버색 링 */
+        .cal-cell-inner.flash { animation: cellFlash 1.4s ease-out; border-radius: 4px; }
+        @keyframes cellFlash {
+          0%   { box-shadow: inset 0 0 0 3px rgba(245,159,0,0.95); background: rgba(245,159,0,0.20); }
+          70%  { box-shadow: inset 0 0 0 3px rgba(245,159,0,0.55); background: rgba(245,159,0,0.10); }
+          100% { box-shadow: inset 0 0 0 3px rgba(245,159,0,0);    background: transparent; }
+        }
+        /* 범위 선택 중 하이라이트 */
+        .cal-cell-inner.range-sel { background: rgba(51,102,204,0.20); border-radius: 3px; box-shadow: inset 0 0 0 1.5px rgba(51,102,204,0.55); }
 
         /* 근무 변경 팝업 */
         .edit-overlay {
@@ -1204,6 +1439,15 @@ export default function Home({ initialData }: { initialData: InitialData }) {
           box-shadow: inset 0 0 0 1px #e9ecef;
         }
         .edit-shift.sel { border-color: #343a40; transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.18); }
+        .edit-shift:disabled { opacity: 0.6; cursor: wait; }
+        .edit-label { font-size: 12px; font-weight: 700; color: #868e96; margin: 2px 2px 6px; }
+        .edit-toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+        .edit-toggle {
+          padding: 11px 0; border: none; border-radius: 10px; cursor: pointer; font-family: inherit;
+          font-size: 13px; font-weight: 700; background: #e9ecef; color: #868e96;
+          box-shadow: inset 0 0 0 1px #dee2e6;
+        }
+        .edit-toggle.on { background: #343a40; color: #fff; box-shadow: none; }
         .edit-input {
           width: 100%; padding: 11px; border: 1px solid #ced4da; border-radius: 8px;
           font-size: 14px; margin-bottom: 14px; background: #fff; color: #212529;
@@ -1213,11 +1457,16 @@ export default function Home({ initialData }: { initialData: InitialData }) {
           flex: 1; padding: 11px 0; border: none; border-radius: 8px;
           font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit;
         }
+        .edit-btn:disabled { opacity: 0.6; cursor: wait; }
         .edit-cancel { background: #e9ecef; color: #495057; }
         .edit-cancel:hover { background: #dee2e6; }
         .edit-save { background: #343a40; color: #fff; }
         .edit-save:hover { background: #212529; }
-        .edit-save:disabled { opacity: 0.6; cursor: wait; }
+        .edit-set { background: #364fc7; color: #fff; }
+        .edit-set:hover { background: #2b3fa0; }
+        .edit-clear { background: #e9ecef; color: #495057; }
+        .edit-clear:hover { background: #dee2e6; }
+        .edit-saving { text-align: center; font-size: 13px; color: #868e96; margin-top: 10px; }
 
         .toast {
           position: fixed; top: 64px; left: 50%; transform: translateX(-50%);
