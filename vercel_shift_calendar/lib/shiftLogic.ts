@@ -80,13 +80,20 @@ export function isInExamPeriod(dateStr: string, examRanges: { start: string; end
   return examRanges.some(r => dateStr >= r.start && dateStr <= r.end);
 }
 
+// 'YYYY-MM-DD' 문자열을 로컬 자정 기준 Date로 안전하게 파싱.
+// new Date('2026-06-09')는 UTC 자정으로 해석돼 시간대에 따라 하루 밀릴 수 있어 직접 파싱함.
+export function parseYMD(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
 export function getExamClass(
   dateStr: string,
   examRanges: { start: string; end: string }[]
 ): string {
   if (!isInExamPeriod(dateStr, examRanges)) return '';
 
-  const date = new Date(dateStr);
+  const date = parseYMD(dateStr);
   const prev = formatDate(new Date(date.getTime() - 86400000));
   const next = formatDate(new Date(date.getTime() + 86400000));
   const prevIn = isInExamPeriod(prev, examRanges);
