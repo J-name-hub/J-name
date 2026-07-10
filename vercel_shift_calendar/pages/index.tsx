@@ -5,11 +5,13 @@ import {
   getTeamForDate, getShift, getMonthDays, getExamClass, formatDate,
   SHIFT_COLORS, TeamHistory, ShiftType
 } from '../lib/shiftLogic';
+import { APP_VERSION } from '../lib/version';
 
 const GRAD_COLOR = '#0066CC';
 const EXAM_COLOR = '#FF6F00';
 const HIGHLIGHTED_MONTH_DAYS = ['01-27', '03-01', '04-06'];
 const AVAILABLE_TEAMS = ['A', 'B', 'C', 'D'];
+const SWIPE_THRESHOLD = 60; // 이 픽셀 이상 좌우로 밀면 월 이동
 
 type ExamRange = { start: string; end: string };
 
@@ -31,38 +33,61 @@ function getTodayKST(): Date {
   return new Date(kst.getFullYear(), kst.getMonth(), kst.getDate());
 }
 
+// 캐시(Cache Storage / Service Worker)를 비우고 새로고침.
+// 코드 배포 후 과거 화면/로직이 남아 보이는 것을 방지.
+async function clearCachesAndReload() {
+  try {
+    if (typeof caches !== 'undefined') {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+  } finally {
+    // 쿼리스트링을 붙여 캐시된 문서까지 확실히 새로 받아오게 함
+    const url = new URL(window.location.href);
+    url.searchParams.set('v', Date.now().toString());
+    window.location.replace(url.toString());
+  }
+}
+
+function isValidMD(m: number, d: number): boolean {
+  return Number.isInteger(m) && Number.isInteger(d) && m >= 1 && m <= 12 && d >= 1 && d <= 31;
+}
+
 function parseRangesText(text: string, year: number): { ranges: ExamRange[]; errors: string[] } {
   const tokens = text.replace(/\n/g, ',').split(',').map(t => t.trim()).filter(Boolean);
   const ranges: ExamRange[] = [];
   const errors: string[] = [];
   for (const t of tokens) {
-    try {
-      if (t.includes('~')) {
-        const [l, r] = t.split('~').map(s => s.trim());
-        const [lm, ld] = l.split('/').map(Number);
-        const [rm, rd] = r.split('/').map(Number);
-        const sd = `${year}-${String(lm).padStart(2,'0')}-${String(ld).padStart(2,'0')}`;
-        const ed = `${year}-${String(rm).padStart(2,'0')}-${String(rd).padStart(2,'0')}`;
-        ranges.push({ start: sd <= ed ? sd : ed, end: sd <= ed ? ed : sd });
-      } else {
-        const [m, d] = t.split('/').map(Number);
-        const sd = `${year}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        ranges.push({ start: sd, end: sd });
-      }
-    } catch { errors.push(t); }
+    if (t.includes('~')) {
+      const [l, r] = t.split('~').map(s => s.trim());
+      const [lm, ld] = (l ?? '').split('/').map(Number);
+      const [rm, rd] = (r ?? '').split('/').map(Number);
+      if (!isValidMD(lm, ld) || !isValidMD(rm, rd)) { errors.push(t); continue; }
+      const sd = `${year}-${String(lm).padStart(2, '0')}-${String(ld).padStart(2, '0')}`;
+      const ed = `${year}-${String(rm).padStart(2, '0')}-${String(rd).padStart(2, '0')}`;
+      ranges.push({ start: sd <= ed ? sd : ed, end: sd <= ed ? ed : sd });
+    } else {
+      const [m, d] = t.split('/').map(Number);
+      if (!isValidMD(m, d)) { errors.push(t); continue; }
+      const sd = `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      ranges.push({ start: sd, end: sd });
+    }
   }
   return { ranges, errors };
 }
 
 function parseDatesText(text: string, year: number): { dates: string[]; errors: string[] } {
-  const tokens = text.split(',').map(t => t.trim()).filter(Boolean);
+  const tokens = text.replace(/\n/g, ',').split(',').map(t => t.trim()).filter(Boolean);
   const dates: string[] = [];
   const errors: string[] = [];
   for (const t of tokens) {
-    try {
-      const [m, d] = t.split('/').map(Number);
-      dates.push(`${year}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
-    } catch { errors.push(t); }
+    const [m, d] = t.split('/').map(Number);
+    if (!isValidMD(m, d)) { errors.push(t); continue; }
+    dates.push(`${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
   }
   return { dates, errors };
 }
@@ -89,37 +114,52 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   const gradFormRef = useRef<HTMLFormElement>(null);
   const examFormRef = useRef<HTMLFormElement>(null);
 
-  // 연도 변경 시 공휴일만 다시 로드
-  const loadHolidays = useCallback(async (y: number) => {
-    const hol = await fetch(`/api/holidays?year=${y}`).then(r => r.json());
-    setHolidays(hol || {});
+  // ── 버전 체크(캐시 초기화) ────────────────────────────────────────
+  // 지난 방문 때의 버전과 현재 코드 버전이 다르면 = 새 배포가 있었다는 뜻.
+  // 캐시를 비우고 새로고침해서 과거 코드/화면이 남지 않게 한다.
+  useEffect(() => {
+    try {
+      const KEY = 'shiftcal_app_version';
+      const stored = localStorage.getItem(KEY);
+      if (stored === APP_VERSION) return;         // 최신 상태
+      localStorage.setItem(KEY, APP_VERSION);     // 루프 방지: 새로고침 전에 먼저 갱신
+      if (stored === null) return;                // 첫 방문이면 새로고침 없이 값만 기록
+      clearCachesAndReload();                     // 버전 바뀜 → 캐시 비우고 리로드
+    } catch { /* localStorage 사용 불가 환경이면 무시 */ }
   }, []);
 
-  // 백그라운드 전체 리프레시 (데이터 변경 반영)
+  // 연도 변경 시 공휴일만 다시 로드
+  const loadHolidays = useCallback(async (y: number) => {
+    try {
+      const hol = await fetch(`/api/holidays?year=${y}`).then(r => r.json());
+      setHolidays(hol || {});
+    } catch { /* 네트워크 오류 시 기존 값 유지 */ }
+  }, []);
+
+  // 백그라운드 전체 리프레시 (공휴일 제외 — 공휴일은 아래 연도 effect가 담당)
   const loadAll = useCallback(async () => {
-    const [sch, team, grad, exam, hol] = await Promise.all([
-      fetch('/api/schedule').then(r => r.json()),
-      fetch('/api/team').then(r => r.json()),
-      fetch('/api/grad').then(r => r.json()),
-      fetch('/api/exam').then(r => r.json()),
-      fetch(`/api/holidays?year=${year}`).then(r => r.json()),
-    ]);
-    setScheduleData(sch.data || {});
-    setScheduleSha(sch.sha);
-    setTeamHistory(team.team_history || []);
-    setGradDays(grad.dates || []);
-    setGradSha(grad.sha);
-    setExamRanges(exam.ranges || []);
-    setExamSha(exam.sha);
-    setHolidays(hol || {});
-  }, [year]);
+    try {
+      const [sch, team, grad, exam] = await Promise.all([
+        fetch('/api/schedule').then(r => r.json()),
+        fetch('/api/team').then(r => r.json()),
+        fetch('/api/grad').then(r => r.json()),
+        fetch('/api/exam').then(r => r.json()),
+      ]);
+      setScheduleData(sch.data || {});
+      setScheduleSha(sch.sha);
+      setTeamHistory(team.team_history || []);
+      setGradDays(grad.dates || []);
+      setGradSha(grad.sha);
+      setExamRanges(exam.ranges || []);
+      setExamSha(exam.sha);
+    } catch { /* 오류 시 SSR 초기 데이터 유지 */ }
+  }, []);
 
   // 마운트 후 백그라운드 리프레시 (SSR 데이터가 최신인지 확인)
-  useEffect(() => { loadAll(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadAll(); }, [loadAll]);
 
-  useEffect(() => {
-    loadHolidays(year);
-  }, [year, loadHolidays]);
+  // 마운트 + 연도 변경 시 공휴일 로드 (중복 호출 없음)
+  useEffect(() => { loadHolidays(year); }, [year, loadHolidays]);
 
   function getShiftForDate(dateStr: string, dateObj: Date): ShiftType {
     if (scheduleData[dateStr]) return scheduleData[dateStr];
@@ -136,10 +176,10 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     for (const week of days) {
       for (const d of week) {
         if (!d) continue;
-        const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const dateObj = new Date(y, m-1, d);
+        const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dateObj = new Date(y, m - 1, d);
         const shift = getShiftForDate(dateStr, dateObj);
-        if (['주','야','올'].includes(shift)) count++;
+        if (['주', '야', '올'].includes(shift)) count++;
       }
     }
     return count;
@@ -151,18 +191,18 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     for (const week of days) {
       for (const d of week) {
         if (!d) continue;
-        const dateObj = new Date(y, m-1, d);
+        const dateObj = new Date(y, m - 1, d);
         if (dateObj > until) return count;
         const dateStr = formatDate(dateObj);
         const shift = getShiftForDate(dateStr, dateObj);
-        if (['주','야','올'].includes(shift)) count++;
+        if (['주', '야', '올'].includes(shift)) count++;
       }
     }
     return count;
   }
 
   const totalWorkdays = calculateWorkdays(year, month);
-  const firstDate = new Date(year, month-1, 1);
+  const firstDate = new Date(year, month - 1, 1);
   const lastDate = new Date(year, month, 0);
   let remainingWorkdays = totalWorkdays;
   if (lastDate < today) remainingWorkdays = 0;
@@ -174,6 +214,41 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     const d = new Date(year, month - 1 + delta, 1);
     setYear(d.getFullYear());
     setMonth(d.getMonth() + 1);
+  }
+
+  // ── 좌우 스와이프(드래그)로 월 이동 ──────────────────────────────
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const swipeAxis = useRef<null | 'h' | 'v'>(null);
+  const [dragX, setDragX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+
+  function onSwipeDown(e: React.PointerEvent) {
+    if (sidebarOpen) return;
+    swipeStart.current = { x: e.clientX, y: e.clientY };
+    swipeAxis.current = null;
+    setDragging(true);
+    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* noop */ }
+  }
+  function onSwipeMove(e: React.PointerEvent) {
+    if (!swipeStart.current) return;
+    const dx = e.clientX - swipeStart.current.x;
+    const dy = e.clientY - swipeStart.current.y;
+    if (swipeAxis.current === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      swipeAxis.current = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+    }
+    if (swipeAxis.current === 'h') setDragX(dx * 0.5); // 저항감
+  }
+  function onSwipeEnd(e: React.PointerEvent) {
+    if (!swipeStart.current) return;
+    const dx = e.clientX - swipeStart.current.x;
+    const isH = swipeAxis.current === 'h';
+    swipeStart.current = null;
+    swipeAxis.current = null;
+    setDragging(false);
+    setDragX(0);
+    if (isH && Math.abs(dx) > SWIPE_THRESHOLD) {
+      navigateMonth(dx < 0 ? 1 : -1); // 왼쪽으로 밀면 다음 달, 오른쪽으로 밀면 이전 달
+    }
   }
 
   // ── 이미지 다운로드/공유 ─────────────────────────────────────────
@@ -275,6 +350,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     const password = fd.get('password') as string;
     const textRaw = fd.get('dates') as string;
     const targetYear = parseInt(fd.get('year') as string);
+    if (!Number.isInteger(targetYear)) { setMsg('❌ 연도를 확인해주세요.'); setTimeout(() => setMsg(''), 3000); return; }
     const { dates, errors } = parseDatesText(textRaw, targetYear);
     if (errors.length) setMsg(`⚠️ 무시된 항목: ${errors.join(', ')}`);
     const current = new Set(gradDays);
@@ -302,12 +378,13 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     const password = fd.get('password') as string;
     const textRaw = fd.get('ranges') as string;
     const targetYear = parseInt(fd.get('year') as string);
+    if (!Number.isInteger(targetYear)) { setMsg('❌ 연도를 확인해주세요.'); setTimeout(() => setMsg(''), 3000); return; }
     const { ranges, errors } = parseRangesText(textRaw, targetYear);
     if (errors.length) setMsg(`⚠️ 무시된 항목: ${errors.join(', ')}`);
     const currentSet = new Set(examRanges.map(r => `${r.start}|${r.end}`));
     if (isDelete) ranges.forEach(r => currentSet.delete(`${r.start}|${r.end}`));
     else ranges.forEach(r => currentSet.add(`${r.start}|${r.end}`));
-    const merged = [...currentSet].map(s => { const [start, end] = s.split('|'); return { start, end }; }).sort((a,b)=>a.start.localeCompare(b.start));
+    const merged = [...currentSet].map(s => { const [start, end] = s.split('|'); return { start, end }; }).sort((a, b) => a.start.localeCompare(b.start));
     const res = await fetch('/api/exam', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -325,23 +402,23 @@ export default function Home({ initialData }: { initialData: InitialData }) {
   }
 
   const monthExamRanges = examRanges.filter(r => {
-    const first = `${year}-${String(month).padStart(2,'0')}-01`;
-    const last = `${year}-${String(month).padStart(2,'0')}-${String(new Date(year,month,0).getDate()).padStart(2,'0')}`;
+    const first = `${year}-${String(month).padStart(2, '0')}-01`;
+    const last = `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`;
     return !(r.end < first || r.start > last);
   });
 
-  const monthGradDays = gradDays.filter(d => d.startsWith(`${year}-${String(month).padStart(2,'0')}-`));
+  const monthGradDays = gradDays.filter(d => d.startsWith(`${year}-${String(month).padStart(2, '0')}-`));
 
   function buildHolidayDesc() {
     const parts: string[] = [];
     const monthHols: Record<string, string[]> = {};
-    for (const [k,v] of Object.entries(holidays)) {
+    for (const [k, v] of Object.entries(holidays)) {
       if (parseInt(k.split('-')[1]) === month && parseInt(k.split('-')[0]) === year) {
         monthHols[k] = v;
       }
     }
     const sorted = Object.keys(monthHols).sort();
-    for (let i = 0; i < sorted.length; ) {
+    for (let i = 0; i < sorted.length;) {
       const start = sorted[i];
       const startDay = parseInt(start.split('-')[2]);
       const names = monthHols[start];
@@ -365,7 +442,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
     const d = new Date(year, month - 1 + i, 1);
     monthOptions.push({ year: d.getFullYear(), month: d.getMonth() + 1 });
   }
-  const MONTH_NAMES = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const MONTH_NAMES = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
 
   return (
     <>
@@ -398,7 +475,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
               }}>
                 {monthOptions.map(o => (
                   <option key={`${o.year}-${o.month}`} value={`${o.year}-${o.month}`}>
-                    {o.year}년 {MONTH_NAMES[o.month-1]}
+                    {o.year}년 {MONTH_NAMES[o.month - 1]}
                   </option>
                 ))}
               </select>
@@ -428,7 +505,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
                 <form onSubmit={handleScheduleChange} className="form">
                   <input type="date" name="date" defaultValue={formatDate(today)} className="input" />
                   <select name="shift" className="select">
-                    {['주','야','비','올'].map(s => <option key={s} value={s}>{s}</option>)}
+                    {['주', '야', '비', '올'].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                   <input type="password" name="password" placeholder="암호 입력" className="input" />
                   <button type="submit" className="btn">스케줄 변경 저장</button>
@@ -469,6 +546,13 @@ export default function Home({ initialData }: { initialData: InitialData }) {
                 </form>
               )}
             </div>
+
+            <div className="section">
+              <button className="section-toggle" onClick={clearCachesAndReload}>
+                🔄 캐시 비우고 새로고침
+              </button>
+              <div className="version-tag">버전 {APP_VERSION}</div>
+            </div>
           </div>
         </aside>
 
@@ -477,7 +561,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
             <button className="menu-btn" onClick={() => setSidebarOpen(true)}>☰</button>
             <span className="top-title">교대근무 달력</span>
             <div className="top-actions">
-              <button className="today-btn" onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth()+1); }}>Today</button>
+              <button className="today-btn" onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth() + 1); }}>Today</button>
               <button
                 className="download-btn"
                 onClick={handleDownloadImage}
@@ -501,59 +585,77 @@ export default function Home({ initialData }: { initialData: InitialData }) {
               <button className="nav-btn" onClick={() => navigateMonth(1)}>›</button>
             </div>
 
-            <div className="cal-weekdays">
-              {['일','월','화','수','목','금','토'].map((d,i) => (
-                <div key={d} className="cal-wday" style={{ color: i === 0 || i === 6 ? 'red' : '#495057' }}>{d}</div>
-              ))}
-            </div>
+            {/* 좌우 스와이프 영역 */}
+            <div
+              className={`cal-swipe ${dragging ? 'dragging' : ''}`}
+              onPointerDown={onSwipeDown}
+              onPointerMove={onSwipeMove}
+              onPointerUp={onSwipeEnd}
+              onPointerCancel={onSwipeEnd}
+            >
+              <div
+                className="cal-swipe-inner"
+                style={{
+                  transform: `translateX(${dragX}px)`,
+                  transition: dragging ? 'none' : 'transform 0.2s ease',
+                }}
+              >
+                <div className="cal-weekdays">
+                  {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
+                    <div key={d} className="cal-wday" style={{ color: i === 0 || i === 6 ? 'red' : '#495057' }}>{d}</div>
+                  ))}
+                </div>
 
-            {weeks.map((week, wi) => (
-              <div key={`week-${wi}`} className="cal-row">
-                {week.map((day, di) => {
-                  if (!day) return <div key={`empty-${wi}-${di}`} className="cal-cell" />;
-                  const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                  const monthDay = `${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                  const dateObj = new Date(year, month-1, day);
-                  const isWeekend = di === 0 || di === 6;
-                  const isHoliday = !!holidays[dateStr];
-                  const isGrad = gradDays.includes(dateStr);
-                  const isHighlighted = HIGHLIGHTED_MONTH_DAYS.includes(monthDay);
-                  const examClass = getExamClass(dateStr, examRanges);
-                  const isToday = dateStr === todayStr;
-                  const shift = getShiftForDate(dateStr, dateObj);
-                  const { bg, color } = SHIFT_COLORS[shift];
-                  const dayColor = isGrad ? GRAD_COLOR : (isWeekend || isHoliday ? 'red' : 'black');
+                {weeks.map((week, wi) => (
+                  <div key={`week-${wi}`} className="cal-row">
+                    {week.map((day, di) => {
+                      if (!day) return <div key={`empty-${wi}-${di}`} className="cal-cell" />;
+                      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                      const monthDay = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                      const dateObj = new Date(year, month - 1, day);
+                      const isWeekend = di === 0 || di === 6;
+                      const isHoliday = !!holidays[dateStr];
+                      const isGrad = gradDays.includes(dateStr);
+                      const isHighlighted = HIGHLIGHTED_MONTH_DAYS.includes(monthDay);
+                      const examClass = getExamClass(dateStr, examRanges);
+                      const isToday = dateStr === todayStr;
+                      const shift = getShiftForDate(dateStr, dateObj);
+                      const { bg, color } = SHIFT_COLORS[shift];
+                      const dayColor = isGrad ? GRAD_COLOR : (isWeekend || isHoliday ? 'red' : 'black');
 
-                  return (
-                    <div key={dateStr} className="cal-cell">
-                      <div className={`cal-cell-inner ${isToday ? 'today' : ''} ${examClass}`}>
-                        <div className="cal-day" style={{ color: dayColor, backgroundColor: isHighlighted ? '#FFB6C1' : 'transparent' }}>
-                          {day}
+                      return (
+                        <div key={dateStr} className="cal-cell">
+                          <div className={`cal-cell-inner ${isToday ? 'today' : ''} ${examClass}`}>
+                            <div className="cal-day" style={{ color: dayColor, backgroundColor: isHighlighted ? '#FFB6C1' : 'transparent' }}>
+                              {day}
+                            </div>
+                            <div className="cal-shift" style={shift !== '비' ? { backgroundColor: bg, color } : { color: 'transparent' }}>
+                              {shift !== '비' ? shift : '비'}
+                            </div>
+                          </div>
                         </div>
-                        <div className="cal-shift" style={shift !== '비' ? { backgroundColor: bg, color } : { color: 'transparent' }}>
-                          {shift !== '비' ? shift : '비'}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                ))}
+
+                <div className="cal-footer">
+                  {monthGradDays.length > 0 && <span style={{ color: GRAD_COLOR, fontWeight: 700 }}>대학원</span>}
+                  {monthGradDays.length > 0 && monthExamRanges.length > 0 && ' | '}
+                  {monthExamRanges.length > 0 && (
+                    <span style={{ color: EXAM_COLOR, fontWeight: 700 }}>
+                      시험기간: {monthExamRanges.map(r => {
+                        const [, sm, sd] = r.start.split('-').map(Number);
+                        const [, em, ed] = r.end.split('-').map(Number);
+                        if (r.start === r.end) return `${sm}/${sd}`;
+                        return `${sm}/${sd}~${em}/${ed}`;
+                      }).join(', ')}
+                    </span>
+                  )}
+                  {(monthGradDays.length > 0 || monthExamRanges.length > 0) && buildHolidayDesc() && ' | '}
+                  {buildHolidayDesc()}
+                </div>
               </div>
-            ))}
-
-            <div className="cal-footer">
-              {monthGradDays.length > 0 && <span style={{ color: GRAD_COLOR, fontWeight: 700 }}>대학원</span>}
-              {monthGradDays.length > 0 && monthExamRanges.length > 0 && ' | '}
-              {monthExamRanges.length > 0 && (
-                <span style={{ color: EXAM_COLOR, fontWeight: 700 }}>
-                  시험기간: {monthExamRanges.map(r => {
-                    const s = new Date(r.start); const e = new Date(r.end);
-                    if (r.start === r.end) return `${s.getMonth()+1}/${s.getDate()}`;
-                    return `${s.getMonth()+1}/${s.getDate()}~${e.getMonth()+1}/${e.getDate()}`;
-                  }).join(', ')}
-                </span>
-              )}
-              {(monthGradDays.length > 0 || monthExamRanges.length > 0) && buildHolidayDesc() && ' | '}
-              {buildHolidayDesc()}
             </div>
           </div>
         </main>
@@ -588,6 +690,7 @@ export default function Home({ initialData }: { initialData: InitialData }) {
           color: #cdd6f4; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;
         }
         .section-toggle:hover { background: #45475a; }
+        .version-tag { padding: 6px 4px 0; font-size: 11px; color: #6c7086; }
         .form { padding: 10px 4px; display: flex; flex-direction: column; gap: 8px; }
         .input, .select, .textarea {
           width: 100%; padding: 8px; border: 1px solid #45475a; border-radius: 6px;
@@ -644,6 +747,12 @@ export default function Home({ initialData }: { initialData: InitialData }) {
         .cal-title { text-align: center; }
         .cal-year { font-size: 18px; }
         .cal-month { font-size: 30px; font-weight: 700; margin: 0 2px; }
+
+        /* 좌우 스와이프 영역: 세로 스크롤은 허용, 가로 제스처는 우리가 처리 */
+        .cal-swipe { touch-action: pan-y; overflow: hidden; }
+        .cal-swipe.dragging { user-select: none; cursor: grabbing; }
+        .cal-swipe-inner { will-change: transform; }
+
         .cal-weekdays {
           display: grid; grid-template-columns: repeat(7, 1fr);
           background: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 4px 0;
